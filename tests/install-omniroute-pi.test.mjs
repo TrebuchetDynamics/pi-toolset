@@ -243,9 +243,27 @@ try {
     0o600,
   );
   assert.equal(
-    fs.existsSync(npmLog),
-    false,
-    "an existing OmniRoute install must not be rewritten by npm",
+    fs.readFileSync(npmLog, "utf8").trim(),
+    "install -g --legacy-peer-deps --engine-strict omniroute",
+    "rerunning the installer must refresh OmniRoute for routing fixes",
+  );
+
+  fs.writeFileSync(omnirouteLog, "");
+  await execFileAsync(
+    "sh",
+    [script, "--base-url", `http://127.0.0.1:${port}/v1`],
+    { cwd: root, env },
+  );
+  const unchangedRuntimeCalls = fs.readFileSync(omnirouteLog, "utf8");
+  assert.match(
+    unchangedRuntimeCalls,
+    /^\|stop$/m,
+    "a refreshed OmniRoute install must replace the running daemon",
+  );
+  assert.match(
+    unchangedRuntimeCalls,
+    /^8\|serve --daemon --no-open$/m,
+    "the refreshed daemon must start even when runtime settings are unchanged",
   );
   const pkg = JSON.parse(
     fs.readFileSync(path.join(root, "package.json"), "utf8"),

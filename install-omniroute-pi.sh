@@ -166,12 +166,9 @@ if [ "$config_only" = "0" ]; then
   if ! command -v pi >/dev/null 2>&1 || ! pi --version >/dev/null 2>&1; then
     npm install -g --ignore-scripts --legacy-peer-deps @earendil-works/pi-coding-agent
   fi
-  if ! command -v omniroute >/dev/null 2>&1 || ! omniroute --version >/dev/null 2>&1; then
-    npm install -g --legacy-peer-deps --engine-strict omniroute
-  fi
+  npm install -g --legacy-peer-deps --engine-strict omniroute
 
-  runtime_changed="$(
-  OMNIROUTE_ENV_FILE="${HOME}/.omniroute/.env" OMNIROUTE_MAX_HEAVY="$max_heavy" OMNIROUTE_BIND_HOST="$server_host" node <<'NODE'
+  OMNIROUTE_ENV_FILE="${HOME}/.omniroute/.env" OMNIROUTE_MAX_HEAVY="$max_heavy" OMNIROUTE_BIND_HOST="$server_host" node <<'NODE' >/dev/null
 import fs from "node:fs";
 import path from "node:path";
 
@@ -197,20 +194,14 @@ if (changed) {
   fs.renameSync(temporary, file);
 }
 fs.chmodSync(file, 0o600);
-console.log(changed ? "1" : "0");
 NODE
-  )"
 
   if omniroute autostart status >/dev/null 2>&1; then
     omniroute autostart enable >/dev/null 2>&1 || true
   fi
 
   case "$base_url" in
-    http://127.0.0.1:*|http://localhost:*)
-      if [ "$runtime_changed" = "1" ]; then
-        omniroute stop >/dev/null 2>&1 || true
-      fi
-      ;;
+    http://127.0.0.1:*|http://localhost:*) omniroute stop >/dev/null 2>&1 || true ;;
   esac
 
   if ! server_ready; then

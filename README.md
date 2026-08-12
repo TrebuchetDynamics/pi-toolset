@@ -100,7 +100,7 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 | Agent skills                |   **65** | Engineering, planning, delivery, UI, research, Pi, and communication workflows                       |
 | Pi extensions               |   **15** | Commands, tools, hooks, status behavior, delegation, and research bridges                            |
 | Theme                       |    **1** | `trebuchet-neon`, a complete dark Pi token map                                                       |
-| Package bins                |    **3** | `tx`, `autofolderrefactor`, and `txd`                                                          |
+| Package bins                |    **3** | `tx`, `autofolderrefactor`, and `txd`                                                                |
 | Direct runtime dependencies |    **3** | Bundled `@narumitw/pi-goal`, `pi-posher`, and `pi-subagents`; Pi core packages remain optional peers |
 
 ### Core extension surfaces
@@ -236,7 +236,7 @@ The all-in-one installer runs this by default. For individual setup:
 sh install-omniroute-pi.sh
 ```
 
-The installer installs OmniRoute globally with strict Node engine checks and npm's legacy peer resolver (avoiding upstream React/Marked peer-warning noise), binds its local daemon to `127.0.0.1`, enables crash recovery and autostart, selects OmniRoute's keyless/no-login `auto/coding:free` routing pool, preserves existing Pi providers/settings, writes permission-restricted backups, and sets that router as Pi's default model. It also persists capacity for eight structurally heavy Pi chats across restarts; lower `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` on memory-constrained hosts. Individual free upstreams can still be rate-limited or temporarily unavailable; OmniRoute handles selection and fallback.
+The installer installs or refreshes OmniRoute globally with strict Node engine checks and npm's legacy peer resolver (avoiding upstream React/Marked peer-warning noise), restarts the local daemon so provider/model rotation fixes take effect, binds it to `127.0.0.1`, enables crash recovery and autostart, selects OmniRoute's keyless/no-login `auto/coding:free` routing pool, preserves existing Pi providers/settings, writes permission-restricted backups, and sets that router as Pi's default model. It also persists capacity for eight structurally heavy Pi chats across restarts; lower `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` on memory-constrained hosts. Individual free upstreams can still be rate-limited or temporarily unavailable; OmniRoute handles selection and fallback.
 
 For an existing server:
 
