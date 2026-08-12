@@ -64,6 +64,11 @@ const server = http.createServer(async (request, response) => {
             context_length: 1048576,
             capabilities: { reasoning: true, tool_calling: true },
           },
+          {
+            id: "oc/deepseek-v4-flash-free",
+            context_length: 200000,
+            capabilities: { reasoning: true, tool_calling: true },
+          },
         ],
       }),
     );
@@ -147,8 +152,11 @@ try {
     `http://127.0.0.1:${port}/v1`,
   );
   assert.equal(config.providers.omniroute.apiKey, "fixture-key");
-  assert.equal(config.providers.omniroute.models[0].id, "auto/coding:free");
-  assert.equal(config.providers.omniroute.models[0].contextWindow, 1048576);
+  assert.equal(
+    config.providers.omniroute.models[0].id,
+    "oc/deepseek-v4-flash-free",
+  );
+  assert.equal(config.providers.omniroute.models[0].contextWindow, 200000);
   assert.equal(config.providers.omniroute.models[0].maxTokens, 16384);
   assert.deepEqual(config.providers.omniroute.models[0].input, ["text"]);
   assert.equal(
@@ -168,7 +176,7 @@ try {
   );
   assert.equal(settings.theme, "keep-me");
   assert.equal(settings.defaultProvider, "omniroute");
-  assert.equal(settings.defaultModel, "auto/coding:free");
+  assert.equal(settings.defaultModel, "oc/deepseek-v4-flash-free");
   assert.equal(
     fs.statSync(path.join(agentDir, "settings.json")).mode & 0o777,
     0o600,

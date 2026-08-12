@@ -1,13 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
-# Install OmniRoute, start its local daemon, and configure its automatic free route in Pi.
+# Install OmniRoute, start its local daemon, and configure a catalog-backed free model in Pi.
 # Use --config-only for an existing local or remote OmniRoute server.
 
 : "${HOME:?HOME is required}"
 
 base_url="${OMNIROUTE_PI_BASE_URL:-http://127.0.0.1:20128/v1}"
-model="${OMNIROUTE_PI_MODEL:-auto/coding:free}"
+# ponytail: avoid auto/coding:free until OmniRoute stops routing to delisted upstream models.
+model="${OMNIROUTE_PI_MODEL:-oc/deepseek-v4-flash-free}"
 api_key="${OMNIROUTE_PI_API_KEY:-omniroute-local}"
 max_heavy="${OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT:-8}"
 server_host="${OMNIROUTE_SERVER_HOST:-127.0.0.1}"
@@ -22,7 +23,7 @@ Install OmniRoute, run it as a daemon, and configure Pi to use OmniRoute.
 Options:
   --config-only    Skip package installation and daemon startup
   --base-url URL   OmniRoute base URL (`/v1` is detected automatically)
-  --model ID       OmniRoute route (default: auto/coding:free)
+  --model ID       OmniRoute model (default: oc/deepseek-v4-flash-free)
   -h, --help       Show this help
 
 Environment:
