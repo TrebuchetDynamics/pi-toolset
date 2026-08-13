@@ -42,7 +42,7 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   path.join(binDir, "npm"),
-  '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$NPM_LOG"\n',
+  '#!/bin/sh\nprintf \'%s\\n\' "$*" >> "$NPM_LOG"\n[ "${NPM_FAIL:-0}" = 1 ] && exit 1\n',
   { mode: 0o755 },
 );
 
@@ -60,7 +60,7 @@ const server = http.createServer(async (request, response) => {
       JSON.stringify({
         data: [
           {
-            id: "auto/coding:free",
+            id: "auto/best-free",
             context_length: 1048576,
             capabilities: { reasoning: true, tool_calling: true },
           },
@@ -152,11 +152,8 @@ try {
     `http://127.0.0.1:${port}/v1`,
   );
   assert.equal(config.providers.omniroute.apiKey, "fixture-key");
-  assert.equal(
-    config.providers.omniroute.models[0].id,
-    "oc/deepseek-v4-flash-free",
-  );
-  assert.equal(config.providers.omniroute.models[0].contextWindow, 200000);
+  assert.equal(config.providers.omniroute.models[0].id, "auto/best-free");
+  assert.equal(config.providers.omniroute.models[0].contextWindow, 1048576);
   assert.equal(config.providers.omniroute.models[0].maxTokens, 16384);
   assert.deepEqual(config.providers.omniroute.models[0].input, ["text"]);
   assert.equal(
@@ -176,7 +173,7 @@ try {
   );
   assert.equal(settings.theme, "keep-me");
   assert.equal(settings.defaultProvider, "omniroute");
-  assert.equal(settings.defaultModel, "oc/deepseek-v4-flash-free");
+  assert.equal(settings.defaultModel, "auto/best-free");
   assert.equal(
     fs.statSync(path.join(agentDir, "settings.json")).mode & 0o777,
     0o600,
@@ -220,10 +217,14 @@ try {
   );
   catalogPath = "/v1/models";
   requireDaemonStart = true;
-  await execFileAsync(
+  const fallbackInstall = await execFileAsync(
     "sh",
     [script, "--base-url", `http://127.0.0.1:${port}/v1`],
-    { cwd: root, env },
+    { cwd: root, env: { ...env, NPM_FAIL: "1" } },
+  );
+  assert.match(
+    fallbackInstall.stderr,
+    /npm refresh failed; continuing with installed OmniRoute/,
   );
   const calls = fs.readFileSync(omnirouteLog, "utf8");
   assert.match(

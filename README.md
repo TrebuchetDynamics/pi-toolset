@@ -236,7 +236,7 @@ The all-in-one installer runs this by default. For individual setup:
 sh install-omniroute-pi.sh
 ```
 
-The installer installs or refreshes OmniRoute globally with strict Node engine checks and npm's legacy peer resolver (avoiding upstream React/Marked peer-warning noise), restarts the local daemon so provider/model rotation fixes take effect, binds it to `127.0.0.1`, enables crash recovery and autostart, and selects OpenCode's catalog-backed, keyless `oc/deepseek-v4-flash-free` model instead of OmniRoute's stale `auto/coding:free` pool. It preserves existing Pi providers/settings, writes permission-restricted backups, and sets that model as Pi's default. It also persists capacity for eight structurally heavy Pi chats across restarts; lower `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` on memory-constrained hosts. Use `--model ID` to select a different advertised model or route.
+The installer installs or refreshes OmniRoute globally with strict Node engine checks and npm's legacy peer resolver (avoiding upstream React/Marked peer-warning noise), restarts the local daemon so provider/model rotation fixes take effect, binds it to `127.0.0.1`, enables crash recovery and autostart, and selects the keyless `auto/best-free` pool so 401, 429, and 504 failures can fall through to another free model. It preserves existing Pi providers/settings, writes permission-restricted backups, and sets that route as Pi's default. It also persists capacity for eight structurally heavy Pi chats across restarts; lower `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` on memory-constrained hosts. Use `--model ID` to select a different advertised model or route.
 
 For an existing server:
 

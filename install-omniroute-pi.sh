@@ -1,14 +1,14 @@
 #!/usr/bin/env sh
 set -eu
 
-# Install OmniRoute, start its local daemon, and configure a catalog-backed free model in Pi.
+# Install OmniRoute, start its local daemon, and configure its fallback-capable free pool in Pi.
 # Use --config-only for an existing local or remote OmniRoute server.
 
 : "${HOME:?HOME is required}"
 
 base_url="${OMNIROUTE_PI_BASE_URL:-http://127.0.0.1:20128/v1}"
-# ponytail: avoid auto/coding:free until OmniRoute stops routing to delisted upstream models.
-model="${OMNIROUTE_PI_MODEL:-oc/deepseek-v4-flash-free}"
+# ponytail: the free pool handles per-model 401/429/504 failures without paid fallback.
+model="${OMNIROUTE_PI_MODEL:-auto/best-free}"
 api_key="${OMNIROUTE_PI_API_KEY:-omniroute-local}"
 max_heavy="${OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT:-8}"
 server_host="${OMNIROUTE_SERVER_HOST:-127.0.0.1}"
@@ -23,7 +23,7 @@ Install OmniRoute, run it as a daemon, and configure Pi to use OmniRoute.
 Options:
   --config-only    Skip package installation and daemon startup
   --base-url URL   OmniRoute base URL (`/v1` is detected automatically)
-  --model ID       OmniRoute model (default: oc/deepseek-v4-flash-free)
+  --model ID       OmniRoute model or route (default: auto/best-free)
   -h, --help       Show this help
 
 Environment:
@@ -167,7 +167,14 @@ if [ "$config_only" = "0" ]; then
   if ! command -v pi >/dev/null 2>&1 || ! pi --version >/dev/null 2>&1; then
     npm install -g --ignore-scripts --legacy-peer-deps @earendil-works/pi-coding-agent
   fi
-  npm install -g --legacy-peer-deps --engine-strict omniroute
+  if ! npm install -g --legacy-peer-deps --engine-strict omniroute; then
+    if command -v omniroute >/dev/null 2>&1 && omniroute --version >/dev/null 2>&1; then
+      printf '%s\n' 'install-omniroute-pi: warning: npm refresh failed; continuing with installed OmniRoute' >&2
+    else
+      printf '%s\n' 'install-omniroute-pi: OmniRoute installation failed' >&2
+      exit 1
+    fi
+  fi
 
   OMNIROUTE_ENV_FILE="${HOME}/.omniroute/.env" OMNIROUTE_MAX_HEAVY="$max_heavy" OMNIROUTE_BIND_HOST="$server_host" node <<'NODE' >/dev/null
 import fs from "node:fs";
