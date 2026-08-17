@@ -1,70 +1,22 @@
-import { lstat, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { popTrailingToken, splitCommandArgs } from "../../_shared/pi-bridge/command-grammar.js";
+import {
+  edgeLine,
+  folderBasename,
+  formatAnalyzedAt,
+  getUnderstandDataDir,
+  graphParts,
+  isPathInside,
+  normalizeFolderToken,
+  resolveContainedOutputPath,
+  resolveFolderArg,
+  tableRow,
+  truncateText,
+} from "./shared.js";
 
 export { splitCommandArgs as splitArgs } from "../../_shared/pi-bridge/command-grammar.js";
-
-function normalizeFolderToken(folder) {
-  const withoutAt = String(folder ?? "").replace(/^@/, "").trim();
-  const withoutDotSuffix = withoutAt.replace(/[\\/]\.$/, "");
-  const cleaned = withoutDotSuffix.replace(/[\\/]+$/, "");
-  return cleaned || withoutAt || "project";
-}
-
-function folderBasename(folder) {
-  return basename(normalizeFolderToken(folder)) || "project";
-}
-
-function truncateText(value, maxLength = 220) {
-  const text = String(value ?? "").replace(/\s+/g, " ").trim();
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength - 1).trimEnd()}…`;
-}
-
-function tableRow(values) {
-  return `| ${values.map((value) => String(value ?? "").replace(/\|/g, "\\|")).join(" | ")} |`;
-}
-
-function edgeLine(edge, byId) {
-  const source = byId.get(edge.source)?.name ?? edge.source;
-  const target = byId.get(edge.target)?.name ?? edge.target;
-  const description = edge.description ? ` — ${truncateText(edge.description, 180)}` : "";
-  return `- **${source}** --${edge.type ?? "related"}→ **${target}**${description}`;
-}
-
-function formatAnalyzedAt(value) {
-  if (!value) return "unknown";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
-}
-
-function graphParts(graph) {
-  return {
-    nodes: Array.isArray(graph?.nodes) ? graph.nodes : [],
-    edges: Array.isArray(graph?.edges) ? graph.edges : [],
-    layers: Array.isArray(graph?.layers) ? graph.layers : [],
-    tour: Array.isArray(graph?.tour) ? graph.tour : [],
-    project: graph?.project ?? {},
-  };
-}
-
-function isPathInside(parent, child) {
-  const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
-}
-
-export function resolveContainedOutputPath(cwd, outputArg) {
-  const outputPath = isAbsolute(outputArg) ? resolve(outputArg) : resolve(cwd, outputArg);
-  if (!isPathInside(resolve(cwd), outputPath)) {
-    throw new Error(`Understand refactor output path must stay inside the current repo: ${outputArg}`);
-  }
-  return outputPath;
-}
-
-function resolveFolderArg(cwd, folder) {
-  const cleaned = folder.replace(/^@/, "");
-  return isAbsolute(cleaned) ? cleaned : resolve(cwd, cleaned);
-}
+export { resolveContainedOutputPath } from "./shared.js";
 
 export function parseRefactorArgs(args = "") {
   const { tokens, token: outputToken } = popTrailingToken(splitCommandArgs(args), (token) => /\.md$/i.test(token));
@@ -478,7 +430,18 @@ export function formatRefactorCommandMessage(result) {
 
 
 export async function readRefactorPlan(ctx, output = "refactor-plan-understand-refactor.md") {
-  const outputPath = isAbsolute(output) ? output : resolve(ctx.cwd, output);
+  let outputPath;
+  try {
+    // grill/ignore must resolve inside the repo exactly like generate does;
+    // an outside path is rejected instead of read or rewritten.
+    outputPath = resolveContainedOutputPath(ctx.cwd, output);
+  } catch (error) {
+    return {
+      ok: false,
+      outputPath: null,
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
   try {
     return { ok: true, outputPath, markdown: await readFile(outputPath, "utf8") };
   } catch (error) {
@@ -528,16 +491,7 @@ export async function ignoreRefactorCandidate(ctx, instruction) {
   };
 }
 
-async function getUnderstandDataDir(projectRoot) {
-  const legacyDir = resolve(projectRoot, ".understand-anything");
-  try {
-    await lstat(legacyDir);
-    return legacyDir;
-  } catch (error) {
-    if (error?.code !== "ENOENT") throw error;
-    return resolve(projectRoot, ".ua");
-  }
-}
+
 
 export async function writeRefactorPlan(ctx, args) {
   const parsed = parseRefactorArgs(args);

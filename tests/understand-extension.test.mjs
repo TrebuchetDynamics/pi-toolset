@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readlink, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import understandAnythingExtension, {
@@ -403,6 +403,42 @@ function makePiRecorder() {
   assert.match(recorder.postedMessages[0].content, /\/understand-refactor @internal\/channels\/telegram\/\. auth flow custom-plan\.md/);
   assert.equal(recorder.dispatchedUserMessages.length, 1);
   assert.match(recorder.dispatchedUserMessages[0].content, /User: internal\/channels\/telegram$/);
+}
+
+{
+  // H2 regression: /understand-refactor ignore|grill must not read or rewrite
+  // a plan outside the repo. The outside path is rejected with a message and
+  // the target file is left untouched.
+  const outsideRoot = await mkdtemp(join(tmpdir(), "understand-outside-"));
+  const outsidePlan = join(outsideRoot, "holder.md");
+  await writeFile(outsidePlan, refactorMarkdown, "utf8");
+  const outsideRecorder = makePiRecorder();
+  const outsideResult = await handleRefactorCommand(
+    outsideRecorder.pi,
+    { cwd: fixtureRoot, isIdle: () => true, hasUI: false },
+    fakePaths,
+    `ignore 1 ${outsidePlan}`,
+  );
+  assert.equal(outsideResult.written, false);
+  assert.match(outsideResult.message, /inside the current repo/);
+  assert.equal(await readFile(outsidePlan, "utf8"), refactorMarkdown, "outside file must be untouched");
+  await rm(outsideRoot, { recursive: true, force: true });
+}
+
+{
+  // H2 regression: an in-repo plan still resolves, so ignore keeps working for
+  // legitimately contained plans; only out-of-repo targets are blocked.
+  const containedPlan = join(fixtureRoot, "contained-plan.md");
+  await writeFile(containedPlan, refactorMarkdown, "utf8");
+  const containedRecorder = makePiRecorder();
+  const containedResult = await handleRefactorCommand(
+    containedRecorder.pi,
+    { cwd: fixtureRoot, isIdle: () => true, hasUI: false },
+    fakePaths,
+    "ignore 1 contained-plan.md",
+  );
+  assert.equal(containedResult.written, true);
+  assert.equal(containedResult.outputPath, containedPlan);
 }
 
 {

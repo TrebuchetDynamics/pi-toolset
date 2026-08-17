@@ -1,5 +1,18 @@
-import { lstat, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
+import { lstat, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import {
+  edgeLine,
+  folderBasename,
+  formatAnalyzedAt,
+  getUnderstandDataDir,
+  graphParts,
+  isPathInside,
+  normalizeFolderToken,
+  resolveContainedOutputPath,
+  resolveFolderArg,
+  tableRow,
+  truncateText,
+} from "./lib/shared.js";
 import { createRepoBackedSkillBridge, pathExists } from "../_shared/pi-bridge/lifecycle.js";
 import { splitCommandArgs, splitFirstArg } from "../_shared/pi-bridge/command-grammar.js";
 import { homedir } from "node:os";
@@ -14,6 +27,8 @@ import {
   writeRefactorPlan,
 } from "./lib/refactor-workflow.js";
 
+
+export { resolveContainedOutputPath } from "./lib/shared.js";
 
 export {
   appendRefactorIgnoreNote,
@@ -117,17 +132,6 @@ export function validateUnderstandAnalysisArgs(args = "") {
   return { ok: true };
 }
 
-function normalizeFolderToken(folder) {
-  const withoutAt = String(folder ?? "").replace(/^@/, "").trim();
-  const withoutDotSuffix = withoutAt.replace(/[\\/]\.$/, "");
-  const cleaned = withoutDotSuffix.replace(/[\\/]+$/, "");
-  return cleaned || withoutAt || "project";
-}
-
-function folderBasename(folder) {
-  return basename(normalizeFolderToken(folder)) || "project";
-}
-
 export function parseCompareArgs(args = "") {
   const tokens = splitCommandArgs(args);
   if (tokens.length < 2) {
@@ -164,12 +168,6 @@ export function buildSkillInvocation({ skillName, skillPath, skillContent, args 
   ].join("\n").trimEnd();
 }
 
-function truncateText(value, maxLength = 220) {
-  const text = String(value ?? "").replace(/\s+/g, " ").trim();
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength - 1).trimEnd()}…`;
-}
-
 function countBy(items, keyFn) {
   const counts = new Map();
   for (const item of items) {
@@ -177,10 +175,6 @@ function countBy(items, keyFn) {
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-}
-
-function tableRow(values) {
-  return `| ${values.map((value) => String(value ?? "").replace(/\|/g, "\\|")).join(" | ")} |`;
 }
 
 function nodeLine(node, cwd) {
@@ -203,13 +197,6 @@ function sortImportantNodes(nodes) {
 function formatNodeList(nodes, cwd, max = 12) {
   if (!nodes.length) return "- None found in the graph.";
   return nodes.slice(0, max).map((node) => nodeLine(node, cwd)).join("\n");
-}
-
-function edgeLine(edge, byId) {
-  const source = byId.get(edge.source)?.name ?? edge.source;
-  const target = byId.get(edge.target)?.name ?? edge.target;
-  const description = edge.description ? ` — ${truncateText(edge.description, 180)}` : "";
-  return `- **${source}** --${edge.type ?? "related"}→ **${target}**${description}`;
 }
 
 export function normalizeAgentOutputArg(args = "") {
@@ -283,22 +270,6 @@ export function buildAutoAgentCommand(understandArgs = "") {
 
 function shouldAutoWriteAgentMap(parsed) {
   return parsed.type === "skill" && parsed.skillName === "understand" && !splitCommandArgs(parsed.args).includes("--no-agent-map");
-}
-
-function formatAnalyzedAt(value) {
-  if (!value) return "unknown";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? String(value) : date.toISOString();
-}
-
-function graphParts(graph) {
-  return {
-    nodes: Array.isArray(graph?.nodes) ? graph.nodes : [],
-    edges: Array.isArray(graph?.edges) ? graph.edges : [],
-    layers: Array.isArray(graph?.layers) ? graph.layers : [],
-    tour: Array.isArray(graph?.tour) ? graph.tour : [],
-    project: graph?.project ?? {},
-  };
 }
 
 export function generateAgentMapMarkdown(graph, { cwd = process.cwd(), graphPath = ".understand-anything/knowledge-graph.json", outputPath = "codebase-map-understand.md" } = {}) {
@@ -648,29 +619,6 @@ async function writeAgentMap(ctx, args) {
     graphPath,
     message: `Wrote agent-readable codebase map to ${outputPath}`,
   };
-}
-
-function isPathInside(parent, child) {
-  const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
-}
-
-export function resolveContainedOutputPath(cwd, outputArg) {
-  const outputPath = isAbsolute(outputArg) ? resolve(outputArg) : resolve(cwd, outputArg);
-  if (!isPathInside(resolve(cwd), outputPath)) {
-    throw new Error(`Understand output path must stay inside the current repo: ${outputArg}`);
-  }
-  return outputPath;
-}
-
-function resolveFolderArg(cwd, folder) {
-  const cleaned = folder.replace(/^@/, "");
-  return isAbsolute(cleaned) ? cleaned : resolve(cwd, cleaned);
-}
-
-async function getUnderstandDataDir(folderPath) {
-  const legacyDir = resolve(folderPath, ".understand-anything");
-  return (await pathExists(legacyDir)) ? legacyDir : resolve(folderPath, ".ua");
 }
 
 async function readGraphForFolder(folderPath) {
