@@ -1,6 +1,6 @@
 # pi-toolset Context
 
-This package ships Pi skills plus `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and OpenWiki extensions.
+This package ships Pi skills plus `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and the bug-harvest, isolated-verifier, workspace-guard, search-hub, s3upload, poshify, and pi-subagents extensions.
 
 ## Language
 

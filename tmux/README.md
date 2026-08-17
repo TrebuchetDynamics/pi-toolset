@@ -56,7 +56,7 @@ tmux source-file ~/.tmux.conf
 ## Runtime flow
 
 - `install.sh` copies the shared assets into user locations: `tmux.conf`, helper scripts, optional local style, and the `tx` launcher.
-- `tmux.conf` shows the status bar at the top with the session, short current path, git branch/status, zoom state, and host. Periodic refresh remains disabled.
+- `tmux.conf` shows the status bar at the bottom with the session, short current path, git branch/status, zoom state, and host. Periodic refresh remains disabled.
 - `tx` reads session aliases from its config file, starts or switches to the matching tmux session, and uses the alias as the tmux session name.
 - `style.tmux` stores per-machine colors and is sourced by `tmux.conf` from `~/.tmux/style.tmux`.
 
@@ -125,7 +125,7 @@ The prefix remains tmux's standard `Ctrl-b`, which works with Termius's extra-ke
 - `Ctrl-b m` — toggle mouse/touch scrolling for the current tmux server.
 - `Ctrl-b t` — toggle the status bar when session details are useful.
 
-Mouse mode remains off by default so Termius can handle native touch selection. The status bar keeps path and git details visible at narrow widths. `xterm-256color` clients use synchronized output so Pi and other full-screen TUIs arrive as atomic frames instead of visible partial redraws. Detach and reconnect once after installing so tmux recalculates client terminal features.
+Mouse mode remains off by default so Termius can handle native touch selection. The status bar keeps path and git details visible at narrow widths. Synchronized output (`terminal-features` sync) is **disabled by default** because mishandled end-of-frame markers can drop whole frames on some mobile SSH clients; re-enable it by uncommenting the two `terminal-features` lines in `tmux.conf`. Detach and reconnect once after installing so tmux recalculates client terminal features.
 
 ## Local/mobile overrides
 

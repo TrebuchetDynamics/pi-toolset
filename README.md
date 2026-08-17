@@ -202,9 +202,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 `autoreview`, `git-commit-push`, `greploop`, `s3upload`
 
-**Engineering (13)**
+**Engineering (15)**
 
-`autonomous-codebase-improver`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wiki-docs`
+`autonomous-codebase-improver`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
 
 **Frontend and design (22)**
 
@@ -342,6 +342,9 @@ Pi discovers resources through `pi.extensions`, `pi.skills`, and `pi.themes` in 
     "extensions": [
       "./extensions/goal",
       "./extensions/goal-technical-auditor",
+      "./extensions/bug-harvest",
+      "./extensions/isolated-verifier",
+      "./extensions/workspace-guard",
       "./extensions/understand",
       "./extensions/folder-refactor",
       "./extensions/rtk",
