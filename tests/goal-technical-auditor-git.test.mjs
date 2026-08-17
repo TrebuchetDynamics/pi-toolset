@@ -142,6 +142,14 @@ try {
   assert.match(failedFinding.stashRef, /^stash@\{/);
   assert.deepEqual(await worktreePaths(repo), []);
 
+  // H3 regression: a twice-failed (stashed) finding is terminal, so it must not
+  // deadlock request_reaudit or final validation.
+  const afterFailure = controlled;
+  const reaudited = await processCheckpoint(afterFailure, { action: "request_reaudit" }, { cwd: repo });
+  assert.equal(reaudited.run.phase, "re_auditing");
+  ({ run: controlled } = await processCheckpoint(reaudited.run, { action: "record_audit", findings: [] }, { cwd: repo }));
+  assert.equal(controlled.phase, "final_validation");
+
   const deliveryHead = (await inspectRepository(repo)).head;
   const deliveryRun = {
     ...controlled,
@@ -170,6 +178,28 @@ try {
   assert.match(protectedResult.run.blocker, /Confirmation required/);
   const remoteMain = (await git(repo, ["ls-remote", "origin", "refs/heads/main"])).stdout;
   assert.equal(remoteMain.trim(), "");
+
+  // C1 regression: a branch tracking a protected remote branch must require
+  // confirmation even though run.branch differs from the push target branch.
+  await git(repo, ["checkout", "-b", "dev"]);
+  await writeFile(join(repo, "dev.txt"), "dev\n");
+  await commitAll(repo, "chore: dev work");
+  const devHead = (await inspectRepository(repo)).head;
+  const devRun = {
+    ...deliveryRun,
+    phase: "delivery_pending",
+    resumePhase: null,
+    branch: "dev",
+    upstream: "origin/main",
+    latestGreenCommit: devHead,
+  };
+  const devProtected = await deliverRun(devRun, { cwd: repo, hasUI: false });
+  assert.equal(devProtected.run.phase, "blocked");
+  assert.match(devProtected.run.blocker, /Confirmation required/);
+  const devConfirmed = await deliverRun(devRun, { cwd: repo, hasUI: true, confirmProtectedBranch: async () => true });
+  assert.equal(devConfirmed.run.phase, "ready_to_complete");
+  const remoteMainAfter = (await git(repo, ["ls-remote", "origin", "refs/heads/main"])).stdout;
+  assert.match(remoteMainAfter, /refs\/heads\/main/);
 } finally {
   await rm(root, { recursive: true, force: true });
 }

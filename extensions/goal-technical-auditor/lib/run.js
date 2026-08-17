@@ -7,7 +7,12 @@ export const RUN_ENTRY_TYPE = "goal-technical-auditor-run";
 export const CHECKPOINT_TOOL_NAME = "technical_auditor_checkpoint";
 
 const CONTINUABLE_PHASES = new Set(["preflight", "auditing", "implementing", "re_auditing", "final_validation", "delivery_pending"]);
-const FINDING_TERMINAL = new Set(["fixed", "deferred", "blocked"]);
+// "failed" is terminal: a twice-failed slice is stashed and recorded to the
+// ledger, then the loop continues with an independent finding (CONTEXT.md's
+// "stashes twice-failed slices" and run.js:568's "Continue with an independent
+// finding"). Keeping it terminal lets request_reaudit and completion proceed
+// instead of deadlocking on a slice that can no longer be retried.
+const FINDING_TERMINAL = new Set(["fixed", "deferred", "blocked", "failed"]);
 
 export function createAuditRun({ id, cwd, branch, upstream = null, scope, objective, tokenBudget, ledgerPath, now = Date.now() }) {
   return {
@@ -451,7 +456,12 @@ export async function deliverRun(run, { cwd = run.cwd, signal, hasUI, confirmPro
   }
 
   const target = await resolvePushTarget(cwd, run, { signal });
-  if (isProtectedBranch(run.branch, target.defaultBranch)) {
+  // Confirm when either the run's own branch or the actual push target branch
+  // is protected. pushRun pushes HEAD:<target.branch>, and for an upstream run
+  // target.branch is the remote's branch (run.js resolvePushTarget), which may
+  // differ from run.branch — so gate on both or a dev tracking origin/main
+  // would push HEAD:main with no confirmation.
+  if (isProtectedBranch(run.branch, target.defaultBranch) || isProtectedBranch(target.branch, target.defaultBranch)) {
     if (!hasUI) {
       return {
         run: applyRunEvent(run, {

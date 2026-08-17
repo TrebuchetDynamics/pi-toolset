@@ -58,7 +58,10 @@ assert.equal(failedOnce.findings[0].attempts, 1);
 assert.equal(failedOnce.findings[0].status, "active");
 const failedTwice = applyRunEvent(failedOnce, { type: "finding_validation_failed", receipts: [{ command: "npm test", code: 1 }], stashRef: "stash@{0}", now: 6 });
 assert.equal(failedTwice.findings[0].status, "failed");
-assert.match(completionBlocker(failedTwice), /failed/);
+// A twice-failed slice is terminal (stashed and reported), so it no longer
+// blocks completion by itself; the remaining gate is a clean re-audit pass.
+assert.doesNotMatch(completionBlocker(failedTwice), /F-1/);
+assert.match(completionBlocker(failedTwice), /clean re-audit pass/);
 const deferred = applyRunEvent(active, { type: "finding_deferred", findingId: "F-1", status: "deferred", reason: "owner chose later", stashRef: "stash@{1}", now: 6 });
 assert.equal(deferred.findings[0].status, "deferred");
 assert.equal(deferred.findings[0].stashRef, "stash@{1}");
