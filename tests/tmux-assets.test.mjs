@@ -443,8 +443,11 @@ esac
     assert.doesNotMatch(plain, /\u001b\[/);
     assert.doesNotMatch(plain, /\(running\)|\(stopped\)|\(missing\)|[●○•]/);
 
+    // Clear an inherited NO_COLOR so this assertion is hermetic: tx treats an
+    // empty NO_COLOR as unset, so TX_COLOR=always actually colors regardless of
+    // the host environment (the suite otherwise reds on NO_COLOR hosts).
     const colored = run(tx, ["ls"], {
-      env: { TX_CONFIG: config, TX_TMUX: fakeTmux, TX_COLOR: "always" },
+      env: { TX_CONFIG: config, TX_TMUX: fakeTmux, TX_COLOR: "always", NO_COLOR: "" },
     });
     assert.match(
       colored,
@@ -533,8 +536,13 @@ async function testTmuxMouseSelectionDoesNotAutoCopy() {
 async function testTmuxExtendedKeysEnabled() {
   const config = fs.readFileSync(path.join(root, "tmux", "tmux.conf"), "utf8");
   assert.match(config, /set -g extended-keys on/);
-  assert.match(config, /set -su terminal-features/);
-  assert.match(config, /set -as terminal-features ',xterm-256color:sync'/);
+  // Synchronized output (terminal-features) is intentionally disabled by default
+  // because mishandled end-of-frame markers can drop whole frames on mobile SSH.
+  // The config keeps the directives commented out as the documented re-enable
+  // point. Assert BOTH the disabled state and the marker so this test cannot pass
+  // on the commented-out text (it previously matched the comments as if enabled).
+  assert.doesNotMatch(config, /^[ \t]*set -(?:su|as) terminal-features/m);
+  assert.match(config, /^[ \t]*# set -as terminal-features ',xterm-256color:sync'/m);
 }
 
 async function testTmuxConfigShowsRepoInfo() {
