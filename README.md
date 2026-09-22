@@ -134,7 +134,7 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 | Surface                     | Included | Purpose                                                                                              |
 | --------------------------- | -------: | ---------------------------------------------------------------------------------------------------- |
 | Agent skills                |   **65** | Engineering, planning, delivery, UI, research, Pi, and communication workflows                       |
-| Pi extensions               |   **15** | Commands, tools, hooks, status behavior, delegation, and research bridges                            |
+| Pi extensions               |   **16** | Commands, tools, hooks, status behavior, delegation, and research bridges                            |
 | Theme                       |    **1** | `trebuchet-neon`, a complete dark Pi token map                                                       |
 | Package bins                |    **2** | `tx` and `autofolderrefactor`                                                                        |
 | Direct runtime dependencies |    **3** | Bundled `@narumitw/pi-goal`, `pi-posher`, and `pi-subagents`; Pi core packages remain optional peers |
@@ -153,6 +153,7 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 | `/rtk`                    | Optional command rewriting and output compaction through an installed RTK binary                                   |
 | `/ponytail`               | Session-level YAGNI and shortest-safe-diff modes                                                                   |
 | `/search-hub`             | Keyless web search and public-page reading through `web_search` and `web_read`                                     |
+| `/typesafe`               | Typed System One decisions (choice/score/noul) with probabilities and confidence through the `typesafe` tool       |
 | `/onklaud`                | Advisory Onklaud council while Pi retains mutation ownership                                                       |
 | `/s3upload`               | Upload to private Azure storage with an expiring is.gd link and TinyURL fallback                                   |
 | `/poshify`                | Run configured formatters, linters, fixes, and audits after edits or on demand                                     |
@@ -160,6 +161,8 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 | Mobile low-redraw         | Hides the repainting work timer inside SSH + tmux sessions                                                         |
 
 Search Hub needs no binary or API key: `web_search` queries every available source in parallel—keyless DuckDuckGo plus Brave and SearXNG when configured—then merges and deduplicates results; `web_read` uses Jina Reader. Enable additional sources with `BRAVE_API_KEY` or `SEARCH_HUB_SEARXNG_URL`; `JINA_API_KEY` raises reader limits. Results are capped at 20KB or 500 lines, with full page output saved to a temporary file when truncated.
+
+TypeSafe needs a `TYPESAFE_API_KEY`: the `typesafe` tool posts a state and a map of choice/score/noul questions to `https://api.typesafe.ai/v1/systemone` and returns typed answers with probabilities and confidence. It validates questions locally, retries documented `429`/`529` responses with backoff, and reuses Search Hub's 20KB/500-line output bound.
 
 <details>
 <summary><strong>Goal controls</strong></summary>
@@ -386,6 +389,7 @@ Pi discovers resources through `pi.extensions`, `pi.skills`, and `pi.themes` in 
       "./extensions/rtk",
       "./extensions/ponytail",
       "./extensions/search-hub",
+      "./extensions/typesafe",
       "./extensions/onklaud",
       "./extensions/mobile-low-redraw",
       "./extensions/s3upload",

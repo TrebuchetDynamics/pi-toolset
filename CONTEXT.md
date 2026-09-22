@@ -1,6 +1,6 @@
 # pi-toolset Context
 
-This package ships Pi skills plus `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and the bug-harvest, isolated-verifier, workspace-guard, search-hub, s3upload, poshify, and pi-subagents extensions.
+This package ships Pi skills plus `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and the bug-harvest, isolated-verifier, workspace-guard, search-hub, typesafe, s3upload, poshify, and pi-subagents extensions.
 
 ## Language
 
@@ -123,6 +123,10 @@ _Avoid_: path-prefix checks without canonicalization, claiming OS isolation, sil
 **Search Hub Extension**:
 The package-local extension at `extensions/search-hub/index.js` exposes `web_search`, `web_read`, and a thin `/search-hub <request>` command. Search queries every available source in parallel—keyless DuckDuckGo plus configured Brave and SearXNG—then merges and deduplicates results while tolerating individual source failures; page reads use Jina Reader after rejecting private/internal URLs. It installs no binary or runtime dependency and caps tool output at 20KB or 500 lines.
 _Avoid_: startup installation, undocumented provider fan-out, automatic API-key/config changes, private/internal URL reads, unbounded response buffering or model output, unsupported crawl promises, or using external search for the local codebase
+
+**TypeSafe Extension**:
+The package-local extension at `extensions/typesafe/index.js` exposes a `typesafe` tool and a thin `/typesafe <request>` command over TypeSafe's System One endpoint (`POST /v1/systemone`). It validates choice/score/noul questions locally before spending a request, sends one state with all questions in a single parallel call, returns typed answers with probabilities and confidence, retries documented `429`/`529` responses with backoff, redacts credentials from errors, and reuses Search Hub's 20KB/500-line output bound.
+_Avoid_: acting on low-confidence answers without escalation, multi-factor questions that should be composed in code, leaking `TYPESAFE_API_KEY`, hidden retries without bound, or claiming a decision model replaces deterministic code
 
 **Pi Posher Extension**:
 The package-local adapter at `extensions/poshify/` loads the bundled `pi-posher` dependency, preserving `/poshify`, `run_poshify`, and post-write/edit hooks while adding explicit `run_poshify_fix` and `run_poshify_audit` tools with absolute failure targets. It seeds user-owned global defaults, executes configured commands without a shell, and requires hash-based trust before project-local `.pi/poshifiers.json` commands can run.
