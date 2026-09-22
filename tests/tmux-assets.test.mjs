@@ -261,6 +261,53 @@ async function testTxAddHandlesConfigWithoutTrailingNewline() {
   }
 }
 
+async function testTxConfigCRLF() {
+  const tmp = tempDir("tx-crlf-");
+  try {
+    const one = path.join(tmp, "one");
+    fs.mkdirSync(one);
+    const env = (config) => ({ TX_CONFIG: config, TX_TMUX: process.execPath });
+
+    // add to an existing path row written with CRLF
+    const addConfig = path.join(tmp, "add.conf");
+    fs.writeFileSync(addConfig, `ROOT=${tmp}\r\none=$ROOT/one\r\n`);
+    assert.match(
+      run(tx, ["add", "extra", one], { env: env(addConfig) }),
+      /updated: one,extra=/,
+    );
+    assert.equal(
+      run(tx, ["which", "extra"], { env: env(addConfig) }).trim(),
+      fs.realpathSync(one),
+    );
+
+    // rename a CRLF row
+    const editConfig = path.join(tmp, "edit.conf");
+    fs.writeFileSync(editConfig, `ROOT=${tmp}\r\none=$ROOT/one\r\n`);
+    assert.match(
+      run(tx, ["edit", "one", "uno"], { env: env(editConfig) }),
+      /renamed: one -> uno=/,
+    );
+    assert.equal(
+      run(tx, ["which", "uno"], { env: env(editConfig) }).trim(),
+      fs.realpathSync(one),
+    );
+
+    // remove a CRLF row
+    const removeConfig = path.join(tmp, "remove.conf");
+    fs.writeFileSync(removeConfig, `ROOT=${tmp}\r\none=$ROOT/one\r\n`);
+    assert.match(
+      run(tx, ["remove", "one"], { env: env(removeConfig) }),
+      /removed: one=/,
+    );
+    assert.throws(
+      () => run(tx, ["which", "one"], { env: env(removeConfig) }),
+      /failed/,
+    );
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 async function testInstallScript() {
   const tmp = tempDir("tx-install-");
   try {
@@ -446,7 +493,12 @@ esac
     // empty NO_COLOR as unset, so TX_COLOR=always actually colors regardless of
     // the host environment (the suite otherwise reds on NO_COLOR hosts).
     const colored = run(tx, ["ls"], {
-      env: { TX_CONFIG: config, TX_TMUX: fakeTmux, TX_COLOR: "always", NO_COLOR: "" },
+      env: {
+        TX_CONFIG: config,
+        TX_TMUX: fakeTmux,
+        TX_COLOR: "always",
+        NO_COLOR: "",
+      },
     });
     assert.match(
       colored,
@@ -541,7 +593,10 @@ async function testTmuxExtendedKeysEnabled() {
   // point. Assert BOTH the disabled state and the marker so this test cannot pass
   // on the commented-out text (it previously matched the comments as if enabled).
   assert.doesNotMatch(config, /^[ \t]*set -(?:su|as) terminal-features/m);
-  assert.match(config, /^[ \t]*# set -as terminal-features ',xterm-256color:sync'/m);
+  assert.match(
+    config,
+    /^[ \t]*# set -as terminal-features ',xterm-256color:sync'/m,
+  );
 }
 
 async function testTmuxConfigShowsRepoInfo() {
@@ -654,6 +709,7 @@ await testScriptSyntaxAndHelp();
 await testTxDefaultConfigPath();
 await testTxConfigLifecycleWithoutTmuxSessions();
 await testTxAddHandlesConfigWithoutTrailingNewline();
+await testTxConfigCRLF();
 await testTxListFormattingAndColorPortability();
 await testInstallScript();
 await testInstallScriptQuotesHelperPaths();

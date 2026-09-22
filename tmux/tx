@@ -383,6 +383,7 @@ append_aliases_to_existing_path() {
 
   while IFS= read -r line || [[ -n "$line" ]]; do
     lineno=$((lineno + 1))
+    line=${line%$'\r'}
     if [[ "$line" =~ ^[[:space:]]*([A-Z_][A-Z0-9_]*)=(.*)$ ]]; then
       key=${BASH_REMATCH[1]}
       val=${BASH_REMATCH[2]}
@@ -479,6 +480,7 @@ rewrite_alias_row() {
   declare -A vars=()
 
   while IFS= read -r line || [[ -n "$line" ]]; do
+    line=${line%$'\r'}
     if [[ "$line" =~ ^[[:space:]]*([A-Z_][A-Z0-9_]*)=(.*)$ ]]; then
       key=${BASH_REMATCH[1]}
       val=${BASH_REMATCH[2]}
@@ -576,7 +578,12 @@ doctor_install() {
   local tx_path="$tx_bin_dir/$tx_bin_name"
   local ok=1
 
-  [[ -f "$tmux_conf_target" ]] && printf 'tmux.conf: %s\n' "$tmux_conf_target" || { printf 'tmux.conf: missing (%s)\n' "$tmux_conf_target"; ok=0; }
+  if [[ -f "$tmux_conf_target" ]]; then
+    printf 'tmux.conf: %s\n' "$tmux_conf_target"
+  else
+    printf 'tmux.conf: missing (%s)\n' "$tmux_conf_target"
+    ok=0
+  fi
 
   for helper in git-status.sh short-path.sh; do
     if [[ -x "$tmux_helper_dir/$helper" ]]; then
@@ -654,7 +661,7 @@ list_sessions() {
 
   local -a row_aliases=() row_aliases_plain=() row_paths=()
   local total=0 running_count=0 missing_count=0
-  local p alias_str a disp dir_exists status item colored_item plain_item joined colored_joined
+  local p alias_str a disp dir_exists status item colored_item joined colored_joined
   local -a parts colored_parts plain_parts
 
   for p in "${PATH_ORDER[@]}"; do
