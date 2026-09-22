@@ -43,7 +43,16 @@ assert.match(help, /RTK/);
 assert.match(help, /OmniRoute/);
 assert.match(help, /Pi, Codex and Claude/);
 assert.match(help, /Ponytail/);
+assert.match(help, /catalog/);
 assert.doesNotMatch(help, /autofolderrefactor/);
+
+const catalogSources = [
+  "npm:pi-mcp-adapter@2.33.0",
+  "npm:@juicesharp/rpiv-ask-user-question@2.10.0",
+  "npm:@juicesharp/rpiv-todo@2.10.0",
+  "npm:@narumitw/pi-btw@0.58.1",
+  "npm:@narumitw/pi-usage@0.60.8",
+];
 
 const dryHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-goal-install-dry-"));
 try {
@@ -58,6 +67,9 @@ try {
   assert.match(output, /without duplicate package skills/);
   assert.doesNotMatch(output, /autofolderrefactor/);
   assert.deepEqual(fs.readdirSync(dryHome), []);
+  for (const source of catalogSources) assert.ok(output.includes(`would install: ${source}`));
+  const withoutCatalog = run(["--dry-run"], { env: { HOME: dryHome, PI_TOOLSET_SKIP: "catalog" } });
+  for (const source of catalogSources) assert.ok(!withoutCatalog.includes(source));
 
   const skippedOutput = run(["--dry-run"], {
     env: { HOME: dryHome, PI_TOOLSET_SKIP_OMNIROUTE: "1" },
@@ -97,7 +109,7 @@ try {
       HOME: home,
       PATH: `${fakeBin}:/usr/bin:/bin`,
       BOOTSTRAP_ARCHIVE: archive,
-      PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,skills,omniroute",
+      PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,skills,omniroute,catalog",
     },
   });
   assert.equal(result.status, 0, `bootstrap failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
@@ -191,6 +203,7 @@ exit 2
   });
 
   assert.match(fs.readFileSync(log, "utf8"), /install git:github\.com\/TrebuchetDynamics\/pi-toolset/);
+  for (const source of catalogSources) assert.ok(fs.readFileSync(log, "utf8").includes(`install ${source}\n`));
   assert.ok(fs.existsSync(path.join(tmp, "tx-bin", "tx")));
   assert.equal(fs.readlinkSync(path.join(home, ".understand-anything-plugin")), path.join(understand, "understand-anything-plugin"));
   assert.match(output, /installed: Understand-Anything/);
@@ -229,7 +242,7 @@ exit 2
     PI_CODING_AGENT_DIR: agentDir,
     CODEX_SKILLS_DIR: path.join(tmp, "codex-skills"),
     CLAUDE_SKILLS_DIR: path.join(tmp, "claude-skills"),
-    PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,omniroute",
+    PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,omniroute,catalog",
   };
   run([], { env: skillsEnv });
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(agentDir, "settings.json"), "utf8")), settings);
@@ -239,6 +252,44 @@ exit 2
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(freshAgent, "settings.json"), "utf8")).skills, [path.join(tmp, "codex-skills")]);
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// Exercise the catalog independently without network access or real Pi settings.
+const catalogHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-toolset-catalog-"));
+try {
+  const bin = path.join(catalogHome, "bin");
+  const log = path.join(catalogHome, "calls");
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, "pi"), `#!/bin/sh
+printf '%s\\n' "$*" >> "$CATALOG_TEST_LOG"
+if [ "$2" = "$CATALOG_FAIL_SOURCE" ]; then exit 17; fi
+`, { mode: 0o755 });
+  const env = {
+    HOME: catalogHome,
+    PATH: `${bin}:${path.dirname(process.execPath)}:${process.env.PATH}`,
+    CATALOG_TEST_LOG: log,
+    CATALOG_FAIL_SOURCE: "",
+    PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,skills,omniroute",
+  };
+  const expected = catalogSources.map((source) => `install ${source}`);
+  run([], { env });
+  run([], { env });
+  assert.deepEqual(fs.readFileSync(log, "utf8").trim().split("\n"), [...expected, ...expected],
+    "repeat installs must reapply exactly the pinned catalog sources");
+
+  fs.writeFileSync(log, "");
+  run([], { env: { ...env, PI_TOOLSET_SKIP: `${env.PI_TOOLSET_SKIP},catalog` } });
+  assert.equal(fs.readFileSync(log, "utf8"), "", "skipping catalog must not invoke Pi");
+
+  const failed = spawnSync("sh", ["install.sh"], {
+    cwd: root, encoding: "utf8",
+    env: { ...process.env, ...env, CATALOG_FAIL_SOURCE: catalogSources[1] },
+  });
+  assert.equal(failed.status, 17);
+  assert.deepEqual(fs.readFileSync(log, "utf8").trim().split("\n"), expected.slice(0, 2));
+  assert.doesNotMatch(failed.stdout, /installation complete/);
+} finally {
+  fs.rmSync(catalogHome, { recursive: true, force: true });
 }
 
 console.log("universal-install ok");

@@ -27,7 +27,7 @@ sh /tmp/pi-toolset-install.sh && rm -f /tmp/pi-toolset-install.sh
 
 The downloaded script fetches and unpacks the complete repository before executing it, installs missing Ubuntu prerequisites, and installs Pi resources in the default global user scope.
 
-Alternatively, run the universal installer from a checkout. It sets up Pi, this package, tmux with `tx`, Search Hub, Understand-Anything, RTK, OmniRoute, and global Codex/Claude skill copies:
+Alternatively, run the universal installer from a checkout. It sets up Pi, this package, tmux with `tx`, Search Hub, Understand-Anything, RTK, OmniRoute, and global Codex/Claude skill copies, plus the five catalog extensions below:
 
 ```bash
 git clone https://github.com/TrebuchetDynamics/pi-toolset.git
@@ -35,7 +35,33 @@ cd pi-toolset
 sh install.sh
 ```
 
-It supports Ubuntu, macOS, other common Linux distributions, and Termux. Remote installers are fully downloaded before execution. Existing files are backed up where supported; existing Pi, Understand, and OmniRoute installations are reused. RTK is installed or updated to its latest release on every run (`RTK_VERSION` can pin a release), and the pi-toolset package, including its Ponytail extension, is updated on every run. OmniRoute is installed globally, starts a local daemon, and becomes Pi's default provider. Global skill copies back up changed same-name skills before replacement; unchanged tools and assets are reused on subsequent runs. To prevent Pi skill-collision warnings, the all-in-one installer disables this package's skill entries in Pi and explicitly registers all bundled skills from `~/.agents/skills` (or `CODEX_SKILLS_DIR`) for Pi, shared with Codex; package-only installs continue to load skills from the package. When run in a terminal, the installer shows an interactive checklist so you can deselect any component; non-interactive runs install everything. Preview with `sh install.sh --dry-run`, or set `PI_TOOLSET_SKIP=rtk,omniroute` (ids: `pi`, `package`, `tmux`, `understand`, `rtk`, `skills`, `omniroute`) or `PI_TOOLSET_SKIP_OMNIROUTE=1` to omit components. Onklaud remains opt-in.
+It supports Ubuntu, macOS, other common Linux distributions, and Termux. Remote installers are fully downloaded before execution. Existing files are backed up where supported; existing Pi, Understand, and OmniRoute installations are reused. RTK is installed or updated to its latest release on every run (`RTK_VERSION` can pin a release), and the pi-toolset package, including its Ponytail extension, is updated on every run. OmniRoute is installed globally, starts a local daemon, and becomes Pi's default provider. Global skill copies back up changed same-name skills before replacement; unchanged tools and assets are reused on subsequent runs. To prevent Pi skill-collision warnings, the all-in-one installer disables this package's skill entries in Pi and explicitly registers all bundled skills from `~/.agents/skills` (or `CODEX_SKILLS_DIR`) for Pi, shared with Codex; package-only installs continue to load skills from the package. When run in a terminal, the installer shows an interactive checklist so you can deselect any component; non-interactive runs install everything. Preview with `sh install.sh --dry-run`, or set `PI_TOOLSET_SKIP=rtk,omniroute` (ids: `pi`, `package`, `tmux`, `understand`, `rtk`, `skills`, `omniroute`, `catalog`) or `PI_TOOLSET_SKIP_OMNIROUTE=1` to omit components. Onklaud remains opt-in.
+
+### Selected catalog extensions
+
+`install.sh` installs these globally through `pi install` at the versions listed below. They are separate Pi packages, not bundled source or runtime dependencies of `pi-toolset`. Package-only installation does not install them.
+
+| Package                                                                                                                 | Pinned version | Why it fits this toolset                                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| [pi-mcp-adapter](https://github.com/nicobailon/pi-mcp-adapter)                                                          | `2.33.0`       | Connects MCP tools such as Context7 and codebase-memory through on-demand discovery. Run `/mcp setup` to import host-specific configuration. |
+| [@juicesharp/rpiv-ask-user-question](https://github.com/juicesharp/rpiv-mono/tree/main/packages/rpiv-ask-user-question) | `2.10.0`       | Adds structured choices for decisions that need your input; available in interactive and supported RPC hosts.                                |
+| [@juicesharp/rpiv-todo](https://github.com/juicesharp/rpiv-mono/tree/main/packages/rpiv-todo)                           | `2.10.0`       | Keeps a visible task list across reloads and compaction; `/todos` shows the list alongside the existing `/goal` workflow.                    |
+| [@narumitw/pi-btw](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-btw)                               | `0.58.1`       | Adds `/btw <question>` for a temporary side conversation, keeping the main task focused until you choose to bring an answer back.            |
+| [@narumitw/pi-usage](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-usage)                           | `0.60.8`       | Adds `/usage` for supported-provider quotas and balances, useful when switching accounts or models.                                          |
+
+Deselect **Curated npm extensions** in the checklist or use `PI_TOOLSET_SKIP=catalog` to omit all five. To install only this selection with Pi already available:
+
+```sh
+PI_TOOLSET_SKIP=pi,package,tmux,understand,rtk,skills,omniroute sh install.sh
+```
+
+Restart Pi after installation. Re-running the installer reapplies these exact package versions; update the pins deliberately when adopting a new release. These pins select the top-level packages; upstream ranged transitive dependencies can still change. The installer does not create MCP server configuration. The adapter discovers standard MCP files automatically and connects to enabled discovered servers on first startup to build its metadata cache; host-specific imports use `/mcp setup`. Questions and todos need no API keys or additional services.
+
+`/btw` requires interactive TUI mode and uses the current model by default; invoking it makes model requests using that provider's allowance. Side threads are kept in memory and discarded on reload or session replacement. `/usage` requires Pi 0.81.0 or newer and supported provider credentials; it is not an aggregate OmniRoute usage dashboard. It also adds `/fast` for supported Codex models, off by default. For supported official Codex requests it owns the service tier: `default` when Fast is off and `priority` when on, so avoid combining it with another service-tier controller. Custom/proxy origins are left unchanged. The installer does not enable Fast mode or redeem account resets.
+
+`pi-canvas@0.1.1` was considered for visual previews but excluded: its published server exposes artifact contents through a wildcard-CORS event stream, and HTML previews lack iframe sandboxing. Revisit after upstream fixes those boundaries.
+
+This selection complements the existing bundle: `pi-subagents`, `/goal`, Ponytail, Search Hub, `/poshify`, and the workspace guard already cover the strongest overlapping catalog candidates. Additional memory services, context proxies, and workflow engines are left out to keep the default setup focused.
 
 To install only the Pi package when Pi already exists:
 

@@ -14,7 +14,15 @@ PI_TOOLSET_ARCHIVE_URL=${PI_TOOLSET_ARCHIVE_URL:-https://codeload.github.com/Tre
 PI_TOOLSET_SKIP_OMNIROUTE=${PI_TOOLSET_SKIP_OMNIROUTE:-0}
 dry_run=0
 
-# Component selection. ids: pi package tmux understand rtk skills omniroute
+# Reviewed catalog versions; Pi owns their installation and transitive dependencies.
+# Keep this list in sync with the catalog table in README.md.
+catalog_packages="npm:pi-mcp-adapter@2.33.0
+npm:@juicesharp/rpiv-ask-user-question@2.10.0
+npm:@juicesharp/rpiv-todo@2.10.0
+npm:@narumitw/pi-btw@0.58.1
+npm:@narumitw/pi-usage@0.60.8"
+
+# Component selection. ids: pi package tmux understand rtk skills omniroute catalog
 want_pi=1
 want_package=1
 want_tmux=1
@@ -22,6 +30,7 @@ want_understand=1
 want_rtk=1
 want_skills=1
 want_omniroute=1
+want_catalog=1
 
 usage() {
   cat <<'EOF'
@@ -34,7 +43,8 @@ Components:
   Pi coding agent, pi-toolset package, tmux and tx, Search Hub research
   extension, Understand-Anything, updated RTK, Ponytail, all bundled skills for
   Pi, Codex and Claude,
-  OmniRoute daemon and Pi configuration
+  OmniRoute daemon and Pi configuration, curated npm catalog extensions
+  (MCP adapter, structured questions, persistent todos, side questions, usage)
 
 Options:
   --dry-run  Print the installation plan without changing the system
@@ -42,7 +52,7 @@ Options:
 
 Environment:
   PI_TOOLSET_SKIP="rtk,omniroute"  Comma-separated component ids to skip:
-                                   pi, package, tmux, understand, rtk, skills, omniroute
+                                   pi, package, tmux, understand, rtk, skills, omniroute, catalog
   PI_TOOLSET_SKIP_OMNIROUTE=1         Skip OmniRoute installation and configuration
   RTK_VERSION=vX.Y.Z              Pin the RTK version used by its official installer
 EOF
@@ -68,10 +78,10 @@ fi
 if [ -n "${PI_TOOLSET_SKIP:-}" ]; then
   for id in $(printf '%s\n' "$PI_TOOLSET_SKIP" | tr ',' ' '); do
     case "$id" in
-      pi|package|tmux|understand|rtk|skills|omniroute) eval "want_$id=0" ;;
+      pi|package|tmux|understand|rtk|skills|omniroute|catalog) eval "want_$id=0" ;;
       *)
         printf 'install: unknown component in PI_TOOLSET_SKIP: %s\n' "$id" >&2
-        printf 'install: valid ids: pi, package, tmux, understand, rtk, skills, omniroute\n' >&2
+        printf 'install: valid ids: pi, package, tmux, understand, rtk, skills, omniroute, catalog\n' >&2
         exit 2
         ;;
     esac
@@ -89,6 +99,7 @@ row_id() {
     4) printf rtk ;;
     5) printf skills ;;
     6) printf omniroute ;;
+    7) printf catalog ;;
   esac
 }
 
@@ -124,6 +135,7 @@ understand:Understand-Anything
 rtk:RTK (install/update latest)
 skills:All bundled skills for Pi, Codex and Claude
 omniroute:OmniRoute
+catalog:Curated npm extensions (MCP, questions, todos, btw, usage)
 EOF
   }
 
@@ -137,7 +149,7 @@ EOF
         seq2=$(dd bs=1 count=2 2>/dev/null)
         case "$seq2" in
           '[A') selected=$((selected > 0 ? selected - 1 : 0)) ;;
-          '[B') selected=$((selected < 6 ? selected + 1 : 6)) ;;
+          '[B') selected=$((selected < 7 ? selected + 1 : 7)) ;;
         esac
         ;;
       '')
@@ -161,6 +173,11 @@ EOF
 }
 
 print_plan() {
+  if [ "$want_catalog" = 1 ]; then
+    for source in $catalog_packages; do
+      printf 'would install: %s\n' "$source"
+    done
+  fi
   if [ "$want_pi" = 1 ]; then printf '%s\n' 'would install: Pi coding agent'; fi
   if [ "$want_package" = 1 ]; then printf '%s\n' "would install: pi-toolset including Ponytail ($PI_TOOLSET_SOURCE)"; fi
   if [ "$want_tmux" = 1 ]; then printf '%s\n' 'would install: tmux and tx'; fi
@@ -369,6 +386,16 @@ if [ "$want_package" = 1 ]; then
     pi install "$PI_TOOLSET_SOURCE"
     printf 'installed: pi-toolset\n'
   fi
+fi
+
+if [ "$want_catalog" = 1 ]; then
+  require pi
+  ensure_node
+  for source in $catalog_packages; do
+    # Explicit install reconciles the pinned version on repeated runs.
+    pi install "$source"
+    printf 'installed: %s\n' "$source"
+  done
 fi
 
 if [ "$want_tmux" = 1 ]; then
