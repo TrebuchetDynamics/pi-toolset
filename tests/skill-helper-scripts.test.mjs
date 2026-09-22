@@ -133,7 +133,7 @@ function assertInstalledSkillTree(skillsDir) {
   assert.ok(fs.existsSync(path.join(skillsDir, "beautify-github-readme", "scripts", "audit_readme.py")));
   assert.ok(fs.existsSync(path.join(skillsDir, "unused-code", "SKILL.md")));
   assert.ok(fs.existsSync(path.join(skillsDir, "shared", "COMMON-CONTRACT.md")));
-  assert.match(fs.readFileSync(path.join(skillsDir, "caveman", "SKILL.md"), "utf8"), /\.\.\/shared\/COMMON-CONTRACT\.md/);
+  assert.match(fs.readFileSync(path.join(skillsDir, "diagram-design", "SKILL.md"), "utf8"), /\.\.\/shared\/COMMON-CONTRACT\.md/);
   assert.match(fs.readFileSync(path.join(skillsDir, "technical-auditor", "references", "architecture-deepening-mode.md"), "utf8"), /\.\.\/\.\.\/grill-with-docs\/CONTEXT-FORMAT\.md/);
 }
 
@@ -144,7 +144,7 @@ function testAgentSkillsInstaller() {
     const claudeSkillsDir = path.join(fixture, ".claude", "skills");
     const stateDir = path.join(fixture, "state");
     for (const skillsDir of [codexSkillsDir, claudeSkillsDir]) {
-      const existing = path.join(skillsDir, "caveman");
+      const existing = path.join(skillsDir, "diagram-design");
       fs.mkdirSync(existing, { recursive: true });
       fs.writeFileSync(path.join(existing, "marker.txt"), "existing skill");
     }
@@ -165,8 +165,8 @@ function testAgentSkillsInstaller() {
     const backupRuns = fs.readdirSync(backupBase);
     assert.equal(backupRuns.length, 1);
     const backupRun = path.join(backupBase, backupRuns[0]);
-    assert.equal(fs.readFileSync(path.join(backupRun, "Codex", "caveman", "marker.txt"), "utf8"), "existing skill");
-    assert.equal(fs.readFileSync(path.join(backupRun, "Claude", "caveman", "marker.txt"), "utf8"), "existing skill");
+    assert.equal(fs.readFileSync(path.join(backupRun, "Codex", "diagram-design", "marker.txt"), "utf8"), "existing skill");
+    assert.equal(fs.readFileSync(path.join(backupRun, "Claude", "diagram-design", "marker.txt"), "utf8"), "existing skill");
     assert.equal(fs.readdirSync(codexSkillsDir).some((name) => name.includes(".bak.")), false);
     assert.equal(fs.readdirSync(claudeSkillsDir).some((name) => name.includes(".bak.")), false);
 

@@ -13,18 +13,19 @@ Check whether the Pi ecosystem already has a useful package, extension, skill, t
 
 ## Skill composition
 
-- Hand `build` or `adapt` decisions to `pi-extensions-helper` with trigger, selected candidate/source artifact, next skill, and expected package validation signal.
+- Hand extension `build` or `adapt` decisions to `pi-extensions-helper`, and skill-only adaptations to `write-a-skill`, with the inspected source revision, selected files, and expected validation signal.
 - Use `autoreview` before recommending installation of a third-party package with broad filesystem or shell access; success signal is no accepted safety findings.
 - Use `grill-me` when the scout result leaves a product choice: reuse, adapt, exclude, or build.
-- If a selected package changes the local repo, finish through `git-commit-push` so notices, licenses, and validation are audited.
+- Validate local changes and audit notices and licenses. Use `git-commit-push` only when the user requests shipping.
 
 ## Sources
 
-Primary index:
+Discovery leads:
 
-- `https://github.com/qualisero/awesome-pi-agent`
+- Search current upstream repositories and package documentation for the specific missing capability; verify maintenance and compatibility directly.
+- `https://github.com/qualisero/awesome-pi-agent` is archived as of June 2026 and describes itself as outdated. Use its historical entries as leads only.
 
-High-value categories from that index:
+Useful search categories:
 
 - Extension collections: `agent-stuff`, `pi-agent-extensions`, `shitty-extensions`, `rhubarb-pi`, `pi-extensions`.
 - Safety and permissions: protected paths, safe git, security filters, checkpoints.
@@ -42,7 +43,7 @@ High-value categories from that index:
    - `docs/tui.md`
    - `examples/extensions/`
 3. Use `web_search` for ecosystem discovery and `web_read` to verify candidate documentation or repository pages. Keep the default all-source search; select one backend only when diagnosing it.
-4. Check the awesome-pi-agent category that matches the request.
+4. Check the installed inventory for overlap, then inspect one exact candidate revision using the [candidate inspection checklist](references/candidate-inspection.md). Popularity alone is not a reason to add it.
 5. Pick one of these outcomes:
    - `reuse`: install or reference an existing package.
    - `adapt`: borrow the pattern, keep local ownership clear.
@@ -59,6 +60,8 @@ Pi ecosystem scout:
 - category:
 - sources checked:
 - candidates:
+- revision and exact files reviewed:
+- executable surface and unresolved findings:
 - decision: reuse|adapt|exclude|build
 - why:
 - next step:
@@ -68,6 +71,7 @@ Pi ecosystem scout:
 
 - Do not install third-party Pi packages without explicit user approval.
 - Review code before recommending install; Pi packages run with full system access.
+- Never bypass an installer or host scanner's dangerous verdict by manually copying the same files. Resolve the finding or exclude the candidate; static inspection is not a safety guarantee.
 - Preserve licenses and attribution when copying code, text, or bundled resources; pattern-only inspiration belongs in the scout report, not package notices.
 - Prefer the smallest reversible, test-backed patch after a scout result; avoid broad harness adoption unless the user explicitly asks.
 - Do not treat awesome-pi-agent as authoritative API documentation; it is an index.

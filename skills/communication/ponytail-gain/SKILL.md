@@ -1,50 +1,21 @@
 ---
 name: ponytail-gain
-description: >
-  Show ponytail benchmark-median impact as a compact scoreboard. Use for ponytail
-  gain, savings, impact, or /ponytail-gain. One-shot display, not a per-repo result.
+description: Assess evidence for Ponytail savings. Use for ponytail gain, savings, impact, or /ponytail-gain. One-shot report; does not run benchmarks or change mode.
 ---
-
-Follow [the shared package contract](../../shared/COMMON-CONTRACT.md); use this skill's output format within the user's requested scope.
-
 
 # Ponytail Gain
 
-Display this scoreboard when invoked. One-shot: do NOT change mode, write flag
-files, or persist anything.
+Report what the available evidence measures. Do not print a fixed promotional scoreboard.
 
-The figures are the published benchmark medians (5 everyday tasks: email
-validator, debounce, CSV sum, countdown timer, rate limiter; three models:
-Haiku, Sonnet, Opus). They are measured, not computed from the current repo.
-Source: `benchmarks/` and the README.
+1. Inspect comparison receipts supplied by the user or already recorded for this task. If none exist, say “No measured savings available for this task.”
+2. Separate local results from upstream benchmarks. For upstream claims, verify the [source](https://github.com/DietrichGebert/ponytail) and report its revision, tasks, models, sample size, and limitations. If those details cannot be verified, omit the numbers.
+3. A causal skill-on/skill-off claim needs the same task, starting state, model, harness, and acceptance checks. Report measured tokens, cost, or elapsed time only for the metrics actually recorded. State the baseline and calculation; disclose missing quality checks or unmatched conditions.
+4. A smaller diff is a code-size observation, not proof of better quality, lower whole-session cost, or time saved. Do not extrapolate a benchmark percentage onto the current repository or invent an unbuilt baseline.
 
-## Scoreboard
+Return a compact evidence summary with source, metric, baseline, result, and limitation. If evidence is absent, point to `ponytail-debt` for actual shortcut counts or `ponytail-audit` for concrete simplification candidates. This invocation edits nothing, starts no benchmark or paid model call, and changes no persistent mode.
 
-Render plain ASCII bars. The bar length shows the measured range; the label
-carries the exact figure:
+Example: “How much did Ponytail save here?” with only a Git diff available → report the observed diff if relevant, then state that token/cost savings are unmeasured.
 
-```
-  ponytail gain                     benchmark median · 5 tasks · 3 models
+## Shared contract
 
-  Lines of code   no-skill  ████████████████████  100%
-                  ponytail  ██▌·················    6–20%   ▼ 80–94%
-  Cost            no-skill  ████████████████████  100%
-                  ponytail  █████▌··············   23–53%  ▼ 47–77%
-  Speed           ponytail  ▸ 3–6× faster
-
-  This repo:  /ponytail-debt  (shortcuts you deferred)
-              /ponytail-audit (what's still cuttable)
-```
-
-## Honesty boundary
-
-These are benchmark medians, not this repo. NEVER print a per-repo savings
-number ("you saved X lines/tokens here"): the unbuilt version was never
-written, so there is no real baseline to subtract from in a live repo. The
-only real per-repo figures come from `/ponytail-debt` (a counted ledger), and
-this card points there instead of inventing one.
-
-## Boundaries
-
-One-shot display. Edits nothing, changes no mode.
-"stop ponytail" or "normal mode": revert.
+Follow [the shared package contract](../../shared/COMMON-CONTRACT.md).

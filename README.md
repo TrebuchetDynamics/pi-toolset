@@ -119,7 +119,9 @@ The package does not hide the work behind a universal mega-agent. It keeps five 
 | Build or redesign UI                     | `ui-design`                                 | Correct specialist + visual/validation evidence |
 | Research with provenance                 | `research-forge` or `/search-hub <request>` | Source-backed findings                          |
 | Ship local work                          | `git-commit-push`                           | Validated commit and push receipts              |
-| Use fewer tokens                         | `/ponytail` or `caveman`                    | Smaller scope or shorter communication          |
+| Simplify implementation                  | `/ponytail`                                | Smallest complete change with verification      |
+| Create a shareable diagram               | `diagram-design`                           | Accessible, standalone HTML/SVG                 |
+| Inspect a skill before adoption          | `pi-ecosystem-scout`                        | Pinned source, reviewed files, explicit decision |
 
 Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill commands are enabled:
 
@@ -233,9 +235,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 <details>
 <summary><strong>Complete skill inventory</strong></summary>
 
-**Communication (8)**
+**Communication (7)**
 
-`caveman`, `ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`, `writing-shape`
+`ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`, `ponytail-review`, `writing-shape`
 
 **Delivery (4)**
 
@@ -245,9 +247,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 `autonomous-codebase-improver`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
 
-**Frontend and design (22)**
+**Frontend and design (23)**
 
-`beautify-github-readme`, `brandkit`, `chrome-extensions`, `design-taste-frontend`, `design-taste-frontend-v1`, `frontend-design`, `full-output-enforcement`, `gpt-taste`, `hallmark`, `high-end-visual-design`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `image-to-code`, `industrial-brutalist-ui`, `minimalist-ui`, `modern-web-guidance`, `redesign-existing-projects`, `stitch-design-taste`, `stitch-react-components`, `ui-design`, `ui-ux-pro-max`, `ui-vault`
+`beautify-github-readme`, `brandkit`, `chrome-extensions`, `design-taste-frontend`, `design-taste-frontend-v1`, `diagram-design`, `frontend-design`, `full-output-enforcement`, `gpt-taste`, `hallmark`, `high-end-visual-design`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `image-to-code`, `industrial-brutalist-ui`, `minimalist-ui`, `modern-web-guidance`, `redesign-existing-projects`, `stitch-design-taste`, `stitch-react-components`, `ui-design`, `ui-ux-pro-max`, `ui-vault`
 
 **Pi authoring and orchestration (4)**
 
@@ -262,6 +264,16 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 `research-forge`
 
 </details>
+
+## Skill curation
+
+The bundle keeps 65 skills: `diagram-design` replaces the standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
+
+The [diagram skill](skills/frontend/diagram-design/SKILL.md) is a text-only adaptation of [Diagram Design](https://github.com/cathrynlavery/diagram-design), pinned in [third-party notices](THIRD_PARTY_NOTICES.md). It adds no executable helpers or dependencies. Scouting and authoring use a [candidate inspection checklist](skills/pi/pi-ecosystem-scout/references/candidate-inspection.md): review the exact revision and reachable files, check overlap and host compatibility, preserve licensing, and never bypass a dangerous scanner verdict. Stars are discovery signals, not evidence of quality or safety.
+
+Existing engineering, research, and optional Understand workflows remain available. No additional workflow plugin, graph service, broad catalog, or scientific toolchain is needed without a specific task. Skill behavior changes have review scenarios, but no measured skill-on/skill-off improvement is claimed.
+
+Package updates remove Caveman from package discovery. The global-skill installer preserves directories absent from the bundle, so older global Caveman copies require separate retirement after checking their ownership; it does not delete user-managed skills automatically.
 
 ## Optional integrations
 

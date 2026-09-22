@@ -24,7 +24,7 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
 - Snapshot inspected: `b8be62f`
 - Latest engineering skills comparison inspected: `694fa30` (upstream engineering grill-with-docs and improve-codebase-architecture skills)
 - Latest skill-design comparison inspected: `ed37663` (upstream writing-great-skills, TDD, and diagnosing-bugs guidance)
-- Latest caveman skill inspected: `694fa30`
+- Historical Caveman snapshot: `694fa30`; removed from the active bundle in September 2026.
 - Wayfinder skill snapshot inspected: `2ab9580`
 - Bundled paths:
   - `skills/engineering/tdd/`
@@ -45,7 +45,6 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
   - `skills/planning/triage/`
   - `skills/communication/writing-shape/`
   - `skills/planning/handoff/`
-  - `skills/communication/caveman/`
   - `skills/pi/write-a-skill/`
 - Local changes: package-specific repo study, skill-contract, safety, provenance, and approval-gated paired-evaluation guidance were added.
 - License: MIT
@@ -64,8 +63,8 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
   - `skills/communication/ponytail-gain/`
   - `skills/communication/ponytail-debt/`
   - `skills/communication/ponytail-help/`
-- Usage: also source inspiration for the Ponytail compression rules added to `skills/communication/caveman/`.
-- Local changes: concise package-local routing descriptions and shared-contract references were added.
+- Historical usage: inspired implementation guidance in the now-retired Caveman skill.
+- Local changes: concise package-local routing descriptions and shared-contract references were added. Help now describes the bundled integration; gain requires verified measurement evidence instead of printing fixed benchmark percentages. The core no longer routes prose to Caveman.
 - License: MIT
 - Full license copy: `licenses/DietrichGebert-ponytail-LICENSE`
 
@@ -84,6 +83,17 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
 - Usage: source evidence for the package-local `pi-ecosystem-scout` skill.
 - License: MIT
 - Full license copy: `licenses/qualisero-awesome-pi-agent-LICENSE`
+
+## cathrynlavery/diagram-design
+
+- Source: https://github.com/cathrynlavery/diagram-design
+- Snapshot inspected: `dc1ace47b99a419e42d01a03cb6ace5346efa8ae`
+- Reviewed source: [upstream skill](https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/skills/diagram-design/SKILL.md) and [upstream license](https://github.com/cathrynlavery/diagram-design/blob/dc1ace47b99a419e42d01a03cb6ace5346efa8ae/LICENSE) at that revision.
+- Bundled path: `skills/frontend/diagram-design/`
+- Local changes: focused text-only adaptation for architecture, sequence, and process diagrams; existing project styles or neutral defaults replace the onboarding gate. Remote fonts, upstream templates, import/export scripts, motion controllers, profiles, and installer are not bundled. Simple Markdown diagrams remain eligible for Mermaid.
+- Security assumptions: instructions and review scenarios only; generated output defaults to static offline HTML/SVG. Source/packaging review does not establish safety or measured behavioral improvement; paired evaluation is unreplicated.
+- License: MIT
+- Full license copy: `licenses/cathrynlavery-diagram-design-LICENSE`
 
 ## en970/ui-vault
 

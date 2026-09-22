@@ -32,6 +32,14 @@ _Avoid_: hidden model calls, treating graph heuristics as final architectural ju
 The curated set of bundled skills under `skills/`. Skills load on demand through Pi's skill discovery.
 _Avoid_: hidden behavior not represented in docs or manifests, unlisted resource paths
 
+**Diagram Design Skill**:
+The text-only `diagram-design` adaptation produces source-backed, accessible standalone HTML/SVG for architecture, sequence, and process explanations. Small inline Markdown diagrams can use Mermaid; quantitative figures belong to plotting tools. Concise communication lives in the shared contract; Caveman is retired from the package inventory.
+_Avoid_: invented relationships, remote assets in offline artifacts, mandatory branding interviews, unverified geometry claims, treating package removal as deletion of global skill copies
+
+**Skill Candidate Inspection**:
+Scouting and authoring inspect an exact source revision and its reachable resources before import, check overlap and host compatibility, and record licenses, executable behavior, and unresolved findings. `ponytail-gain` reports evidence rather than fixed savings figures.
+_Avoid_: installing collections for one skill, using stars as quality proof, scanner-bypass copying, unsupported performance claims
+
 **Skill Composition**:
 Lightweight handoff guidance embedded inside high-traffic seam skills. It names when to switch to another skill and what evidence should cross that seam. `skill-router` chooses a single primary workflow for ambiguous tasks, `goal` orchestrates long-running objectives, and `autonomous-codebase-improver` is the bounded repo-improvement front door that chooses one validated slice and routes to one specialist.
 _Avoid_: vague "use related skills" advice, handoffs without evidence, duplicating long protocol text in every skill, broad choreography layers that hide validation ownership

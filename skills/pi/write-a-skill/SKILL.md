@@ -31,7 +31,7 @@ Before changing a skill, inspect the current skill inventory, `README.md`, `CONT
 2. Check fit:
    - Existing skill can be updated instead of adding a new one?
    - Description overlaps another skill? Narrow, merge, or add anti-triggers.
-   - Any executable helper, dependency, or third-party source needs license/security review?
+   - For imports or executable helpers, use the [candidate inspection checklist](../pi-ecosystem-scout/references/candidate-inspection.md); record the reviewed revision, files, dependencies, and license before enabling them.
 3. Draft the skill:
    - `SKILL.md` with compact entry instructions and a contract.
    - Reference files for details that do not need to be always read.

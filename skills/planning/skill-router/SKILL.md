@@ -27,7 +27,9 @@ Use this as the front door when the user wants the agent to choose the workflow.
 | One noisy folder split or guarded folder refactor | `skill-folder-refactor` |
 | Proven duplication/shared-code cleanup | `share-code` |
 | UI, visual design, layouts, accessibility | `ui-design` |
+| Standalone architecture, sequence, or process diagram | `diagram-design` |
 | Pi extension, provider, package resource | `pi-extensions-helper` |
+| Inspect or select a third-party skill/package before adoption | `pi-ecosystem-scout` |
 | Skill creation or skill edits | `write-a-skill` |
 | Project docs, README, architecture docs, onboarding, wiki | `wiki-docs` |
 | Research/survey/literature or OSS study | `research-forge` |

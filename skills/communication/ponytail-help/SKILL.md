@@ -31,12 +31,12 @@ Level sticks until changed or session end.
 | **ponytail-review** | `/ponytail-review` | Over-engineering review: `L42: yagni: factory, one product. Inline.` |
 | **ponytail-audit** | `/ponytail-audit` | Whole-repo over-engineering audit: ranked list of what to delete. |
 | **ponytail-debt** | `/ponytail-debt` | Harvest `ponytail:` shortcut comments into a tracked ledger. |
-| **ponytail-gain** | `/ponytail-gain` | Measured-impact scoreboard: less code, less cost, more speed. |
+| **ponytail-gain** | `/ponytail-gain` | Evidence-backed savings report; says when savings are unmeasured. |
 | **ponytail-help** | `/ponytail-help` | This card. |
 
-Codex uses `@ponytail`, `@ponytail-review`, and `@ponytail-help`; Claude Code
-and OpenCode use the slash-command forms above (OpenCode ships all six as
-slash commands).
+In Pi, use the slash commands above or `/skill:ponytail-help` when skill commands
+are enabled. Other hosts use their exposed skill catalog; do not assume Pi's
+extension commands exist there.
 
 ## Deactivate
 
@@ -64,9 +64,11 @@ Resolution: env var > config file > `full`.
 
 ## Update
 
-Enable auto-update once: open `/plugin`, go to Marketplaces, pick ponytail, Enable auto-update. Claude Code then pulls new versions at startup (run `/reload-plugins` when it prompts). Manual refresh: `/plugin marketplace update ponytail` then `/reload-plugins`.
-
-If `/plugin` is not recognized, your Claude Code is out of date. Update it (`npm install -g @anthropic-ai/claude-code@latest`, or `brew upgrade claude-code`) and restart. Other hosts use their own update flow.
+These skills and the Pi extension are maintained as part of pi-toolset. Update
+through the same package or global-skill installation method already used for
+this bundle, then reload Pi or restart the relevant host. Do not install a
+separate upstream plugin to update bundled files. This help invocation installs
+nothing and does not alter provider or hook configuration.
 
 ## More
 

@@ -14,7 +14,7 @@ Reuse answers, accepted decisions, and authorization already present in the conv
 
 Use Ponytail full mode by default for every packaged skill's implementation choices: YAGNI first, prefer deletion over addition, stdlib/native before dependencies, already-installed dependencies before new ones, fewest files, shortest safe diff. The [Ponytail ladder](../communication/ponytail/SKILL.md) gives optional detail; apply it smartly: specialist process, safety gates, required schemas, citations, accessibility, security, trust-boundary validation, and explicitly requested scope still win. Simplicity reduces implementation cost, never the requested deliverables.
 
-Ponytail is not a prose-compression requirement. Final replies should use normal compact technical prose: summarize first, avoid filler, keep vertical space reasonable, and offer detail on request. Use compact receipts like `validated: npm test ✅; changed: <paths>`. Use caveman style only when the user explicitly asks for `caveman`, `less tokens`, or similar; `normal mode` changes presentation only unless the Ponytail extension is active and interprets it as Ponytail-off. Repo hygiene, verification, handoff, and safety obligations always apply.
+Ponytail is not a prose-compression requirement. Final replies should use normal compact technical prose: put the outcome or next action first, preserve technical meaning and uncertainty, and omit tangents. Number steps when order matters; keep unfinished work visible during longer tasks. A request to be brief changes presentation, not scope or verification. Use compact receipts like `validated: npm test ✅; changed: <paths>`. Repo hygiene, verification, handoff, and safety obligations always apply.
 
 ## Skill quality baseline
 

@@ -38,7 +38,7 @@ const expectedSkills = [
   "handoff",
   "lgtm",
   "nack",
-  "caveman",
+  "diagram-design",
   "ponytail",
   "ponytail-review",
   "ponytail-audit",
@@ -1608,7 +1608,7 @@ async function testSkills() {
   assert.match(commonContract, /compact receipts/);
   assert.match(
     commonContract,
-    /Use caveman style only when the user explicitly asks/,
+    /A request to be brief changes presentation, not scope or verification/,
   );
   assert.match(commonContract, /Skill quality baseline/);
   assert.match(
@@ -1634,10 +1634,8 @@ async function testSkills() {
   assert.match(commonContract, /Version-sensitive guidance/);
   assert.match(commonContract, /harmless `--help`\/`version` checks/);
   assert.match(read("skills/communication/ponytail/SKILL.md"), /The ladder/);
-  assert.match(
-    read("skills/communication/caveman/SKILL.md"),
-    /Optimize vertical space too/,
-  );
+  assert.equal(exists("skills/communication/caveman/SKILL.md"), false);
+  assert.ok(exists("licenses/cathrynlavery-diagram-design-LICENSE"));
   assert.match(commonContract, /Repo and ownership check/);
   assert.match(commonContract, /Search Hub for live web evidence/);
   assert.match(
