@@ -1929,6 +1929,35 @@ function testSkillEntrypointBudget() {
   }
 }
 
+function testNpmPackContents() {
+  const result = spawnSync("npm", ["pack", "--dry-run", "--json"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
+
+  const packagedPaths = new Set(
+    JSON.parse(result.stdout)[0].files.map((file) => file.path),
+  );
+  assert.equal(
+    packagedPaths.has("skills/frontend/stitch-react-components/.eslintcache"),
+    false,
+    "npm package must not include generated ESLint caches",
+  );
+  const imageSources = [...read("README.md").matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)]
+    .map((match) => match[1]);
+  for (const source of imageSources) {
+    if (/^https?:\/\//i.test(source)) continue;
+    const packagePath = path.posix.normalize(source.replace(/^\.\//, ""));
+    assert.ok(
+      packagedPaths.has(packagePath),
+      `README image ${source} is not included in the npm package`,
+    );
+  }
+}
+
 function testPackageContentsStep() {
   const ci = read(".github/workflows/ci.yml");
   const step = ci.match(
@@ -1985,5 +2014,6 @@ await testPackageManifestPaths();
 await testUnderstandExtension();
 await testPiCoreDependencies();
 await testSkills();
+testNpmPackContents();
 await testDocsAndNotices();
 console.log("validate-package ok");

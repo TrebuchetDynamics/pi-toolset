@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="pi-toolset keeps coding objectives visible, routes work to specialist skills, and requires evidence before delivery">
+  <img src="https://raw.githubusercontent.com/TrebuchetDynamics/pi-toolset/main/assets/readme/hero.svg" width="100%" alt="pi-toolset keeps coding objectives visible, routes work to specialist skills, and requires evidence before delivery">
 </p>
 
 <p align="center">
@@ -88,7 +88,7 @@ pi install -l git:github.com/TrebuchetDynamics/pi-toolset
 ## The operating loop
 
 <p align="center">
-  <img src="./assets/readme/workflow.svg" width="100%" alt="Set an objective, understand the codebase, route to one specialist, execute a bounded change, then verify and ship">
+  <img src="https://raw.githubusercontent.com/TrebuchetDynamics/pi-toolset/main/assets/readme/workflow.svg" width="100%" alt="Set an objective, understand the codebase, route to one specialist, execute a bounded change, then verify and ship">
 </p>
 
 Superpowers owns planning, debugging, TDD, execution, review, and completion. The user and project rules remain higher priority. Local specialists supply domain knowledge inside that workflow; `git-commit-push` performs shipping only when explicitly requested. No second general-purpose router or always-on Ponytail mode leads the session.

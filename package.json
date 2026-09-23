@@ -47,6 +47,7 @@
     "!**/.understand-anything/**",
     "!**/.ua",
     "!**/.ua/**",
+    "!**/.eslintcache",
     "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
