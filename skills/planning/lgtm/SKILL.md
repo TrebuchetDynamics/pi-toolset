@@ -1,5 +1,6 @@
 ---
 name: lgtm
+disable-model-invocation: true
 description: Resolve short approval against the latest checkpoint. Use for "lgtm", "looks good", "approved", or "go ahead"; not risky or review feedback.
 ---
 

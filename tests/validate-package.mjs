@@ -593,24 +593,7 @@ async function testPackageManifest() {
     autofolderrefactor:
       "./skills/engineering/candidates-folder-refactor/scripts/autofolderrefactor",
   });
-  assert.deepEqual(pkg.pi.extensions, [
-    "./extensions/goal",
-    "./extensions/goal-technical-auditor",
-    "./extensions/bug-harvest",
-    "./extensions/isolated-verifier",
-    "./extensions/workspace-guard",
-    "./extensions/understand",
-    "./extensions/folder-refactor",
-    "./extensions/rtk",
-    "./extensions/ponytail",
-    "./extensions/search-hub",
-    "./extensions/typesafe",
-    "./extensions/onklaud",
-    "./extensions/mobile-low-redraw",
-    "./extensions/s3upload",
-    "./extensions/poshify",
-    "./extensions/pi-subagents",
-  ]);
+  assert.deepEqual(pkg.pi.extensions, ["./extensions/search-hub", "./extensions/pi-subagents"]);
   for (const extensionPath of pkg.pi.extensions) {
     const absolutePath = path.join(root, extensionPath);
     if (extensionPath.startsWith("./node_modules/")) {
@@ -642,7 +625,7 @@ async function testPackageManifest() {
     "pi-posher",
     "pi-subagents",
   ]);
-  assert.deepEqual(pkg.pi.skills, ["./skills"]);
+  assert.deepEqual(pkg.pi.skills, ["./skills/delivery/git-commit-push", "./skills/engineering/technical-auditor", "./skills/engineering/wiki-docs", "./skills/frontend/frontend-design", "./skills/frontend/modern-web-guidance", "./skills/frontend/redesign-existing-projects", "./skills/pi/pi-extensions-helper", "./skills/planning/handoff", "./skills/planning/lgtm"]);
   assert.deepEqual(pkg.pi.themes, ["./themes"]);
   assert.equal(
     pkg.scripts["test:behavioral"],
@@ -823,14 +806,6 @@ async function testUnderstandExtension() {
   assert.ok(
     exists("tests/isolated-verifier-extension.test.mjs"),
     "isolated verifier extension test must exist",
-  );
-
-  const workspaceGuardExtension = read("extensions/workspace-guard/index.js");
-  assert.match(workspaceGuardExtension, /registerCommand\("workspace-guard"/);
-  assert.match(workspaceGuardExtension, /tool_call/);
-  assert.ok(
-    exists("tests/workspace-guard-extension.test.mjs"),
-    "workspace guard extension test must exist",
   );
 
   const folderRefactorExtension = read("extensions/folder-refactor/index.js");
@@ -1595,10 +1570,10 @@ async function testSkills() {
   );
   const commonContract = read("skills/shared/COMMON-CONTRACT.md");
   assert.match(commonContract, /Default skill posture/);
-  assert.match(commonContract, /Use Ponytail full mode by default/);
+  assert.match(commonContract, /Superpowers owns the engineering workflow/);
   assert.match(commonContract, /YAGNI first/);
   assert.match(commonContract, /stdlib\/native before dependencies/);
-  assert.match(commonContract, /apply it smartly/);
+  assert.doesNotMatch(commonContract, /Use Ponytail full mode by default/);
   assert.match(
     commonContract,
     /required schemas, citations, accessibility, security/,
@@ -1685,7 +1660,7 @@ async function testSkills() {
   assert.match(commonContract, /Artifact continuity/);
   assert.match(commonContract, /reuse compatible existing work/);
   assert.match(commonContract, /Update one bounded artifact at a time/);
-  assert.match(commonContract, /Reviews are optional validation gates/);
+  assert.match(commonContract, /Follow the selected Superpowers workflow for review/);
   assert.match(commonContract, /Verification evidence/);
   assert.match(commonContract, /Handoff shape/);
   assert.match(commonContract, /Safety defaults/);
@@ -1904,12 +1879,11 @@ async function testDocsAndNotices() {
   assert.match(readme, /git-commit-push/);
   assert.match(readme, /technical-auditor/);
   assert.doesNotMatch(readme, /\/development-goal/);
-  assert.match(readme, /### Core extension surfaces/);
+  assert.match(readme, /### Extension reference/);
   assert.match(readme, /`\/typesafe`/);
   assert.match(readme, /`\/s3upload`/);
   assert.match(readme, /`\/bug-harvest`/);
   assert.match(readme, /`\/verify-isolated`/);
-  assert.match(readme, /`\/workspace-guard`/);
   assert.match(readme, /npm run test:behavioral/);
   assert.doesNotMatch(readme, /goal-advisor/);
   assert.match(readme, /trebuchet-neon/);

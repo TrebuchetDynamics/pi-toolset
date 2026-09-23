@@ -28,7 +28,7 @@ Do not ask for approval merely because there are many changed files. Inspect and
 
 3. **Validate once**
    - Use fresh existing receipts only when they cover the unchanged content and required commands. Otherwise run user-provided checks, or infer one normal project validation set, plus `git diff --check`.
-   - Fix the smallest safe cause and rerun only failed or affected checks. Use `diagnose` for a real behavior failure or `tdd` for missing behavior coverage.
+   - Fix the smallest safe cause and rerun only failed or affected checks. Use `systematic-debugging` for a real behavior failure or `test-driven-development` for missing behavior coverage.
 
 4. **Commit and push**
    - Stage explicit paths or hunks for one topic. Inspect `git diff --cached --name-status` and the cached diff, then commit. Repeat without rerunning unchanged checks.

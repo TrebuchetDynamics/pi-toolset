@@ -1,6 +1,8 @@
 # pi-toolset Context
 
-This package ships Pi skills plus `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and the bug-harvest, isolated-verifier, workspace-guard, search-hub, typesafe, s3upload, poshify, and pi-subagents extensions.
+Superpowers is the primary workflow; the package defaults to eight local specialists, Search Hub, and subagents. Other stored resources are opt-in. The upstream bootstrap comes from the pinned, unmodified Superpowers checkout.
+
+The optional catalog includes `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and the bug-harvest, isolated-verifier, search-hub, typesafe, s3upload, poshify, and pi-subagents extensions.
 
 ## Language
 
@@ -29,7 +31,7 @@ A deterministic file-generation workflow that reads the current repo's existing 
 _Avoid_: hidden model calls, treating graph heuristics as final architectural judgment, editing production code during plan generation, requiring refactor to run `/understand` itself, recommending graph-only hotspots without live-code confidence labels, ending with only a file path and no decision prompt, losing prior refactor decisions when regenerating the same output file, asking the user to manually compose the next skill prompt, silently running follow-up reasoning without an explicit candidate choice
 
 **Skill Bundle**:
-The curated set of bundled skills under `skills/`. Skills load on demand through Pi's skill discovery.
+The source catalog lives under `skills/`; `package.json` explicitly selects eight default local skills. `skills/shared/profiles.json` names optional profiles and the pinned upstream source. Global migration archives inactive known copies outside discovery roots, leaves manual-only compatibility files for already-installed commands, and links the 15 canonical Superpowers skills. The explicit `lgtm` command remains available without automatic invocation.
 _Avoid_: hidden behavior not represented in docs or manifests, unlisted resource paths
 
 **Diagram Design Skill**:
@@ -41,7 +43,7 @@ Scouting and authoring inspect an exact source revision and its reachable resour
 _Avoid_: installing collections for one skill, using stars as quality proof, scanner-bypass copying, unsupported performance claims
 
 **Skill Composition**:
-Lightweight handoff guidance embedded inside high-traffic seam skills. It names when to switch to another skill and what evidence should cross that seam. `skill-router` chooses a single primary workflow for ambiguous tasks, `goal` orchestrates long-running objectives, and `autonomous-codebase-improver` is the bounded repo-improvement front door that chooses one validated slice and routes to one specialist.
+Lightweight handoff guidance embedded inside high-traffic seam skills. It names when to switch to another skill and what evidence should cross that seam. `using-superpowers` owns workflow selection. Optional `goal` and `autonomous-codebase-improver` follow that workflow when explicitly invoked. Local skills defer debugging, TDD, planning, and reviews to upstream Superpowers.
 _Avoid_: vague "use related skills" advice, handoffs without evidence, duplicating long protocol text in every skill, broad choreography layers that hide validation ownership
 
 **Skill Lifecycle**:
@@ -124,10 +126,6 @@ _Avoid_: timers or background daemons, silent startup resumption, repeated no-ev
 The package-local extension at `extensions/isolated-verifier/index.js` registers `/verify-isolated <contract>`. Each explicit invocation starts a fresh read-only Pi process with no extensions, skills, prompts, context files, session history, or mutation tools, then records the independent verdict and usage in the parent conversation.
 _Avoid_: automatic paid verification, inherited implementation context, mutation-capable verifier tools, pass verdicts without path evidence, or presenting a model verdict as deterministic proof
 
-**Workspace Guard Extension**:
-The package-local extension at `extensions/workspace-guard/index.js` blocks `edit` and `write` outside the canonical workspace or temporary directory, protects repository control/secret/cache paths, follows symlinks before deciding, and gives bash calls a default timeout. It explicitly does not claim to sandbox bash or user shell commands.
-_Avoid_: path-prefix checks without canonicalization, claiming OS isolation, silent writes to `.git`/`.pi`/`.agents`/`.env`, or unbounded default shell execution
-
 **Search Hub Extension**:
 The package-local extension at `extensions/search-hub/index.js` exposes `web_search`, `web_read`, and a thin `/search-hub <request>` command. Search queries every available source in parallel—keyless DuckDuckGo plus configured Brave and SearXNG—then merges and deduplicates results while tolerating individual source failures; page reads use Jina Reader after rejecting private/internal URLs. It installs no binary or runtime dependency and caps tool output at 20KB or 500 lines.
 _Avoid_: startup installation, undocumented provider fan-out, automatic API-key/config changes, private/internal URL reads, unbounded response buffering or model output, unsupported crawl promises, or using external search for the local codebase
@@ -140,8 +138,8 @@ _Avoid_: acting on low-confidence answers without escalation, multi-factor quest
 The package-local adapter at `extensions/poshify/` loads the bundled `pi-posher` dependency, preserving `/poshify`, `run_poshify`, and post-write/edit hooks while adding explicit `run_poshify_fix` and `run_poshify_audit` tools with absolute failure targets. It seeds user-owned global defaults, executes configured commands without a shell, and requires hash-based trust before project-local `.pi/poshifiers.json` commands can run.
 _Avoid_: treating seeded formatter/SAST tools as installed dependencies, silently trusting project-local command configs, hiding automatic post-edit command execution, modifying upstream code without updating provenance
 
-**Skill Router Skill**:
-A front-door planning skill under `skills/planning/skill-router/` that selects exactly one primary skill for a user task and routes blank tasks to `autonomous-codebase-improver` so the agent can still work autonomously from repo evidence.
+**Retired Skill Router Reference**:
+The legacy router source under `skills/planning/skill-router/` remains for historical reference. It is excluded from every active profile; upstream `using-superpowers` owns routing.
 _Avoid_: becoming a second planning layer, stacking skills up front, using routing as approval for risky actions
 
 **Autonomous Codebase Improver Skill**:

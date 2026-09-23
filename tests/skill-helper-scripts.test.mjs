@@ -5,6 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { hasHardcodedHex, jsxAttributeText } from "../skills/frontend/stitch-react-components/scripts/validation-rules.js";
 
+import { superpowersFixture } from "./fixtures/superpowers.mjs";
+
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 
 function runNode(script, args = [], options = {}) {
@@ -118,28 +120,25 @@ function testUiVaultDiagnosisContract() {
 
 function installedSkillCount(skillsDir) {
   return fs.readdirSync(skillsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name !== "shared")
+    .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && entry.name !== "shared")
     .filter((entry) => fs.existsSync(path.join(skillsDir, entry.name, "SKILL.md")))
     .length;
 }
 
 function assertInstalledSkillTree(skillsDir) {
-  assert.equal(installedSkillCount(skillsDir), 65);
-  assert.ok(fs.existsSync(path.join(skillsDir, "s3upload", "SKILL.md")));
-  assert.ok(fs.existsSync(path.join(skillsDir, "pi-subagents", "SKILL.md")));
-  assert.ok(fs.existsSync(path.join(skillsDir, "wayfinder", "SKILL.md")));
-  assert.ok(fs.existsSync(path.join(skillsDir, "wayfinder-next", "SKILL.md")));
-  assert.ok(fs.existsSync(path.join(skillsDir, "ui-vault", "references", "catalog.json")));
-  assert.ok(fs.existsSync(path.join(skillsDir, "beautify-github-readme", "scripts", "audit_readme.py")));
-  assert.ok(fs.existsSync(path.join(skillsDir, "unused-code", "SKILL.md")));
+  assert.equal(installedSkillCount(skillsDir), 24);
+  assert.ok(fs.existsSync(path.join(skillsDir, "systematic-debugging", "SKILL.md")));
+  assert.ok(fs.lstatSync(path.join(skillsDir, "test-driven-development")).isSymbolicLink());
+  assert.equal(fs.existsSync(path.join(skillsDir, "ponytail")), false);
   assert.ok(fs.existsSync(path.join(skillsDir, "shared", "COMMON-CONTRACT.md")));
-  assert.match(fs.readFileSync(path.join(skillsDir, "diagram-design", "SKILL.md"), "utf8"), /\.\.\/shared\/COMMON-CONTRACT\.md/);
-  assert.match(fs.readFileSync(path.join(skillsDir, "technical-auditor", "references", "architecture-deepening-mode.md"), "utf8"), /\.\.\/\.\.\/grill-with-docs\/CONTEXT-FORMAT\.md/);
+  assert.match(fs.readFileSync(path.join(skillsDir, "handoff", "SKILL.md"), "utf8"), /\.\.\/shared\/COMMON-CONTRACT\.md/);
+  assert.match(fs.readFileSync(path.join(skillsDir, "technical-auditor", "references", "architecture-deepening-mode.md"), "utf8"), /\]\(CONTEXT-FORMAT\.md\)/);
 }
 
 function testAgentSkillsInstaller() {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "agent-skills-install-"));
   try {
+    const upstreamEnv = superpowersFixture(path.join(fixture, "source"), root);
     const codexSkillsDir = path.join(fixture, ".agents", "skills");
     const claudeSkillsDir = path.join(fixture, ".claude", "skills");
     const stateDir = path.join(fixture, "state");
@@ -151,7 +150,7 @@ function testAgentSkillsInstaller() {
 
     const output = execFileSync("sh", [path.join(root, "install-agent-skills.sh")], {
       cwd: root,
-      env: { ...process.env, HOME: fixture, XDG_STATE_HOME: stateDir },
+      env: { ...process.env, ...upstreamEnv, HOME: fixture, XDG_STATE_HOME: stateDir },
       encoding: "utf8",
     });
 
@@ -172,7 +171,7 @@ function testAgentSkillsInstaller() {
 
     const secondOutput = execFileSync("sh", [path.join(root, "install-agent-skills.sh")], {
       cwd: root,
-      env: { ...process.env, HOME: fixture, XDG_STATE_HOME: stateDir },
+      env: { ...process.env, ...upstreamEnv, HOME: fixture, XDG_STATE_HOME: stateDir },
       encoding: "utf8",
     });
     assert.match(secondOutput, /unchanged:/);
@@ -185,9 +184,10 @@ function testAgentSkillsInstaller() {
 function testClaudeSkillsInstallerCompatibilityWrapper() {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "claude-skills-install-"));
   try {
+    const upstreamEnv = superpowersFixture(path.join(fixture, "source"), root);
     const output = execFileSync("sh", [path.join(root, "install-claude-skills.sh")], {
       cwd: root,
-      env: { ...process.env, HOME: fixture, CLAUDE_SKILLS_BACKUP: "0" },
+      env: { ...process.env, ...upstreamEnv, HOME: fixture, CLAUDE_SKILLS_BACKUP: "0" },
       encoding: "utf8",
     });
     assert.match(output, /Claude skills dir:/);

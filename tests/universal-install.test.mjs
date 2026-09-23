@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
+import { superpowersFixture } from "./fixtures/superpowers.mjs";
+
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 assert.ok(pkg.files.includes("install.sh"), "published package must include the universal installer");
@@ -21,7 +23,7 @@ const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 assert.match(readme, /sh install\.sh/);
 assert.match(readme, /new Ubuntu PC/);
 assert.match(readme, /raw\.githubusercontent\.com\/TrebuchetDynamics\/pi-toolset\/main\/install\.sh/);
-assert.match(readme, /Pi, this package, tmux with `tx`, Search Hub, Understand-Anything, RTK, OmniRoute, and global Codex\/Claude skill copies/);
+assert.match(readme, /Superpowers/);
 
 function run(args, options = {}) {
   const result = spawnSync("sh", ["install.sh", ...args], {
@@ -42,17 +44,11 @@ assert.match(help, /Understand-Anything/);
 assert.match(help, /RTK/);
 assert.match(help, /OmniRoute/);
 assert.match(help, /Pi, Codex and Claude/);
-assert.match(help, /Ponytail/);
+assert.match(help, /Superpowers/);
 assert.match(help, /catalog/);
 assert.doesNotMatch(help, /autofolderrefactor/);
 
-const catalogSources = [
-  "npm:pi-mcp-adapter@2.33.0",
-  "npm:@juicesharp/rpiv-ask-user-question@2.10.0",
-  "npm:@juicesharp/rpiv-todo@2.10.0",
-  "npm:@narumitw/pi-btw@0.58.1",
-  "npm:@narumitw/pi-usage@0.60.8",
-];
+const catalogSources = ["npm:pi-mcp-adapter@2.33.0"];
 
 const dryHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-goal-install-dry-"));
 try {
@@ -60,8 +56,8 @@ try {
   assert.match(output, /would install: Pi coding agent/);
   assert.match(output, /would install: pi-toolset/);
   assert.match(output, /would install: tmux and tx/);
-  assert.match(output, /would install: Understand-Anything/);
-  assert.match(output, /would install: RTK/);
+  assert.doesNotMatch(output, /would install: Understand-Anything/);
+  assert.doesNotMatch(output, /would install: RTK/);
   assert.match(output, /would install: OmniRoute/);
   assert.match(output, /would install: global Codex and Claude skill copies/);
   assert.match(output, /without duplicate package skills/);
@@ -148,6 +144,7 @@ try {
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "pi-goal-install-"));
 try {
+  const upstreamEnv = superpowersFixture(path.join(tmp, "superpowers"), root);
   const home = path.join(tmp, "home");
   const bin = path.join(tmp, "bin");
   const understand = path.join(tmp, "understand");
@@ -184,7 +181,9 @@ exit 2
   const output = run([], {
     env: {
       HOME: home,
-      PATH: `${bin}:${path.dirname(process.execPath)}:${process.env.PATH}`,
+      PATH: `${bin}:${path.dirname(process.execPath)}:${upstreamEnv.PATH}`,
+      SUPERPOWERS_DIR: upstreamEnv.SUPERPOWERS_DIR,
+      PI_TOOLSET_ENABLE: "rtk,understand",
       RTK_TEST_LOG: path.join(tmp, "rtk-updates"),
       RTK_VERSION: "v-test",
       UA_DIR: understand,
@@ -209,15 +208,14 @@ exit 2
   assert.match(output, /installed: Understand-Anything/);
   assert.match(output, /installed: RTK/);
   assert.equal(fs.readFileSync(path.join(tmp, "rtk-updates"), "utf8"), "v-test\n", "existing RTK must still run the installer with the requested version");
-  const bundledSkills = fs.readdirSync(path.join(root, "skills"), { recursive: true })
-    .filter((file) => path.basename(file) === "SKILL.md")
-    .map((file) => fs.readFileSync(path.join(root, "skills", file), "utf8").match(/^name:\s*(.+)$/m)[1]);
+  const bundledSkills = [...pkg.pi.skills.map(p => path.basename(p)), ...JSON.parse(fs.readFileSync(path.join(root, "skills/shared/profiles.json"))).superpowers.skills];
   for (const name of bundledSkills) {
     for (const target of ["codex-skills", "claude-skills"]) {
       assert.ok(fs.existsSync(path.join(tmp, target, name, "SKILL.md")), `${target} missing ${name}`);
     }
   }
-  assert.ok(bundledSkills.includes("ponytail"));
+  assert.equal(bundledSkills.length, 24);
+  assert.equal(fs.existsSync(path.join(tmp, "codex-skills", "ponytail")), false);
   assert.match(output, /Codex skills dir:/);
   assert.match(output, /Claude skills dir:/);
   const settings = JSON.parse(fs.readFileSync(path.join(agentDir, "settings.json"), "utf8"));
@@ -238,7 +236,9 @@ exit 2
   assert.match(output, /installation complete/);
   const skillsEnv = {
     HOME: home,
-    PATH: `${bin}:${path.dirname(process.execPath)}:${process.env.PATH}`,
+    PATH: `${bin}:${path.dirname(process.execPath)}:${upstreamEnv.PATH}`,
+      SUPERPOWERS_DIR: upstreamEnv.SUPERPOWERS_DIR,
+      PI_TOOLSET_ENABLE: "rtk,understand",
     PI_CODING_AGENT_DIR: agentDir,
     CODEX_SKILLS_DIR: path.join(tmp, "codex-skills"),
     CLAUDE_SKILLS_DIR: path.join(tmp, "claude-skills"),
@@ -283,10 +283,10 @@ if [ "$2" = "$CATALOG_FAIL_SOURCE" ]; then exit 17; fi
 
   const failed = spawnSync("sh", ["install.sh"], {
     cwd: root, encoding: "utf8",
-    env: { ...process.env, ...env, CATALOG_FAIL_SOURCE: catalogSources[1] },
+    env: { ...process.env, ...env, CATALOG_FAIL_SOURCE: catalogSources[0] },
   });
   assert.equal(failed.status, 17);
-  assert.deepEqual(fs.readFileSync(log, "utf8").trim().split("\n"), expected.slice(0, 2));
+  assert.deepEqual(fs.readFileSync(log, "utf8").trim().split("\n"), expected.slice(0, 1));
   assert.doesNotMatch(failed.stdout, /installation complete/);
 } finally {
   fs.rmSync(catalogHome, { recursive: true, force: true });

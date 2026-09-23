@@ -12,9 +12,11 @@ Reuse answers, accepted decisions, and authorization already present in the conv
 
 ## Default skill posture
 
-Use Ponytail full mode by default for every packaged skill's implementation choices: YAGNI first, prefer deletion over addition, stdlib/native before dependencies, already-installed dependencies before new ones, fewest files, shortest safe diff. The [Ponytail ladder](../communication/ponytail/SKILL.md) gives optional detail; apply it smartly: specialist process, safety gates, required schemas, citations, accessibility, security, trust-boundary validation, and explicitly requested scope still win. Simplicity reduces implementation cost, never the requested deliverables.
+Superpowers owns the engineering workflow: use its planning, systematic-debugging, test-driven-development, review, and verification skills when applicable. Local specialists provide domain knowledge within that workflow. User instructions and project rules remain higher priority. Optional autonomous controllers never override the selected workflow or expand authorization.
 
-Ponytail is not a prose-compression requirement. Final replies should use normal compact technical prose: put the outcome or next action first, preserve technical meaning and uncertainty, and omit tangents. Number steps when order matters; keep unfinished work visible during longer tasks. A request to be brief changes presentation, not scope or verification. Use compact receipts like `validated: npm test ✅; changed: <paths>`. Repo hygiene, verification, handoff, and safety obligations always apply.
+YAGNI first: prefer reuse, deletion, and stdlib/native before dependencies. Make the smallest complete change that satisfies the request, including required schemas, citations, accessibility, security, and verification. These principles are not a prose-compression requirement and need no persistent mode or injected extension.
+
+Use normal compact technical prose: put the outcome or next action first, preserve uncertainty, and omit tangents. Number ordered steps and keep unfinished work visible. A request to be brief changes presentation, not scope or verification. Use compact receipts when useful. Evaluate corrections against evidence and resolve approvals against the latest concrete checkpoint; neither implies new delivery permission.
 
 ## Skill quality baseline
 
@@ -68,7 +70,7 @@ When a workflow produces a durable brief, plan, decision, token set, task list, 
 3. Pass the artifact, trigger, next skill, and success signal forward as handoff evidence.
 4. Skip the artifact when the task does not need durable state, and say why.
 
-Reviews are optional validation gates, not mandatory stages. Use the available local checks or review tools that fit the artifact; never assume browser, MCP, external-model, or paid-service access.
+Follow the selected Superpowers workflow for review and verification gates. Use the available local checks or review tools that fit the artifact; never assume browser, MCP, external-model, or paid-service access.
 
 ## Verification evidence
 

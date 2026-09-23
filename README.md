@@ -9,7 +9,7 @@
   <a href="#development">Development</a>
 </p>
 
-`pi-toolset` is a curated [Pi](https://pi.dev) package for disciplined agent work. It combines persistent objectives, specialist skills, codebase understanding, guarded refactors, research, UI craft, and evidence-backed delivery in one install.
+`pi-toolset` is a curated [Pi](https://pi.dev) package for disciplined agent work. Superpowers leads engineering work; eight local specialist skills add UI, research guidance, audits, documentation, handoffs, shipping, and Pi expertise. Optional resources remain packaged but are excluded from default discovery.
 
 ## Quick start
 
@@ -27,19 +27,26 @@ sh /tmp/pi-toolset-install.sh && rm -f /tmp/pi-toolset-install.sh
 
 The downloaded script fetches and unpacks the complete repository before executing it, installs missing Ubuntu prerequisites, and installs Pi resources in the default global user scope.
 
-Alternatively, run the universal installer from a checkout. It sets up Pi, this package, tmux with `tx`, Search Hub, Understand-Anything, RTK, OmniRoute, and global Codex/Claude skill copies, plus the five catalog extensions below:
+Alternatively, run the universal installer from a checkout:
 
 ```bash
 git clone https://github.com/TrebuchetDynamics/pi-toolset.git
 cd pi-toolset
+sh install.sh --dry-run
 sh install.sh
 ```
 
-It supports Ubuntu, macOS, other common Linux distributions, and Termux. Remote installers are fully downloaded before execution. Existing files are backed up where supported; existing Pi, Understand, and OmniRoute installations are reused. RTK is installed or updated to its latest release on every run (`RTK_VERSION` can pin a release), and the pi-toolset package, including its Ponytail extension, is updated on every run. OmniRoute is installed globally, starts a local daemon, and becomes Pi's default provider. Global skill copies back up changed same-name skills before replacement; unchanged tools and assets are reused on subsequent runs. To prevent Pi skill-collision warnings, the all-in-one installer disables this package's skill entries in Pi and explicitly registers all bundled skills from `~/.agents/skills` (or `CODEX_SKILLS_DIR`) for Pi, shared with Codex; package-only installs continue to load skills from the package. When run in a terminal, the installer shows an interactive checklist so you can deselect any component; non-interactive runs install everything. Preview with `sh install.sh --dry-run`, or set `PI_TOOLSET_SKIP=rtk,omniroute` (ids: `pi`, `package`, `tmux`, `understand`, `rtk`, `skills`, `omniroute`, `catalog`) or `PI_TOOLSET_SKIP_OMNIROUTE=1` to omit components. Onklaud remains opt-in.
+The default installs Pi, this package, tmux with `tx`, the MCP adapter, and the Superpowers-led skill profile for Pi, Codex and Claude. The existing OmniRoute component still installs its daemon and configures Pi's provider unless skipped with `PI_TOOLSET_SKIP=omniroute`; skill-only migration does not change providers. Understand-Anything and RTK are opt-in through the terminal checklist or `PI_TOOLSET_ENABLE=understand,rtk` (`RTK_VERSION` pins RTK when enabled).
+
+Superpowers **6.4.1**, revision `5bf4e78011075bcfc0dc295f0724994cd123ee71`, is fetched from [obra/superpowers](https://github.com/obra/superpowers) into `~/.local/share/pi-toolset/superpowers/<revision>`. No upstream installer or npm lifecycle script runs. Its native Pi package supplies the bootstrap; its 15 skills are symlinked into global skill directories from that same unmodified checkout. Pi deduplicates the real file paths. The eight local specialists are `frontend-design`, `redesign-existing-projects`, `modern-web-guidance`, `technical-auditor`, `wiki-docs`, `handoff`, `git-commit-push`, and `pi-extensions-helper`. They are copied with their shared references. `/skill:lgtm` remains available as a manual-only compatibility command, so existing sessions and explicit approvals do not reference a deleted file. It does not lead or automatically select a workflow. The MCP adapter also provides a manual-only help skill; it is not part of automatic skill selection.
+
+The skill installer archives known optional/retired global copies outside discovery roots and preserves unrelated user skills. For previously installed commands, it leaves a small manual-only compatibility file at the old path so open sessions do not fail with ENOENT. Optional commands point to their preserved instructions; retired workflows point back to the Superpowers-led baseline. Fresh installs do not get these legacy command files. Modified replacements are backed up by default. Backups live under `~/.local/state/pi-toolset/skill-backups/`; do not move them underneath a skill root. Inspect host-native plugins separately: an old Superpowers or Ponytail plugin can still inject a competing workflow. When a native Superpowers Claude plugin is enabled, the skill installer archives duplicate loose Superpowers skills and leaves the plugin in charge. It does not rewrite plugin settings.
+
+Use `PI_TOOLSET_SKIP=pi,package,tmux,understand,rtk,skills,omniroute,catalog` to skip components by id. `PI_TOOLSET_SKIP_OMNIROUTE=1` is also supported. Downloaded installers finish downloading before execution. Package-only installation loads only the eight specialists and two package extensions; install Superpowers separately as shown below.
 
 ### Selected catalog extensions
 
-`install.sh` installs these globally through `pi install` at the versions listed below. They are separate Pi packages, not bundled source or runtime dependencies of `pi-toolset`. Package-only installation does not install them.
+`install.sh` installs only the MCP adapter by default. The remaining entries are optional, individually installed catalog tools. They are separate Pi packages, not bundled source or runtime dependencies of `pi-toolset`. Package-only installation does not install them.
 
 | Package                                                                                                                 | Pinned version | Why it fits this toolset                                                                                                                     |
 | ----------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -49,7 +56,7 @@ It supports Ubuntu, macOS, other common Linux distributions, and Termux. Remote 
 | [@narumitw/pi-btw](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-btw)                               | `0.58.1`       | Adds `/btw <question>` for a temporary side conversation, keeping the main task focused until you choose to bring an answer back.            |
 | [@narumitw/pi-usage](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-usage)                           | `0.60.8`       | Adds `/usage` for supported-provider quotas and balances, useful when switching accounts or models.                                          |
 
-Deselect **Curated npm extensions** in the checklist or use `PI_TOOLSET_SKIP=catalog` to omit all five. To install only this selection with Pi already available:
+Deselect **MCP adapter** in the checklist or use `PI_TOOLSET_SKIP=catalog` to omit it. To install only this selection with Pi already available:
 
 ```sh
 PI_TOOLSET_SKIP=pi,package,tmux,understand,rtk,skills,omniroute sh install.sh
@@ -61,27 +68,16 @@ Restart Pi after installation. Re-running the installer reapplies these exact pa
 
 `pi-canvas@0.1.1` was considered for visual previews but excluded: its published server exposes artifact contents through a wildcard-CORS event stream, and HTML previews lack iframe sandboxing. Revisit after upstream fixes those boundaries.
 
-This selection complements the existing bundle: `pi-subagents`, `/goal`, Ponytail, Search Hub, `/poshify`, and the workspace guard already cover the strongest overlapping catalog candidates. Additional memory services, context proxies, and workflow engines are left out to keep the default setup focused.
+The default extension capabilities are the native Superpowers bootstrap, `pi-subagents`, Search Hub, and the MCP adapter. Goal and poshify are optional; Ponytail is retired from the default workflow. Additional memory services, context proxies, and workflow engines are left out to keep the default setup focused.
 
 To install only the Pi package when Pi already exists:
 
 ```bash
+pi install git:github.com/obra/superpowers@5bf4e78011075bcfc0dc295f0724994cd123ee71
 pi install git:github.com/TrebuchetDynamics/pi-toolset
 ```
 
-Reload an open Pi session, then start with a real objective:
-
-```text
-/reload
-/goal improve this repository until npm test passes and the README is clear
-```
-
-Useful smoke checks:
-
-```text
-/goal status
-/ponytail status
-```
+Reload an open Pi session and use the normal task prompt. Check `/skill:using-superpowers` and `/skill:systematic-debugging` after installation. Goal and Ponytail commands are not part of the default setup.
 
 Install for only the current project/team repository with `-l`:
 
@@ -95,22 +91,18 @@ pi install -l git:github.com/TrebuchetDynamics/pi-toolset
   <img src="./assets/readme/workflow.svg" width="100%" alt="Set an objective, understand the codebase, route to one specialist, execute a bounded change, then verify and ship">
 </p>
 
-The package does not hide the work behind a universal mega-agent. It keeps five responsibilities explicit:
-
-1. **Set the objective** — `/goal` keeps scope and token budget visible.
-2. **Orient from evidence** — `/understand` maps the codebase; live files remain authoritative.
-3. **Route deliberately** — `skill-router` chooses one primary workflow.
-4. **Execute a bounded slice** — `tdd`, `diagnose`, UI skills, refactor skills, or another specialist owns the change.
-5. **Prove the result** — tests and `git-commit-push` provide the delivery receipt.
+Superpowers owns planning, debugging, TDD, execution, review, and completion. The user and project rules remain higher priority. Local specialists supply domain knowledge inside that workflow; `git-commit-push` performs shipping only when explicitly requested. No second general-purpose router or always-on Ponytail mode leads the session.
 
 ## Choose a workflow
+
+Default engineering entry points are Superpowers `brainstorming`, `systematic-debugging`, and `test-driven-development`. The additional commands below require their optional skill profile and/or extension.
 
 | You want to…                             | Start here                                  | Success signal                                  |
 | ---------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
 | Keep a long task on course               | `/goal <objective>`                         | Objective completed with evidence               |
 | Find useful repository work              | `autonomous-codebase-improver`              | One validated bounded slice                     |
-| Diagnose a concrete failure              | `diagnose`                                  | Repro fails before and passes after             |
-| Build behavior test-first                | `tdd`                                       | Red → green → refactor                          |
+| Diagnose a concrete failure              | `systematic-debugging`                     | Repro fails before and passes after             |
+| Build behavior test-first                | `test-driven-development`                  | Red → green → refactor                          |
 | Understand architecture                  | `/understand`                               | Knowledge graph + agent-readable map            |
 | Plan a graph-backed refactor             | `/understand-refactor <focus>`              | Bounded plan grounded in live files             |
 | Split one noisy folder                   | `/folder-refactor <folder>`                 | Every remaining root file classified            |
@@ -119,14 +111,14 @@ The package does not hide the work behind a universal mega-agent. It keeps five 
 | Build or redesign UI                     | `ui-design`                                 | Correct specialist + visual/validation evidence |
 | Research with provenance                 | `research-forge` or `/search-hub <request>` | Source-backed findings                          |
 | Ship local work                          | `git-commit-push`                           | Validated commit and push receipts              |
-| Simplify implementation                  | `/ponytail`                                | Smallest complete change with verification      |
+| Simplify implementation                  | Shared YAGNI guidance                       | Smallest complete change with verification      |
 | Create a shareable diagram               | `diagram-design`                           | Accessible, standalone HTML/SVG                 |
 | Inspect a skill before adoption          | `pi-ecosystem-scout`                        | Pinned source, reviewed files, explicit decision |
 
 Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill commands are enabled:
 
 ```text
-/skill:diagnose debug the failing parser test
+/skill:systematic-debugging debug the failing parser test
 /skill:ui-vault improve src/routes/pricing.tsx
 /skill:git-commit-push ship the validated changes
 ```
@@ -135,13 +127,17 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 
 | Surface                     | Included | Purpose                                                                                              |
 | --------------------------- | -------: | ---------------------------------------------------------------------------------------------------- |
-| Agent skills                |   **65** | Engineering, planning, delivery, UI, research, Pi, and communication workflows                       |
-| Pi extensions               |   **16** | Commands, tools, hooks, status behavior, delegation, and research bridges                            |
+| Agent skills                |   **8 automatic + 1 manual / 65 stored** | Local specialists plus optional and retired reference sources                       |
+| Pi extensions               |   **2 default / 15 stored** | Search Hub and subagents; other extensions are opt-in                            |
 | Theme                       |    **1** | `trebuchet-neon`, a complete dark Pi token map                                                       |
 | Package bins                |    **2** | `tx` and `autofolderrefactor`                                                                        |
 | Direct runtime dependencies |    **3** | Bundled `@narumitw/pi-goal`, `pi-posher`, and `pi-subagents`; Pi core packages remain optional peers |
 
-### Core extension surfaces
+### Optional extension surfaces
+
+Only Search Hub and subagents load from this package by default. To try another extension for one session, use `pi -e /absolute/path/to/pi-toolset/extensions/<name>/index.js`. Command bridges also need their corresponding optional skills. Retired Ponytail sources are retained for reference, not recommended for activation.
+
+### Extension reference
 
 | Surface                   | What it adds                                                                                                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -149,7 +145,6 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 | `/goal-technical-auditor` | Autonomous audit → validated slices → re-audit controller                                                          |
 | `/bug-harvest`            | Session-local continuous bug hunt with anti-repetition and clean-context handoffs                                  |
 | `/verify-isolated`        | Explicit fresh-session, read-only verification against a named contract                                            |
-| `/workspace-guard`        | Workspace-bound edit/write protection plus a default bash timeout                                                  |
 | `/understand`             | Understand-Anything graph, map, compare, explain, onboard, domain, and refactor flows                              |
 | `/folder-refactor`        | Deterministic folder scan, state, and completion audit tools                                                       |
 | `/rtk`                    | Optional command rewriting and output compaction through an installed RTK binary                                   |
@@ -203,7 +198,7 @@ TypeSafe needs a `TYPESAFE_API_KEY`: the `typesafe` tool posts a state and a map
 
 The controller queues another evidence-backed bug pass whenever the agent settles, rotates recovery instructions when work repeats, and pauses after five stuck turns. At 80% context use it hands the run to a clean session. It has no fixed iteration limit while active; reloads, restarts, and failed turns pause it to prevent silent spend.
 
-`/verify-isolated <contract>` starts a separate read-only Pi process with no extensions, skills, prompts, context files, or mutation tools. It can use multiple provider requests, so it runs only on an explicit command. `/workspace-guard` reports write protection: `edit` and `write` stay inside the workspace or temporary directory, `.git`/`.pi`/`.agents`/`.env`/cache paths are blocked, and bash receives a 180-second default timeout. Bash is not an OS sandbox.
+`/verify-isolated <contract>` starts a separate read-only Pi process with no extensions, skills, prompts, context files, or mutation tools. It can use multiple provider requests, so it runs only on an explicit command.
 
 </details>
 
@@ -267,17 +262,17 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 ## Skill curation
 
-The bundle keeps 65 skills: `diagram-design` replaces the standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
+The source tree retains 65 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
 
 The [diagram skill](skills/frontend/diagram-design/SKILL.md) is a text-only adaptation of [Diagram Design](https://github.com/cathrynlavery/diagram-design), pinned in [third-party notices](THIRD_PARTY_NOTICES.md). It adds no executable helpers or dependencies. Scouting and authoring use a [candidate inspection checklist](skills/pi/pi-ecosystem-scout/references/candidate-inspection.md): review the exact revision and reachable files, check overlap and host compatibility, preserve licensing, and never bypass a dangerous scanner verdict. Stars are discovery signals, not evidence of quality or safety.
 
 Existing engineering, research, and optional Understand workflows remain available. No additional workflow plugin, graph service, broad catalog, or scientific toolchain is needed without a specific task. Skill behavior changes have review scenarios, but no measured skill-on/skill-off improvement is claimed.
 
-Package updates remove Caveman from package discovery. The global-skill installer preserves directories absent from the bundle, so older global Caveman copies require separate retirement after checking their ownership; it does not delete user-managed skills automatically.
+Package updates remove Caveman from package discovery. The global-skill installer archives known retired copies, including Caveman, outside active discovery roots. Unrelated user-managed skills are preserved.
 
 ## Optional integrations
 
-Installing only the Pi package does not install these external tools. The explicit all-in-one `install.sh` command installs OmniRoute, RTK, and global skill copies by default; use the commands below for individual setup.
+Installing only the Pi package does not install these external tools. The explicit all-in-one `install.sh` command installs OmniRoute and the focused global skill profile by default; RTK is opt-in; use the commands below for individual setup.
 
 ### OmniRoute for Pi
 
@@ -299,7 +294,7 @@ Remote servers must already expose the requested route. The installer probes bot
 
 ### RTK
 
-The all-in-one installer installs or updates [rtk-ai/rtk](https://github.com/rtk-ai/rtk) through its checksum-verifying official installer. Package-only users can install RTK separately, then use `/rtk status`. The extension fails open when RTK is absent or unsupported.
+When selected, the all-in-one installer installs or updates [rtk-ai/rtk](https://github.com/rtk-ai/rtk) through its checksum-verifying official installer. Package-only users can install RTK separately, then use `/rtk status`. The extension fails open when RTK is absent or unsupported.
 
 ```text
 /rtk status
@@ -327,7 +322,9 @@ The all-in-one installer runs this by default. For individual setup:
 sh install-agent-skills.sh
 ```
 
-This installs flattened skill directories to `~/.agents/skills` and `~/.claude/skills`, backing up same-name skills under `~/.local/state/pi-toolset/skill-backups/`. All bundled skills are copied, including the six Ponytail skills refreshed from upstream 4.9.0. The all-in-one installer registers the Codex skill directory in Pi's settings, including when `CODEX_SKILLS_DIR` or `PI_CODING_AGENT_DIR` is customized or the package component is skipped. It also disables this package's duplicate Pi skill entries; direct `pi install` users are unaffected. Options: `--codex-only`, `--claude-only`, `--dry-run`, and `--no-backup`.
+This installs 15 upstream Superpowers symlinks plus eight flattened local specialist directories to `~/.agents/skills` and `~/.claude/skills`. It archives known inactive bundle skills and backs up replaced copies under `~/.local/state/pi-toolset/skill-backups/`. `--profile=design` adds a specialist profile; rerunning without it returns managed skills to the core set. Available profiles are defined in [profiles.json](skills/shared/profiles.json): design, research, refactor, automation, authoring, delivery, planning, and writing. Retired wrappers are excluded from all profiles.
+
+Options: `--codex-only`, `--claude-only`, `--dry-run`, and `--no-backup`. `CODEX_SKILLS_DIR` and `CLAUDE_SKILLS_DIR` support project-local destinations. `SUPERPOWERS_DIR` can select an existing clean checkout at the pinned revision; it is never reset or overwritten. No skill-only install changes Pi providers or other hosts' plugin settings.
 
 ## Theme and shell helpers
 
@@ -390,25 +387,8 @@ Pi discovers resources through `pi.extensions`, `pi.skills`, and `pi.themes` in 
 ```json
 {
   "pi": {
-    "extensions": [
-      "./extensions/goal",
-      "./extensions/goal-technical-auditor",
-      "./extensions/bug-harvest",
-      "./extensions/isolated-verifier",
-      "./extensions/workspace-guard",
-      "./extensions/understand",
-      "./extensions/folder-refactor",
-      "./extensions/rtk",
-      "./extensions/ponytail",
-      "./extensions/search-hub",
-      "./extensions/typesafe",
-      "./extensions/onklaud",
-      "./extensions/mobile-low-redraw",
-      "./extensions/s3upload",
-      "./extensions/poshify",
-      "./extensions/pi-subagents"
-    ],
-    "skills": ["./skills"],
+    "extensions": ["./extensions/search-hub", "./extensions/pi-subagents"],
+    "skills": ["./skills/delivery/git-commit-push", "./skills/engineering/technical-auditor", "./skills/engineering/wiki-docs", "./skills/frontend/frontend-design", "./skills/frontend/modern-web-guidance", "./skills/frontend/redesign-existing-projects", "./skills/pi/pi-extensions-helper", "./skills/planning/handoff", "./skills/planning/lgtm"],
     "themes": ["./themes"]
   }
 }

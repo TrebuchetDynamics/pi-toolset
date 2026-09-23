@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-# Install this package's flattened skills for Codex and Claude Code.
+# Install the Superpowers-led profile for Codex and Claude Code.
 #
 # Usage:
 #   sh install-agent-skills.sh
@@ -28,16 +28,22 @@ AGENT_SKILLS_DRY_RUN="${AGENT_SKILLS_DRY_RUN:-${CLAUDE_SKILLS_DRY_RUN:-0}}"
 
 install_codex=1
 install_claude=1
+profile=default
 
 usage() {
   cat <<'EOF'
 Usage: sh install-agent-skills.sh [options]
 
-Install the bundled skills globally for Codex and Claude Code.
+Install 15 pinned upstream Superpowers skills, eight local specialists,
+and the explicit-use lgtm compatibility command.
+Known optional/retired global copies are archived outside discovery roots.
+Unrelated user skills are preserved.
 
 Options:
   --codex-only   Install only to CODEX_SKILLS_DIR (default: ~/.agents/skills)
   --claude-only  Install only to CLAUDE_SKILLS_DIR (default: ~/.claude/skills)
+  --profile=NAME Add one optional profile (design, research, refactor, automation,
+                 authoring, delivery, planning, writing); default is core only
   --dry-run      Print planned changes without writing files
   --no-backup    Replace same-name skills without backing them up
   -h, --help     Show this help
@@ -53,6 +59,9 @@ while [ "$#" -gt 0 ]; do
     --claude-only)
       install_codex=0
       install_claude=1
+      ;;
+    --profile=*)
+      profile=${1#--profile=}
       ;;
     --dry-run)
       AGENT_SKILLS_DRY_RUN=1
@@ -94,9 +103,48 @@ if [ ! -d "$src_root" ]; then
   exit 1
 fi
 
+# Resolve the reviewed profile before changing any destination.
+selected_files=$(node --input-type=module - "$script_dir" "$profile" <<'NODE'
+import fs from 'node:fs';
+import path from 'node:path';
+const [root, profile] = process.argv.slice(2);
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
+const config = JSON.parse(fs.readFileSync(path.join(root, 'skills/shared/profiles.json')));
+if (profile !== 'default' && !config.optional[profile]) throw new Error(`Unknown skill profile: ${profile}`);
+const selected = new Set(pkg.pi.skills.map(p => path.basename(p)));
+for (const name of config.optional[profile] || []) selected.add(name);
+for (const rel of fs.readdirSync(path.join(root, 'skills'), {recursive:true})) {
+  if (path.basename(rel) === 'SKILL.md' && selected.has(path.basename(path.dirname(rel)))) {
+    console.log(path.join(root, 'skills', rel));
+    selected.delete(path.basename(path.dirname(rel)));
+  }
+}
+if (selected.size) throw new Error(`Missing skills: ${[...selected]}`);
+NODE
+)
+upstream_names=$(node -e 'console.log(require(process.argv[1]).superpowers.skills.join("\n"))' "$src_root/shared/profiles.json")
+if [ "$AGENT_SKILLS_DRY_RUN" = 1 ]; then
+  upstream_root=$(node "$script_dir/scripts/superpowers-source.mjs" --path)
+else
+  upstream_root=$(node "$script_dir/scripts/superpowers-source.mjs")
+fi
+
 timestamp="$(date +%Y%m%d%H%M%S).$$"
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}"
 AGENT_SKILLS_BACKUP_DIR="${AGENT_SKILLS_BACKUP_DIR:-${state_root}/pi-toolset/skill-backups/${timestamp}}"
+
+node --input-type=module - "$AGENT_SKILLS_BACKUP_DIR" "$CODEX_SKILLS_DIR" "$CLAUDE_SKILLS_DIR" <<'NODE'
+import fs from 'node:fs';
+import path from 'node:path';
+function canonical(p) {
+  p = path.resolve(p);
+  return fs.existsSync(p) ? fs.realpathSync(p) : path.join(canonical(path.dirname(p)), path.basename(p));
+}
+const [backup, ...roots] = process.argv.slice(2).map(canonical);
+if (roots.some(root => backup === root || backup.startsWith(root + path.sep))) {
+  throw new Error('Skill backups must be outside active discovery roots');
+}
+NODE
 
 skill_name() {
   awk '
@@ -175,13 +223,67 @@ install_target() {
 
   install_dir "${src_root}/shared" "${dest_root}/shared" "$backup_root"
 
-  find "$src_root" -path '*/SKILL.md' -type f | sort | while IFS= read -r skill_file; do
-    name="$(skill_name "$skill_file")"
-    if [ -z "$name" ]; then
-      printf 'install-agent-skills: missing name in %s\n' "$skill_file" >&2
-      exit 1
+  # Retire known bundle copies, including edited copies, by moving them intact.
+  # This is reversible even when --no-backup is used for ordinary replacements.
+  managed_names=$(find "$src_root" -name SKILL.md -type f | while IFS= read -r file; do skill_name "$file"; done)
+  for name in $managed_names caveman; do
+    if printf '%s\n' "$selected_files" | awk -F/ -v name="$name" '$(NF-1) == name {found=1} END {exit !found}'; then
+      continue
     fi
+    dest="$dest_root/$name"
+    if [ -f "$dest/SKILL.md" ] && grep -q '^<!-- pi-toolset-compatibility -->$' "$dest/SKILL.md"; then continue; fi
+    if [ -e "$dest" ] || [ -L "$dest" ]; then
+      if [ "$AGENT_SKILLS_DRY_RUN" = 1 ]; then
+        printf 'would archive: %s\n' "$dest"
+      else
+        mkdir -p "$backup_root"
+        [ ! -e "$backup_root/$name" ] && [ ! -L "$backup_root/$name" ] || { printf 'backup already exists: %s\n' "$backup_root/$name" >&2; exit 1; }
+        mv "$dest" "$backup_root/$name"
+        if [ -f "$backup_root/$name/SKILL.md" ]; then
+          node "$script_dir/scripts/skill-compatibility.mjs" "$dest" "$backup_root/$name/SKILL.md"
+        fi
+        printf 'archived: %s -> %s\n' "$dest" "$backup_root/$name"
+      fi
+    fi
+  done
+
+  printf '%s\n' "$selected_files" | while IFS= read -r skill_file; do
+    name="$(skill_name "$skill_file")"
     install_dir "$(dirname "$skill_file")" "${dest_root}/${name}" "$backup_root"
+  done
+
+  # Native Claude plugins own their skill namespace and bootstrap. Do not shadow them.
+  native_claude=0
+  if [ "$label" = Claude ] && [ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" ]; then
+    native_claude=$(node -e 'const s=require(process.argv[1]);console.log(Object.entries(s.enabledPlugins||{}).some(([k,v])=>k.startsWith("superpowers@")&&v===true)?1:0)' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json")
+  fi
+  for name in $upstream_names; do
+    src="$upstream_root/skills/$name"
+    dest="$dest_root/$name"
+    if [ "$native_claude" = 1 ]; then
+      if [ -e "$dest" ] || [ -L "$dest" ]; then
+        if [ "$AGENT_SKILLS_DRY_RUN" = 1 ]; then
+          printf 'would archive plugin duplicate: %s\n' "$dest"
+        else
+          mkdir -p "$backup_root"
+          [ ! -e "$backup_root/$name" ] && [ ! -L "$backup_root/$name" ] || { printf 'backup already exists: %s\n' "$backup_root/$name" >&2; exit 1; }
+          mv "$dest" "$backup_root/$name"
+        fi
+      fi
+      continue
+    fi
+    if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then continue; fi
+    if [ "$AGENT_SKILLS_DRY_RUN" = 1 ]; then
+      printf 'would link upstream: %s -> %s\n' "$dest" "$src"
+      continue
+    fi
+    if [ -e "$dest" ] || [ -L "$dest" ]; then
+      mkdir -p "$backup_root"
+      [ ! -e "$backup_root/$name" ] && [ ! -L "$backup_root/$name" ] || { printf 'backup already exists: %s\n' "$backup_root/$name" >&2; exit 1; }
+      mv "$dest" "$backup_root/$name"
+    fi
+    ln -s "$src" "$dest"
+    printf 'linked upstream: %s\n' "$dest"
   done
 
   printf '\n%s skills dir: %s\n' "$label" "$dest_root"

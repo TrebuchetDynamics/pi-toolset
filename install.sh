@@ -16,18 +16,14 @@ dry_run=0
 
 # Reviewed catalog versions; Pi owns their installation and transitive dependencies.
 # Keep this list in sync with the catalog table in README.md.
-catalog_packages="npm:pi-mcp-adapter@2.33.0
-npm:@juicesharp/rpiv-ask-user-question@2.10.0
-npm:@juicesharp/rpiv-todo@2.10.0
-npm:@narumitw/pi-btw@0.58.1
-npm:@narumitw/pi-usage@0.60.8"
+catalog_packages="npm:pi-mcp-adapter@2.33.0"
 
 # Component selection. ids: pi package tmux understand rtk skills omniroute catalog
 want_pi=1
 want_package=1
 want_tmux=1
-want_understand=1
-want_rtk=1
+want_understand=0
+want_rtk=0
 want_skills=1
 want_omniroute=1
 want_catalog=1
@@ -37,14 +33,15 @@ usage() {
 Usage: sh install.sh [--dry-run]
 
 Install the pi-toolset setup. When run in a terminal you can deselect any
-component; non-interactive runs install everything unless PI_TOOLSET_SKIP is set.
+component; non-interactive runs use the focused defaults. Understand and RTK
+are optional (select interactively or set PI_TOOLSET_ENABLE).
 
 Components:
   Pi coding agent, pi-toolset package, tmux and tx, Search Hub research
-  extension, Understand-Anything, updated RTK, Ponytail, all bundled skills for
-  Pi, Codex and Claude,
+  extension, pinned Superpowers and eight local skills for Pi, Codex and Claude;
+  optional Understand-Anything and RTK,
   OmniRoute daemon and Pi configuration, curated npm catalog extensions
-  (MCP adapter, structured questions, persistent todos, side questions, usage)
+  (MCP adapter; other catalog tools are opt-in)
 
 Options:
   --dry-run  Print the installation plan without changing the system
@@ -54,6 +51,7 @@ Environment:
   PI_TOOLSET_SKIP="rtk,omniroute"  Comma-separated component ids to skip:
                                    pi, package, tmux, understand, rtk, skills, omniroute, catalog
   PI_TOOLSET_SKIP_OMNIROUTE=1         Skip OmniRoute installation and configuration
+  PI_TOOLSET_ENABLE="rtk,understand" Enable optional components
   RTK_VERSION=vX.Y.Z              Pin the RTK version used by its official installer
 EOF
 }
@@ -73,6 +71,15 @@ case "$PI_TOOLSET_SKIP_OMNIROUTE" in
 esac
 if [ "$PI_TOOLSET_SKIP_OMNIROUTE" = "1" ]; then
   want_omniroute=0
+fi
+
+if [ -n "${PI_TOOLSET_ENABLE:-}" ]; then
+  for id in $(printf '%s\n' "$PI_TOOLSET_ENABLE" | tr ',' ' '); do
+    case "$id" in
+      understand|rtk) eval "want_$id=1" ;;
+      *) printf 'install: unknown optional component: %s\n' "$id" >&2; exit 2 ;;
+    esac
+  done
 fi
 
 if [ -n "${PI_TOOLSET_SKIP:-}" ]; then
@@ -129,13 +136,13 @@ tui_select() {
       i=$((i + 1))
     done <<EOF
 pi:Pi coding agent
-package:pi-toolset package (includes Ponytail)
+package:pi-toolset package (Search Hub and subagents)
 tmux:tmux and tx
 understand:Understand-Anything
 rtk:RTK (install/update latest)
-skills:All bundled skills for Pi, Codex and Claude
+skills:Superpowers + eight specialists for Pi, Codex and Claude
 omniroute:OmniRoute
-catalog:Curated npm extensions (MCP, questions, todos, btw, usage)
+catalog:MCP adapter
 EOF
   }
 
@@ -179,11 +186,11 @@ print_plan() {
     done
   fi
   if [ "$want_pi" = 1 ]; then printf '%s\n' 'would install: Pi coding agent'; fi
-  if [ "$want_package" = 1 ]; then printf '%s\n' "would install: pi-toolset including Ponytail ($PI_TOOLSET_SOURCE)"; fi
+  if [ "$want_package" = 1 ]; then printf '%s\n' "would install: pi-toolset (Search Hub and subagents) ($PI_TOOLSET_SOURCE)"; fi
   if [ "$want_tmux" = 1 ]; then printf '%s\n' 'would install: tmux and tx'; fi
   if [ "$want_understand" = 1 ]; then printf '%s\n' 'would install: Understand-Anything'; fi
   if [ "$want_rtk" = 1 ]; then printf '%s\n' 'would install: RTK'; fi
-  if [ "$want_skills" = 1 ]; then printf '%s\n' 'would install: global Codex and Claude skill copies (all bundled skills, including Ponytail, shared with Pi)'; fi
+  if [ "$want_skills" = 1 ]; then printf '%s\n' 'would install: global Codex and Claude skill copies (pinned Superpowers + eight specialists, shared with Pi)'; fi
   if [ "$want_omniroute" = 1 ]; then
     printf '%s\n' 'would install: OmniRoute'
   else
@@ -449,7 +456,10 @@ if [ "$want_rtk" = 1 ]; then
 fi
 
 if [ "$want_skills" = 1 ]; then
+  ensure_node
   sh "$script_dir/install-agent-skills.sh"
+  SUPERPOWERS_DIR=$(node "$script_dir/scripts/superpowers-source.mjs" --path)
+  export SUPERPOWERS_DIR
   printf 'installed: global Codex and Claude skill copies\n'
 fi
 
@@ -465,6 +475,7 @@ const source = process.env.PI_TOOLSET_SOURCE;
 const before = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : null;
 const settings = before === null ? {} : JSON.parse(before);
 const skillRoot = path.resolve(process.env.CODEX_SKILLS_DIR);
+const superpowersRoot = process.env.SUPERPOWERS_DIR;
 settings.skills = [...new Set([...(settings.skills ?? []), skillRoot])];
 let found = false;
 settings.packages = (settings.packages ?? []).map((entry) => {
@@ -473,6 +484,9 @@ settings.packages = (settings.packages ?? []).map((entry) => {
   found = true;
   return typeof entry === "string" ? { source: entry, skills: [] } : { ...entry, skills: [] };
 });
+if (!settings.packages.some(entry => (typeof entry === "string" ? entry : entry?.source) === superpowersRoot)) {
+  settings.packages.push(superpowersRoot);
+}
 if (!found && process.env.PI_TOOLSET_REQUIRE_PACKAGE === "1") throw new Error(`Pi package setting not found: ${source}`);
 const after = `${JSON.stringify(settings, null, 2)}\n`;
 if (after !== before) {
@@ -488,7 +502,7 @@ if (after !== before) {
 }
 fs.chmodSync(file, 0o600);
 NODE
-  printf 'configured: disabled duplicate package skills; Pi uses all bundled skills from the Codex skill directory\n'
+  printf 'configured: disabled duplicate package skills; Pi uses the Superpowers-led profile from the Codex skill directory\n'
 fi
 
 if [ "$want_omniroute" = 1 ]; then

@@ -286,3 +286,10 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
 - Security assumptions: Goal continuation can initiate repeated model turns until completion or a configured safety limit; settings writes are confined to the Pi agent directory and require explicit user interaction.
 - License: MIT
 - Full license copy: `licenses/narumiruna-pi-goal-LICENSE`
+# External Superpowers workflow
+
+The profile installer fetches the unmodified MIT-licensed `obra/superpowers`
+repository at revision `5bf4e78011075bcfc0dc295f0724994cd123ee71` (6.4.1).
+Its 15 skills and native Pi bootstrap remain in the upstream checkout, including
+the upstream LICENSE. They are not copied into this package's source catalog.
+The revision and profile inventory are recorded in `skills/shared/profiles.json`.

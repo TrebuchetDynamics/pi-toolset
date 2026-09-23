@@ -19,24 +19,7 @@ assert.equal(
 );
 assert.deepEqual(
   pkg.pi.extensions,
-  [
-    "./extensions/goal",
-    "./extensions/goal-technical-auditor",
-    "./extensions/bug-harvest",
-    "./extensions/isolated-verifier",
-    "./extensions/workspace-guard",
-    "./extensions/understand",
-    "./extensions/folder-refactor",
-    "./extensions/rtk",
-    "./extensions/ponytail",
-    "./extensions/search-hub",
-    "./extensions/typesafe",
-    "./extensions/onklaud",
-    "./extensions/mobile-low-redraw",
-    "./extensions/s3upload",
-    "./extensions/poshify",
-    "./extensions/pi-subagents",
-  ],
+  ["./extensions/search-hub", "./extensions/pi-subagents"],
   "package must register package extensions",
 );
 assert.deepEqual(

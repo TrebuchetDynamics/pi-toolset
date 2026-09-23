@@ -4,6 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { superpowersFixture } from "./fixtures/superpowers.mjs";
+
 const root = path.resolve(new URL("..", import.meta.url).pathname);
 const autoInstaller = path.join(
   root,
@@ -173,6 +175,7 @@ try {
     /AUTO_FOLDER_REFACTOR_BIN_NAME must be a file name/,
   );
 
+  const upstreamEnv = superpowersFixture(path.join(fixture, "superpowers"), root);
   const skillsHome = path.join(fixture, "skills-home");
   const skillsDir = path.join(skillsHome, "skills");
   const backupDir = path.join(skillsHome, "backups");
@@ -182,6 +185,7 @@ try {
   assert.throws(
     () =>
       run(agentSkillsInstaller, {
+        ...upstreamEnv,
         HOME: skillsHome,
         CODEX_SKILLS_DIR: skillsDir,
         AGENT_SKILLS_BACKUP_DIR: backupDir,

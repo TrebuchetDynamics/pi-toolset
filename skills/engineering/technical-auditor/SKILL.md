@@ -56,7 +56,7 @@ Each task needs title, description, affected files/areas, acceptance criteria, e
 
 ### Agentic improvement handoff
 
-When an autonomous improvement run needs an implementable next slice, convert only the top safe finding into a handoff: choose `delete`, `move`, `extract`, or `adapter`; name locality/caller evidence; name the validation command or missing test seam; and route to `diagnose`, `tdd`, `skill-folder-refactor`, `share-code`, or implementation directly. Do not hand off multiple broad refactors at once.
+When an autonomous improvement run needs an implementable next slice, convert only the top safe finding into a handoff: choose `delete`, `move`, `extract`, or `adapter`; name locality/caller evidence; name the validation command or missing test seam; and route to `systematic-debugging`, `test-driven-development`, `skill-folder-refactor`, `share-code`, or implementation directly. Do not hand off multiple broad refactors at once.
 
 ## Contract
 
