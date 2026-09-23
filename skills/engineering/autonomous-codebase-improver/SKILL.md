@@ -1,175 +1,54 @@
 ---
 name: autonomous-codebase-improver
-description: Run broad, open-ended or continuous roadmap-driven repository improvement as validated slices. Use when the agent should find and fix weaknesses, bugs, UI, tests, architecture, performance, or pipeline issues; not a single known defect or fixed plan.
+description: Use when requests call for broad, open-ended or continuous roadmap-driven repository improvement across bugs, security, design, UI, performance, reliability, tests, delivery, or docs; not a single known defect or fixed plan.
 ---
 
 # Autonomous Codebase Improver
 
-Use this as the orchestrator for broad “make this repo better” requests. It is intentionally not a multi-agent framework: one objective, a live evidence queue, one bounded slice at a time, and deterministic validation before continuation.
+A **parent-only**, evidence-backed campaign: discover → approve concrete work → one worker → validate → fresh review → parent acceptance → continue. Ordinary children execute only their assigned slice; they never inherit this controller or delegate. This skill remains opt-in, outside the default skill profile. It is not a service or permission to ship.
 
-Research basis: `research/agentic-coding-skills/report.md` found the strongest pattern is retrieval-first repo context, explicit agent-computer interfaces, deterministic feedback signals, and benchmark-style completion audits instead of self-reported progress. `research/software-development-skill-design/report.md` reinforces narrow routing, low-overhead instructions, and trajectory evidence rather than broad orchestration.
+## Mode and authority
 
-## Operating modes
+| Request | Boundary |
+| --- | --- |
+| Bare invocation, “improve this repo”, “keep improving” | **Continuous campaign by default** |
+| “One improvement” or explicit one-slice checkpoint | Stop after one accepted slice |
+| Named subsystem | Continuous within that subsystem |
+| Named collection | Inventory every member; cover each with evidence, not forced edits |
+| Known defect, fixed plan, audit-only, review-only | Honor the narrower task; no scope or mutation expansion |
 
-- **Single-slice mode:** use when the user asks for one improvement or a checkpoint. Select, implement, validate, and report one bounded slice.
-- **Bounded collection:** when the user names an entire collection (for example, "improve all skills"), inventory that collection and cover every member through successive validated slices. Shared fixes may cover many members; do not manufacture individual edits. Stop when collection coverage and validation are complete, rather than after the first slice or after expanding into unrelated repository work.
-- **Continuous campaign mode:** use when the user says keep improving, work continuously, follow the roadmap/tasks, find everything worth fixing, or gives a broad ongoing objective. Maintain a ranked queue and keep completing validated slices until a terminal condition applies.
+Explicit limits and user pause/stop win. Re-invocation resumes state, not discovery from scratch, and never grants pending approval. Continuous intent permits continued selection, **not approval of unknown future designs**. Follow required Superpowers design/planning gates; present concrete approval-ready work sets and reuse their approval exactly. New product, architecture, risk, scope, or spend decisions stay gated while independent authorized work continues.
 
-Continuous means repeated bounded work, not one giant diff. Do not ask for approval between safe slices: `/goal pause` pauses a campaign and `/goal resume` continues it.
-
-A collection, benchmark, spend, experiment, or owner-decision gate is branch-local: preserve that branch's frozen state, but continue independent local work. If the user rejects waiting and asks for gaps or bugs now, pivot immediately to live discovery without re-asking the prior question or changing the gated branch. After the minimum repo and ownership check, run one bounded baseline or repro; do not spend the turn only narrating plans or searches.
-
-Use continuous campaign mode only when the request clearly signals ongoing work, such as “keep improving,” “work continuously,” “follow the roadmap,” or “find everything worth fixing.” A plain “improve this repo” request runs one slice and reports the next candidate, so ambiguous wording never creates an indefinite run.
-
-## Quick start
-
-1. Determine the mode and scope from the request; continuous intent authorizes continuation, not risky actions.
-2. Inspect `git status --short --branch`, repo instructions, package manifests, README/CONTEXT, task sources, tests/CI, and `codebase-map-understand.md` when present.
-3. Build or refresh a small evidence-backed candidate queue across relevant weakness lanes; each candidate needs a concrete consequence and validation signal.
-4. Pick exactly one highest-priority safe slice; record why it outranks alternatives or why higher-ranked signals are unavailable.
-5. Route to one specialist skill only when the slice crosses that seam.
-6. Validate the slice, update the queue, and continue according to the selected mode without another approval prompt. Use `git-commit-push` only when the user asks to ship.
-
-## Candidate discovery
-
-1. Read repository-owned work first: `ROADMAP.md`, `TODO.md`, `TASKS.md`, issue/plan/PRD/ADR files, unchecked tasks, CI failures, and explicit acceptance criteria. If those sources are absent or exhausted, set the task source to `live discovery`; do not create a roadmap or task file unless the user asks.
-2. Sweep only relevant live surfaces for correctness, security, CI/pipeline and release reliability, performance, architecture, tests/observability, UI/accessibility/responsive states, and docs/package drift.
-3. Verify map, TODO, smell, and static-analysis leads against live code, callers, behavior, or a runnable check.
-4. Keep at most three candidates that are actionable now; compare severity/impact, owner priority, evidence confidence, reversibility, and validation cost.
-
-Prefer documented work over invented improvements. A code smell is a lead, not a bug; require a concrete consequence before selecting it. If no safe candidate has a validation path, report that instead of manufacturing work.
-
-Candidate record:
-```text
-Candidate: <one sentence>
-- lane and evidence: <file, test, issue, log, or command>
-- consequence: <user, maintainer, security, reliability, or cost impact>
-- feedback signal: <exact baseline command or artifact>
-- intended slice: <smallest reversible change>
-- validation: <objective pass condition>
-- risk/owner blocker: <none or exact reason>
-```
-
-## Slice selection ladder
-
-Prefer slices in this order, with critical security/data-loss risk and explicit owner priority allowed to override:
-
-1. Failing release/build/validation or a reproducible correctness, security, or data-loss defect.
-2. An explicit roadmap/task/issue with acceptance criteria and a fast feedback loop.
-3. CI/pipeline, packaging, deployment-preparation, or flaky-test reliability with local validation.
-4. A high-leverage architecture or performance seam with caller and test evidence.
-5. A UI surface with visual hierarchy, accessibility, responsive, loading, empty, or error-state evidence.
-6. Missing tests/observability for changed or risky behavior.
-7. Package/docs drift with a clear manifest, link, example, or test signal.
-
-Skip slices that need secrets, production access, deploy/publish, dependency upgrades, broad rewrites, unclear ownership, or destructive git actions. Do not choose an easier lower-ranked slice while a higher-ranked safe signal remains actionable; record blockers or explicit deferrals instead.
-
-## Specialist routing
-
-- Need to find one fixable bug from repo evidence → `bug-harvest`; success signal: one candidate has a repro and validation path.
-- Known broken, failing, flaky, or slow behavior → `diagnose`; success signal: repro/regression command passes.
-- CI/pipeline, build, packaging, or release-check failure → `diagnose`; success signal: the smallest safe local reproduction passes without deploying or publishing.
-- New expected behavior or missing focused coverage → `tdd`; success signal: RED→GREEN test evidence.
-- Architecture, refactor, seams, testability, module boundaries → `technical-auditor` Architecture mode; success signal: locality/caller/test evidence for one safe slice.
-- UI layout, visual hierarchy, accessibility, responsive states → `ui-design`; success signal: visual-state evidence plus build/test/lint where available.
-- Folder topology or shared code in one noisy directory → `skill-folder-refactor` or `share-code`; success signal: guarded scan/audit or proven duplicate extraction.
-- Source-backed README/docs/wiki drift → `wiki-docs`; success signal: docs slice cites live files and validates links/examples/tests where practical.
-- Pi extension/package resources → `pi-extensions-helper`; success signal: package manifest and extension tests/smoke evidence.
-- Finished work the user wants shipped → `git-commit-push`; success signal: validation, commit, push, final clean or classified state.
-
-## Campaign and slice state
-
-Keep state in the conversation unless the repository already owns a roadmap/task file or the user asks to update one. Do not create a roadmap, task file, or tracking system just to run this skill.
-
-```text
-Campaign state:
-- mode: <single-slice|continuous>
-- objective and scope:
-- task source: <roadmap|tasks|issues|audit|live discovery>
-- queue: <up to three ranked candidates>
-- completed: <validated slices>
-- blocked: <candidate + reason + owner action>
-- current slice:
-
-Slice state:
-- lane: <bug|security|pipeline|architecture|performance|ui|tests|docs|package>
-- evidence: <files/commands/map leads inspected>
-- selection rationale: <why this is the highest-priority safe slice>
-- intended change: <one sentence>
-- validation: <command or concrete proof>
-- stop condition: <what proves done or blocks>
-```
+Before selecting work read [campaign selection and state](references/campaign.md). Before any child launch or recovery read [delegation and recovery](references/delegation-and-recovery.md), and use the available `pi-subagents` skill's relevant execution/safety guidance. Discover actual executable roles and controls; missing worker or fresh-review capability blocks implementation, never triggers solo fallback.
 
 ## Operating loop
 
-1. Build or identify the feedback signal before editing; run the baseline and preserve its result. If no signal exists, create the smallest deterministic check before changing production files.
-2. Make the smallest safe change that can satisfy that signal.
-3. Run scoped validation, then repo-level validation when practical.
-4. Record receipts, update the campaign queue, and re-scan the changed area for exposed bugs or follow-up gaps.
-5. In single-slice mode, report the checkpoint. In continuous campaign mode, select the next safe candidate immediately.
+1. **Orient.** Inspect repo instructions, dirty state, manifests, README, tests/CI, and the codebase map when present. Read repository-owned tasks first; verify leads against live code. Establish objective, mode, non-goals, explicit limits, approvals, and coverage.
+2. **Discover and rank.** Consider correctness, security, performance, system design, UI/UX, reliability, tests, delivery, and docs. Use distinct read-only scouts only when new evidence is needed. Keep at most three actionable candidates plus separate coverage and blocked/deferred records. Rank by consequence across lanes, not a packaging-first ladder. At every refresh inspect coverage debt; after at most two accepted slices or investigation-only steps, advance an underexplored applicable lane even if the queue is nonempty. Urgent security/data-loss may preempt with a recorded reason and next revisit point.
+3. **Authorize and baseline.** Select one bounded candidate with concrete consequence and objective checks. Resolve its required design approval using the approved work set. Capture recoverable pre-slice contents and path state (including previous uncommitted work); run baseline checks and preserve results. Assign exclusive writer ownership before launch.
+4. **Implement.** One pi-subagents worker is the sole writer for the cwd. Give it the approved design, allowed paths, non-goals, checks, baseline location, and escalation rule—not “improve everything.” No parent edits or concurrent mutating validation. Ownership survives timeout, detach, error, pause, cancellation, and handoff until run/tools are quiescent and the delta reconciled.
+5. **Validate and review.** Capture the quiescent post-worker state; inspect the actual slice delta, not just `git diff HEAD`. Run focused checks and required repo gates. Require a fresh-context read-only reviewer of that delta, acceptance criteria, regression protection, and evidence. A worker's success claim is not acceptance.
+6. **Synthesize and accept.** Parent dispositions every finding. Send required fixes to one worker, then revalidate and obtain focused follow-up review for non-trivial fixes. Default cap: three review rounds; unresolved blockers are not accepted. Before advancing, fix regressions or safely remove a rejected slice using compare-before-rollback. If recovery is unsafe, stop with a blocked handoff. Parent accepts only when intended outcome, checks, review, ownership, and delta agree.
+7. **Continue.** In continuous mode, emit a progress receipt with the next concrete action, refresh coverage/queue, and select the next authorized candidate in the same campaign. Do not send a terminal report merely because of one success, a clean audit, an empty short queue, or one blocked candidate. Explicit limits and stops still apply. Empty queues trigger fresh discovery; no-progress leads need new evidence before retry.
 
-Do not stop after one successful slice when continuous campaign mode is active. Continue while useful in-scope work remains, validation is green, and no terminal condition applies. Stop only at the terminal conditions below or when the user pauses/stops the campaign.
+## Stops, recovery, and reporting
 
-## Failure handling
+- A design/credential/spend gate is branch-local: park it with a revisit condition and continue independent authorized work. Two attempts on the same blocker without new evidence stop that branch, not the campaign.
+- If baseline checks already fail, classify pre-existing failures separately. Introduced regressions block new implementation until repaired or safely removed. Never rollback against HEAD or overwrite external edits; use the recovery reference.
+- Pause/stop prevents new launches immediately. Use only supported child controls, account for in-flight mutations, and retain ownership if status is unknown. Resume refreshes ownership and stale evidence. Context/time/spend/spawn limits produce a handoff, not exhaustion or cap bypass.
+- Exhaustion requires scoped tasks/collection coverage plus a fresh evidence-backed pass over applicable lanes. Say “no further actionable candidates found,” not “no bugs exist.” If all useful work is gated, ask once for the exact decision. Never promise work after the session stops.
 
-- If the baseline already fails, preserve the output and treat that failure as candidate evidence; do not attribute it to the new slice.
-- If scoped validation fails after editing, do not start another slice. Compare against the baseline and current diff, then fix or revert only the current slice; route uncertain root cause to `diagnose`.
-- If the same blocker twice produces no new evidence, stop blind retries and report the blocker plus the smallest owner action needed.
-- If repo-level validation exposes an unrelated failure, classify it separately and leave unrelated code untouched.
+**Progress receipt:** slice/lead, selection rationale, baseline → result, changed paths, review disposition, ownership, coverage/queue update, blocked/deferred revisit conditions, next action. Investigation-only receipts name what was ruled out and the next seam.
 
-## Terminal conditions
+**Terminal report:** reason/lifecycle, original scope and each task's acceptance evidence, accepted vs rejected/unreplicated slices, commands/outcomes, remaining coverage/queue, dirty-state classification, active run IDs/ownership, exact next action. Keep compact state in the conversation; do not create a task database.
 
-Stop continuous work only when the scoped roadmap/queue is exhausted and a fresh discovery pass finds no safe candidate; an owner decision, credential, production access, or risky action is required; validation cannot be restored; the same blocker repeats without new evidence; or the user pauses/stops the campaign. Budget/context limits produce a handoff, not a false completion claim.
+## Example and evidence boundary
 
-## Example
+“Improve this repo”: A and B have concrete approved designs. After A's worker, checks, fresh review, and parent acceptance, issue a progress receipt and start B—not a final answer or a repeated approval request. If B needs a new architecture decision, park B and discover independent authorized work.
 
-User: “Work continuously through this repo’s weaknesses.” Agent: read the roadmap and CI first, then inspect relevant bug, security, pipeline, performance, architecture, UI, and test signals; rank three candidates; fix and validate the release-blocking failure; update the queue; then continue to the next safe task instead of stopping at the first success.
+Required design/TDD/debugging/review/verification workflows remain under Superpowers; use available domain specialists only at real seams. No commits, pushes, production access, external mutation, broad upgrades, destructive Git, model/budget changes, or global activation without corresponding authorization.
 
-## Evidence discipline
-
-Tests passing are necessary, not sufficient. The slice receipt must connect selection → trajectory → outcome:
-
-- **Selection:** the chosen candidate and its evidence outrank the alternatives.
-- **Trajectory:** the repo/context inspection, specialist handoff, and changed scope stayed within the slice.
-- **Outcome:** the objective-specific acceptance check passes after the change, with the baseline result preserved for comparison.
-
-If the only evidence is a generic suite or a self-reported improvement, keep the slice open or mark it unreplicated; do not claim the objective was met.
-
-## Completion audit
-
-Before saying the autonomous improvement is done, map the original request to artifacts:
-
-- objective, scope, and repository task source restated;
-- each explicit task and its acceptance criteria mapped to files, behavior, decisions, and fresh validation;
-- changed files/artifacts and validation receipts named;
-- campaign queue entries completed, explicitly deferred, or blocked with an owner action;
-- a final discovery pass found no remaining safe in-scope work;
-- dirty worktree state inspected and classified.
-
-Do not claim completion because “some improvement” landed or one test suite passed. A continuous campaign is complete only when the scoped task source is exhausted and fresh discovery finds no safe candidate; otherwise continue or report the exact blocker.
-
-## Red lines
-
-- Do not run broad repo rewrites, dependency upgrades, deploy/publish, force-push/rebase/merge, or secret-bearing operations without explicit approval.
-- Do not edit unrelated dirty worktree paths.
-- Do not stack multiple specialist skills in one step; route only at real seams.
-- Do not ship without `git-commit-push` validation and user shipping intent.
-
-## Output contract
-
-End each autonomous pass with:
-
-```text
-Autonomous improvement pass:
-- mode and task source:
-- slice completed:
-- selection rationale:
-- files changed:
-- validation:
-- queue update:
-- blocked/deferred:
-- next safe slice or terminal reason:
-```
+[Pressure scenarios](references/pressure-scenarios.md) define decision probes and actual parent-capable two-slice/safety acceptance. [Evaluation receipt](references/evaluation-receipt.md) records the supplied old-skill decision failure. Repository edits and offline checks are **provisional**: only passing end-to-end behavioral evidence supports verified campaign behavior; missing evidence is unreplicated, failed behavior blocks verified acceptance. Pin the loaded skill path/revision, not just the repository file you intended to load. No live model calls in npm tests.
 
 ## Shared contract
 
