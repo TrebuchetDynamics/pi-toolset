@@ -53,7 +53,7 @@
     "automation": [
       "goal",
       "autonomous-codebase-improver",
-      "hermes-repo-team",
+      "hermes-repo-profiles-team",
       "bug-harvest",
       "wayfinder",
       "wayfinder-next"

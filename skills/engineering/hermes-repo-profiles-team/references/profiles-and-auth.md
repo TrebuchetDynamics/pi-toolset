@@ -1,8 +1,25 @@
 # Profiles, provider/model selection, and authentication
 
+## Flat profile identity and layout
+
+For a **new team**, use coordinator `<repo>-team` and justified specialists `<repo>-team-<role>`, all direct children of the resolved native profiles root:
+
+```text
+~/.hermes/profiles/
+  ledger-kit-team/            # human-facing coordinator, not a container
+  ledger-kit-team-python/     # specialist sibling
+  ledger-kit-team-validator/  # specialist sibling
+```
+
+On a standard POSIX installation, launch root with `hermes -p ledger-kit-team --tui`; add `--resume <id-or-title>` for a specific existing conversation. Resolve custom roots instead of hard-coding these illustrative paths. Keep the human-facing repo label simple; users do not need to manage each specialist or memorize storage paths.
+
+Installed `hermes_cli/profiles.py` resolves IDs as direct children, enumerates only that level, and validates names without path separators; `get_active_profile_name()` resolves real paths and expects one component beneath the profiles root. Kanban's `list_profiles_on_disk()` likewise scans direct children. Nesting workers under the coordinator, directory symlinks or changing `HERMES_HOME` beneath the native home are not a supported grouping mechanism in the reviewed build. Use the native flat layout; no Hermes source patch or new per-team gateway is required by this convention.
+
+Existing teams retain recorded IDs, including the earlier `<repo>` / `<repo>-<role>` scheme, and new members follow that team's convention. Naming migration needs separate approval and the [maintenance procedure](maintenance.md). Budget the `-team` and role suffixes against installed length/reserved-name rules and check collisions before creation.
+
 ## One explicit selection, complete coverage
 
-Ask: **“Which provider/model should this repository team use? Default: openai-codex / gpt-6-luna (GPT-6-Luna) for every profile. Any per-profile overrides?”** Reuse an existing answer; do not interrogate the user once per specialist. Present all resolved rows before applying changes. If the user has not supplied a choice, show that default in the proposal rather than inheriting arbitrary host defaults. An explicit different choice wins.
+Ask: **“Which provider/model should this repository team use? Default: openai-codex / gpt-6-luna (GPT-6-Luna) for every profile. Any per-profile overrides?”** Reuse an existing answer; do not interrogate the user once per specialist. Present all resolved rows before applying changes. If the user has not supplied a choice, show that default in the proposal rather than inheriting arbitrary host defaults. An explicit different choice wins. During maintenance reuse established pairs and overrides; an omitted model preference is not permission to reset an existing team to the new-team default.
 
 Validated configuration shape, subject to the installed schema:
 
@@ -20,7 +37,7 @@ Resolve a model name from the selected provider's current catalog or a fresh cac
 
 Normalize a repository slug using the installed name grammar; budget length for role suffixes, reserved names and aliases. Resolve collisions with the user: adopt a compatible owner-approved profile, choose another name, or stop that branch. Never overwrite an unrelated existing profile or regenerate a working team on rerun.
 
-Prefer fresh profiles. Verify creation's implicit skill seeding, command aliases, gateway registration/rescan, and channel side effects before applying. `--clone` is not merely model configuration: versions copy credentials, identity and curated memory; `--clone-all` is broader and also version-dependent. Do not clone to solve authentication.
+For new members, prefer fresh profiles. For existing members, apply targeted updates through the maintenance procedure rather than recreating them. Verify creation's implicit skill seeding, command aliases, gateway registration/rescan, and channel side effects before applying. `--clone` is not merely model configuration: versions copy credentials, identity and curated memory; `--clone-all` is broader and also version-dependent. Do not clone to solve authentication.
 
 Use per-profile `SOUL.md` for stable identity/remit. Put shared repository conventions in the existing effective project context; do not add `.hermes.md` that accidentally shadows `AGENTS.md`. Keep transient task details on cards. Installed skills expose metadata, not necessarily full procedures: record the loading mechanism and actual installed names. Task `skills` can preload supported installed skills; they do not install them. Project-local skills may need trust, including in new worktrees. Do not invent `kanban-orchestrator`/`kanban-worker` skills when lifecycle guidance is injected natively.
 

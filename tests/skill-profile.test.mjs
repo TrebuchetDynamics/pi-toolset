@@ -18,7 +18,7 @@ try {
     XDG_STATE_HOME: path.join(tmp, "state"), AGENT_SKILLS_BACKUP: "1",
     AGENT_SKILLS_DRY_RUN: "0", AGENT_SKILLS_BACKUP_DIR: path.join(tmp, "backups"),
   };
-  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "user-owned"]) {
+  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team", "user-owned"]) {
     fs.mkdirSync(path.join(codex, name), { recursive: true });
     fs.writeFileSync(path.join(codex, name, "SKILL.md"), `Owner-modified ${name}\n`);
   }
@@ -26,7 +26,7 @@ try {
   run("--dry-run");
   assert.equal(fs.existsSync(env.AGENT_SKILLS_BACKUP_DIR), false);
   run();
-  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver"]) {
+  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team"]) {
     const compatibility = path.join(codex, name, "SKILL.md");
     assert.ok(fs.existsSync(compatibility), `cached command must remain readable: ${name}`);
     assert.match(fs.readFileSync(compatibility, "utf8"), /^disable-model-invocation: true$/m);
@@ -55,15 +55,15 @@ try {
   assert.match(fs.readFileSync(path.join(codex,"research-forge/SKILL.md"),"utf8"), /^disable-model-invocation: true$/m);
   assert.ok(fs.existsSync(path.join(env.AGENT_SKILLS_BACKUP_DIR, "Codex/research-forge/SKILL.md")));
 
-  // Break caught: optional setup skill missing from automation, or its
+  // Break caught: optional team-management skill missing from automation, or its
   // references/shared contract lost when flattened by the real installer.
-  const hermesName = "hermes-repo-team";
+  const hermesName = "hermes-repo-profiles-team";
   assert.equal(fs.existsSync(path.join(codex, hermesName, "SKILL.md")), false,
     "the core profile must not activate Hermes team provisioning");
   // Each changed installation uses a fresh backup receipt, as a real run does.
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "automation-backups");
   run("--profile=automation");
-  const hermesReferences = ["discovery.md", "profiles-and-auth.md", "coordination.md", "verification.md"];
+  const hermesReferences = ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "verification.md"];
   for (const directory of [codex, claude]) {
     const installed = path.join(directory, hermesName);
     assert.ok(fs.existsSync(path.join(installed, "SKILL.md")), "automation must install the Hermes skill");

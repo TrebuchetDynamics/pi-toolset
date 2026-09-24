@@ -5,20 +5,28 @@
 Report each item as verified with evidence, failed, or not checked. Never promote “configured” to “working.”
 
 1. **Identity and scope:** correct repo/root slug, explicit collision decisions, real homes, no overwrite of unrelated profiles, private memories or user work. Inspect only necessary redacted metadata. Confirm clone/creation side effects and rollback baseline before approved writes.
-2. **Provider/model matrix:** every profile has the repo-wide pair or explicit override. Unspecified selection resolves to `openai-codex` / `gpt-6-luna`. Confirm provider-qualified catalog evidence and stale-fallback handling. Distinguish persisted config from effective session/task overrides.
+2. **Provider/model matrix:** every profile has the repo-wide pair or explicit override. For new teams, unspecified selection resolves to `openai-codex` / `gpt-6-luna`; maintenance retains existing choices unless a model change is explicitly approved. Confirm provider-qualified catalog evidence and stale-fallback handling. Distinguish persisted config from effective session/task overrides.
 3. **Authentication:** check each profile/provider in its actual launch context. Record source/time and redacted result; shared resolution must be supported, not assumed. “Logged out” after “Done” is still unresolved. Do not copy token stores or perform repeated OAuth retries without diagnosing which scope/account was checked.
-4. **Instructions and tools:** correct profile SOUL and effective project context, actual skill inventory/loading/trust, root CLI/TUI and Telegram schemas, specialist CLI tools, no unintended headless-worker prompt on the interactive root. A configuration file alone does not prove the runtime surface.
+4. **Instructions and tools:** correct profile SOUL and effective project context, actual skill inventory/loading/trust, root CLI/TUI and Telegram schemas, specialist CLI tools, no unintended headless-worker prompt on the interactive root. Require the [root readiness matrix](team-contract.md) and evidence that root read the current durable briefing revision on each applicable surface; a configuration file alone does not prove the runtime surface.
 5. **Board/workspaces:** root explicitly targets the correct board; coding cards persist as worktrees in the correct repo with traceable candidate evidence. Preserve existing cards/workspaces. No reliance on disposable scratch or dependencies to transfer code.
 6. **Ownership/gates:** actual dispatcher owner, shared-config blast radius, concurrency scope, safe initial hold states, explicit independent reviewer, release approval. Existing ready-but-unauthorized cards may already be dispatchable; surface that risk rather than equating “I didn't launch” with held.
 7. **Interfaces:** sequential root access; native handoff/resume preserves the requested conversation. Verify actual Telegram profile/destination and allowlist. Subscription delivery and agent wake are separate, with no inferred migration or exactly-once guarantee.
+8. **Maintenance and naming:** new teams have flat `<repo>-team` / `<repo>-team-<role>` sibling homes; existing IDs remain unchanged without migration approval, and model overrides remain unchanged without scoped model-change approval. Review scoped before/after evidence, retained state, no-op rerun behavior and effective reload requirements. Retirement requires resolved dispatch exposure/references and process quiescence, not deletion or a roster edit alone. See [maintenance](maintenance.md).
+
+9. **Responsibility coverage:** every applicable repo/scope responsibility has an actual owner and independent validation; optional rows carry evidence-backed N/A reasons. Profile count alone never proves coverage.
+10. **Integrated acceptance:** exact combined candidate/base/input identities, integration owner, relevant validation commands/results and independent review of that candidate. Changed candidates need affected checks/review repeated; push/deployment remain separately authorized.
+11. **Bounded recovery:** approved finite total-attempt, review-cycle, deadline and applicable spend limits; observed counters and enforcement scope; quiescence and scoped dispatch protection before replacements. Native failure counters alone do not bound stale reclaims/review loops. Missing policy/enforcement blocks unattended release or further automatic recovery.
 
 A setup-only request may end with **configured, live checks not run**. Do not launch canaries or business work to improve the report without authorization. If tests are authorized, use a disposable repo/board/profile set and bounded model-call budget; do not borrow production card identities. Gateway operations, credentials, external messages and release each stay within their approved scope. Stop and report a failed prerequisite; continue independent authorized setup.
 
 ### Authorized live canary sequence (not part of npm tests)
 
+- Confirm explicit canary authorization: disposable scope, operations, finite attempt/review/deadline/spend limits, outbound-message destinations and cleanup authority. Verify the current briefing is actually loaded and root capabilities work on each approved surface; configuration-only authorization does not suffice.
 - Verify effective authentication; make one minimal bounded inference in each selected profile/provider/model only if approved. Report failures without printing credentials.
 - Create a harmless explicitly authorized worktree task; observe exact assignee, board, workspace, native lifecycle handoff and independent same-card review.
 - Exercise one changes-requested → repair → re-review cycle without duplicate review cards. Verify candidate continuity and preserved workspace.
+- Combine two harmless input changes in a preserved candidate; observe specialist integration ownership, combined-result checks and independent review of the exact final identity before acceptance.
+- Within the authorized canary only, test a bounded failure/recovery case: observe attempt/cycle counts and stop behavior at the approved limit, verify no replacement writer before quiescence, and reconcile a delayed notification without duplicate work. If failure injection or model spend is not approved, mark these checks unrun.
 - Observe root notification and wake on the selected surface. Exercise idle/busy completion and native Telegram ↔ terminal resumption; check subscription destinations rather than assuming they migrated.
 - Test a parked/gated card cannot run before authorization and an unknown/unready assignee does not silently substitute root. Verify other boards/configuration remain unchanged.
 - Clean up only test resources created by this canary, with ownership/quiescence and authorization established; retain redacted receipts. No production deployment or release is implicit.
@@ -45,7 +53,9 @@ User requests Telegram → TUI, same root profile, sequential, no new machinery;
 
 **Pass:** explicit profile-scoped native TUI resume; no custom service/mandatory summary; verify conversation identity without promising notification migration. Name an independent reviewer for same-card review; don't invent automatic reviewer-card creation. Explicit coding worktrees; concurrency limits are not global ownership locks.
 
-## Authoring evidence
+## Initial authoring evidence (before maintenance extension)
+
+The A–C fixtures above use the original profile IDs; they remain valid existing-team examples, not the naming template for new teams.
 
 Status: **provisional — live Hermes setup is not certified**. Package/resource checks and isolated skill-install fixtures are not model-behavior tests; decision probes are not authentication, Telegram, transport or dispatch tests. No live model calls belong in npm tests/CI.
 
@@ -67,3 +77,15 @@ Independent read-only review verified package/install tests and found that nativ
 One subsequent fresh held-out decision probe, without this verification reference, used already-approved custom homes, an explicit OpenRouter catalog-fixture model, a Codex reviewer override, an unauthorized ready/scratch card, and setup-only authorization. It retained both approved pairs without re-asking, deferred unsafe dispatch exposure, rejected token copying, distinguished shared-auth reports from worker execution evidence, and refused handoff without inference/outbound-message approval. This single skill-on sample has no skill-off control and does not establish generalization or live safety.
 
 Static RED: missing skill/resource inventory and missing optional automation installation. An initial installer-fixture backup collision was not valid RED; fresh transition backup directories exposed the intended missing-skill failure without changing production installer safeguards. GREEN: package validation, isolated optional activation/reference-preservation/idempotence/deactivation tests, and full `npm test`. No Hermes live canary was run; do not infer runtime certification from this receipt.
+
+## Maintenance-extension evidence
+
+One fresh current-skill baseline and one fresh revised-skill decision probe used the same three cases: new-team names/homes/TUI command; a narrow instruction update to a legacy team with an explicit model override and active review; retirement with running work and queued dependents. The baseline used `atlas` / `atlas-python` and explicitly reported missing flat-layout and retirement guidance. It already preserved existing state and rejected unsafe resets. The revised answer used flat `atlas-team` siblings, retained legacy IDs/overrides during maintenance, supplied a scoped no-op-capable receipt, and required drain/reference resolution while retaining retired data.
+
+This single old/new comparison is a reference-application check, not a repeated wording study or statistical efficacy claim. No live homes, authentication, retirement or migration were exercised. Independent review found no blocking issues; its minor default/approval wording inconsistency was corrected. Package/resource and isolated installer checks failed before the new maintenance reference existed and passed afterward; they test distribution, not Hermes behavior.
+
+## Team-contract extension evidence
+
+One fresh old-skill and one fresh revised-skill probe used identical cases: an incomplete UI/API/data/security roster and untested root; individually green branches without combined-candidate evidence; and stale work, expired reviewer auth, missed notifications and unbounded retries. The baseline already rejected unsafe readiness/release but identified unspecified coverage, briefing/loading, acceptance and recovery schemas. The revised answer supplied the required fields and withheld readiness/restart/release where evidence or bounded authorization was missing. No newly caused general safety gain is claimed.
+
+This is a single reference-application comparison, not statistical or live-runtime proof. Independent read-only review accepted the bounded addition without findings. Resource reachability and isolated installer-copy checks failed for the missing `team-contract.md` before authoring and passed afterward. The extended live canary, root loading, integrated execution and native recovery enforcement remain **unrun and unverified**, pending separate authorization.
