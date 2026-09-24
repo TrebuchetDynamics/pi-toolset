@@ -46,6 +46,8 @@ codebase-map-understand.md
 .pi/auto-folder-refactor-sessions/
 .pi/autofolderrefactor-sessions/
 .pi/folder-refactor/
+# Local pi-subagents run artifacts (inputs, outputs, transcripts).
+.pi-subagents/
 
 # OS/editor noise
 .DS_Store
