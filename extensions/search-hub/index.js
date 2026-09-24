@@ -158,8 +158,14 @@ export function normalizePublicUrl(value) {
 
 async function readResponseText(response, maxBytes = MAX_BODY_BYTES) {
   const declared = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > maxBytes)
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    try {
+      await response.body?.cancel();
+    } catch {
+      // Cleanup failure must not mask the size-limit error.
+    }
     throw new Error(`Response exceeds ${maxBytes} bytes`);
+  }
   if (!response.body) return "";
 
   const chunks = [];
@@ -280,7 +286,7 @@ function resultKey(value) {
     const url = new URL(value);
     url.hash = "";
     url.pathname = url.pathname.replace(/\/+$/, "") || "/";
-    return url.toString().toLowerCase();
+    return url.toString();
   } catch {
     return String(value).toLowerCase();
   }
@@ -327,6 +333,7 @@ export async function runSearch(
     throw new Error(`Unknown search backend: ${backend}`);
   const boundedLimit = Math.min(20, Math.max(1, Number(limit) || 5));
   const candidates = backend === "auto" ? configuredBackends(env) : [backend];
+  signal?.throwIfAborted();
   const settled = await Promise.all(
     candidates.map(async (candidate) => {
       try {
@@ -343,6 +350,7 @@ export async function runSearch(
       }
     }),
   );
+  signal?.throwIfAborted();
   const successful = settled.filter(({ results }) => results.length > 0);
   const errors = settled
     .filter(({ error }) => error)
