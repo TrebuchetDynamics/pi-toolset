@@ -55,6 +55,42 @@ try {
   assert.match(fs.readFileSync(path.join(codex,"research-forge/SKILL.md"),"utf8"), /^disable-model-invocation: true$/m);
   assert.ok(fs.existsSync(path.join(env.AGENT_SKILLS_BACKUP_DIR, "Codex/research-forge/SKILL.md")));
 
+  // Break caught: optional setup skill missing from automation, or its
+  // references/shared contract lost when flattened by the real installer.
+  const hermesName = "hermes-repo-team";
+  assert.equal(fs.existsSync(path.join(codex, hermesName, "SKILL.md")), false,
+    "the core profile must not activate Hermes team provisioning");
+  // Each changed installation uses a fresh backup receipt, as a real run does.
+  env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "automation-backups");
+  run("--profile=automation");
+  const hermesReferences = ["discovery.md", "profiles-and-auth.md", "coordination.md", "verification.md"];
+  for (const directory of [codex, claude]) {
+    const installed = path.join(directory, hermesName);
+    assert.ok(fs.existsSync(path.join(installed, "SKILL.md")), "automation must install the Hermes skill");
+    const skill = fs.readFileSync(path.join(installed, "SKILL.md"), "utf8");
+    assert.doesNotMatch(skill, /^disable-model-invocation: true$/m);
+    for (const reference of hermesReferences) {
+      assert.equal(fs.readFileSync(path.join(installed, "references", reference), "utf8"),
+        fs.readFileSync(path.join(root, "skills/engineering", hermesName, "references", reference), "utf8"));
+    }
+    // Every local Markdown link in the installed entry point must resolve
+    // outside the source checkout too, including rewritten shared links.
+    for (const [, target] of skill.matchAll(/\]\(([^)]+\.md)\)/g)) {
+      assert.ok(fs.existsSync(path.resolve(installed, target)), `broken installed link: ${target}`);
+    }
+  }
+  const automationBackups = fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true });
+  run("--profile=automation");
+  assert.deepEqual(fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true }), automationBackups);
+  env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "deactivation-backups");
+  run();
+  for (const directory of [codex, claude]) {
+    assert.match(fs.readFileSync(path.join(directory, hermesName, "SKILL.md"), "utf8"),
+      /^disable-model-invocation: true$/m, "returning to core must deactivate the optional skill");
+  }
+  assert.ok(fs.existsSync(path.join(env.AGENT_SKILLS_BACKUP_DIR, "Codex", hermesName, "references/coordination.md")),
+    "deactivation must preserve archived skill references");
+
   // Native Claude plugin supplies its own skills; do not shadow its namespace.
   fs.writeFileSync(path.join(home, ".claude/settings.json"), JSON.stringify({ enabledPlugins: { "superpowers@test": true } }));
   run();

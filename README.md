@@ -101,6 +101,7 @@ Default engineering entry points are Superpowers `brainstorming`, `systematic-de
 | ---------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
 | Keep a long task on course               | `/goal <objective>`                         | Objective completed with evidence               |
 | Find useful repository work              | `autonomous-codebase-improver` (opt-in)     | Continuous reviewed slices within approved scope |
+| Set up a Hermes repository team          | `hermes-repo-team` (opt-in automation)      | Root-only interaction, native profiles/Kanban, per-profile readiness |
 | Diagnose a concrete failure              | `systematic-debugging`                     | Repro fails before and passes after             |
 | Build behavior test-first                | `test-driven-development`                  | Red → green → refactor                          |
 | Understand architecture                  | `/understand`                               | Knowledge graph + agent-readable map            |
@@ -127,7 +128,7 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 
 | Surface                     | Included | Purpose                                                                                              |
 | --------------------------- | -------: | ---------------------------------------------------------------------------------------------------- |
-| Agent skills                |   **8 automatic + 1 manual / 65 stored** | Local specialists plus optional and retired reference sources                       |
+| Agent skills                |   **8 automatic + 1 manual / 66 stored** | Local specialists plus optional and retired reference sources                       |
 | Pi extensions               |   **2 default / 15 stored** | Search Hub and subagents; other extensions are opt-in                            |
 | Theme                       |    **1** | `trebuchet-neon`, a complete dark Pi token map                                                       |
 | Package bins                |    **2** | `tx` and `autofolderrefactor`                                                                        |
@@ -238,9 +239,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 `autoreview`, `git-commit-push`, `greploop`, `s3upload`
 
-**Engineering (15)**
+**Engineering (16)**
 
-`autonomous-codebase-improver`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
+`autonomous-codebase-improver`, `hermes-repo-team`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
 
 **Frontend and design (23)**
 
@@ -262,9 +263,11 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 ## Skill curation
 
-The source tree retains 65 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
+The source tree retains 66 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
 
 The [diagram skill](skills/frontend/diagram-design/SKILL.md) is a text-only adaptation of [Diagram Design](https://github.com/cathrynlavery/diagram-design), pinned in [third-party notices](THIRD_PARTY_NOTICES.md). It adds no executable helpers or dependencies. Scouting and authoring use a [candidate inspection checklist](skills/pi/pi-ecosystem-scout/references/candidate-inspection.md): review the exact revision and reachable files, check overlap and host compatibility, preserve licensing, and never bypass a dangerous scanner verdict. Stars are discovery signals, not evidence of quality or safety.
+
+The optional automation skill [`hermes-repo-team`](skills/engineering/hermes-repo-team/SKILL.md) sets up repo-specific Hermes profiles with root-only Telegram or CLI/TUI interaction and native Kanban coordination. It asks for one provider/model choice for the whole team, defaults to `openai-codex` / `gpt-6-luna` unless overridden, and verifies authentication separately for every profile before work release. It uses native session handoff/resume, preserves existing cards and workspaces, and requires approval for live provisioning and shared gateway changes. Its [verification reference](skills/engineering/hermes-repo-team/references/verification.md) separates decision-probe evidence from unverified live Hermes behavior. Installing the skill does not configure Hermes or start agents.
 
 Existing engineering, research, and optional Understand workflows remain available. No additional workflow plugin, graph service, broad catalog, or scientific toolchain is needed without a specific task. The opt-in [`autonomous-codebase-improver`](skills/engineering/autonomous-codebase-improver/SKILL.md) treats bare/broad requests as continuous, multi-area campaigns: the parent selects concrete approved work, uses one pi-subagents worker and fresh read-only review per slice, accepts the evidence, then continues. Explicit one-slice, collection/subsystem, audit-only, pause/stop, and budget boundaries still apply; missing required delegation blocks implementation. New designs remain approval-gated, and ownership/recoverable slice baselines protect dirty work. Its [evaluation receipt](skills/engineering/autonomous-codebase-improver/references/evaluation-receipt.md) records decision probes, independent review, and parent-guided two-slice, one-slice, timeout/paused-continuation, rollback/refusal, and regression-repair fixtures. Full behavioral acceptance remains provisional: approval/credential branch continuation, unavailable-role/budget, and other lifecycle/type/race variants remain decision-only or unrun; these samples do not prove autonomous reliability. No measured skill-on/skill-off improvement or global activation is claimed.
 
