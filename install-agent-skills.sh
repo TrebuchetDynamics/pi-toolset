@@ -18,6 +18,7 @@ set -eu
 
 script_dir="$(CDPATH= cd "$(dirname "$0")" && pwd)"
 src_root="${script_dir}/skills"
+AGENT_SKILLS_PROFILE_FILE="${AGENT_SKILLS_PROFILE_FILE:-${XDG_STATE_HOME:-${HOME}/.local/state}/pi-toolset/skills-profile}"
 
 : "${HOME:?HOME is required}"
 
@@ -29,6 +30,7 @@ AGENT_SKILLS_DRY_RUN="${AGENT_SKILLS_DRY_RUN:-${CLAUDE_SKILLS_DRY_RUN:-0}}"
 install_codex=1
 install_claude=1
 profile=default
+profile_explicit=0
 
 usage() {
   cat <<'EOF'
@@ -62,6 +64,7 @@ while [ "$#" -gt 0 ]; do
       ;;
     --profile=*)
       profile=${1#--profile=}
+      profile_explicit=1
       ;;
     --dry-run)
       AGENT_SKILLS_DRY_RUN=1
@@ -101,6 +104,12 @@ esac
 if [ ! -d "$src_root" ]; then
   printf 'install-agent-skills: source not found: %s\n' "$src_root" >&2
   exit 1
+fi
+
+# install.sh (and other updaters) set AGENT_SKILLS_PRESERVE_PROFILE=1 so a recorded
+# profile survives a rerun. Explicit --profile always wins and is recorded again.
+if [ "$profile_explicit" = 0 ] && [ "${AGENT_SKILLS_PRESERVE_PROFILE:-0}" = "1" ] && [ -f "$AGENT_SKILLS_PROFILE_FILE" ]; then
+  profile=$(cat "$AGENT_SKILLS_PROFILE_FILE")
 fi
 
 # Resolve the reviewed profile before changing any destination.
@@ -299,6 +308,8 @@ if [ "$install_claude" = "1" ]; then
 fi
 
 if [ "$AGENT_SKILLS_DRY_RUN" = "0" ]; then
+  mkdir -p "$(dirname "$AGENT_SKILLS_PROFILE_FILE")"
+  printf '%s\n' "$profile" > "$AGENT_SKILLS_PROFILE_FILE"
   if [ "$install_codex" = "1" ] && [ "$install_claude" = "1" ]; then
     printf 'Reload open Pi sessions and restart open Codex and Claude Code sessions to refresh skill discovery.\n'
   elif [ "$install_codex" = "1" ]; then

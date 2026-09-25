@@ -27,6 +27,8 @@ want_rtk=0
 want_skills=1
 want_omniroute=1
 want_catalog=1
+profile=""
+profile_explicit=0
 
 usage() {
   cat <<'EOF'
@@ -45,6 +47,8 @@ Components:
 
 Options:
   --dry-run  Print the installation plan without changing the system
+  --profile=NAME  Global skill profile (see install-agent-skills.sh); recorded
+                  profiles are preserved on later runs
   -h, --help Show this help
 
 Environment:
@@ -59,6 +63,7 @@ EOF
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dry-run) dry_run=1 ;;
+    --profile=*) profile=${1#--profile=}; profile_explicit=1 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'install: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -190,7 +195,13 @@ print_plan() {
   if [ "$want_tmux" = 1 ]; then printf '%s\n' 'would install: tmux and tx'; fi
   if [ "$want_understand" = 1 ]; then printf '%s\n' 'would install: Understand-Anything'; fi
   if [ "$want_rtk" = 1 ]; then printf '%s\n' 'would install: RTK'; fi
-  if [ "$want_skills" = 1 ]; then printf '%s\n' 'would install: global Codex and Claude skill copies (pinned Superpowers + eight specialists, shared with Pi)'; fi
+  if [ "$want_skills" = 1 ]; then
+    if [ "$profile_explicit" = 1 ]; then
+      printf 'would install: global Codex and Claude skill copies (profile: %s)\n' "$profile"
+    else
+      printf '%s\n' 'would install: global Codex and Claude skill copies (pinned Superpowers + eight specialists, preserving any recorded profile)'
+    fi
+  fi
   if [ "$want_omniroute" = 1 ]; then
     printf '%s\n' 'would install: OmniRoute'
   else
@@ -457,7 +468,13 @@ fi
 
 if [ "$want_skills" = 1 ]; then
   ensure_node
-  sh "$script_dir/install-agent-skills.sh"
+  # Preserve a recorded optional profile so an install/update rerun does not
+  # silently return the global copies to the core set.
+  if [ "$profile_explicit" = 1 ]; then
+    AGENT_SKILLS_PRESERVE_PROFILE=1 sh "$script_dir/install-agent-skills.sh" "--profile=$profile"
+  else
+    AGENT_SKILLS_PRESERVE_PROFILE=1 sh "$script_dir/install-agent-skills.sh"
+  fi
   SUPERPOWERS_DIR=$(node "$script_dir/scripts/superpowers-source.mjs" --path)
   export SUPERPOWERS_DIR
   printf 'installed: global Codex and Claude skill copies\n'

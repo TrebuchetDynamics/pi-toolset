@@ -327,7 +327,7 @@ sh install-agent-skills.sh
 
 This installs 15 upstream Superpowers symlinks plus eight flattened local specialist directories to `~/.agents/skills` and `~/.claude/skills`. It archives known inactive bundle skills and backs up replaced copies under `~/.local/state/pi-toolset/skill-backups/`. `--profile=design` adds a specialist profile; rerunning without it returns managed skills to the core set. Available profiles are defined in [profiles.json](skills/shared/profiles.json): design, research, refactor, automation, authoring, delivery, planning, and writing. Retired wrappers are excluded from all profiles.
 
-Options: `--codex-only`, `--claude-only`, `--dry-run`, and `--no-backup`. `CODEX_SKILLS_DIR` and `CLAUDE_SKILLS_DIR` support project-local destinations. `SUPERPOWERS_DIR` can select an existing clean checkout at the pinned revision; it is never reset or overwritten. No skill-only install changes Pi providers or other hosts' plugin settings.
+Options: `--codex-only`, `--claude-only`, `--dry-run`, and `--no-backup`. `CODEX_SKILLS_DIR` and `CLAUDE_SKILLS_DIR` support project-local destinations. `SUPERPOWERS_DIR` can select an existing clean checkout at the pinned revision; it is never reset or overwritten. No skill-only install changes Pi providers or other hosts' plugin settings. The selected profile is recorded under `~/.local/state/pi-toolset/skills-profile`; `install.sh` reads it and passes `--profile` back, so `sh install.sh --profile=automation` survives later installer and update runs. Running `install-agent-skills.sh` directly without `--profile` still returns to the core set.
 
 ## Theme and shell helpers
 
@@ -403,7 +403,11 @@ The root `.npmrc` intentionally disables npm's automatic peer installation for g
 
 ## Update or remove
 
+`pi update git:github.com/TrebuchetDynamics/pi-toolset` refreshes the package checkout. The skills Pi loads come from the global copies, so refresh those too; `install.sh` does both and preserves the recorded profile:
+
 ```bash
+sh install.sh                    # update package + global skills
+sh install.sh --profile=design   # switch the recorded skill profile
 pi update git:github.com/TrebuchetDynamics/pi-toolset
 pi remove git:github.com/TrebuchetDynamics/pi-toolset
 ```

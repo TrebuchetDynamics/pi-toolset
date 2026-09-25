@@ -14,6 +14,7 @@ const installer = fs.readFileSync(path.join(root, "install.sh"), "utf8");
 assert.match(installer, /pacman -S --needed --noconfirm tmux/);
 assert.doesNotMatch(installer, /pacman -Sy\b/, "Arch install must not perform a partial package database refresh");
 assert.match(installer, /install-agent-skills\.sh/);
+assert.match(installer, /AGENT_SKILLS_PRESERVE_PROFILE=1/, "install.sh must preserve a recorded skill profile");
 assert.doesNotMatch(installer, /install-autofolderrefactor\.sh/, "autofolderrefactor must remain opt-in");
 assert.match(installer, /install-omniroute-pi\.sh/);
 assert.match(installer, /RTK_INSTALL_URL/);
@@ -61,6 +62,8 @@ try {
   assert.match(output, /would install: OmniRoute/);
   assert.match(output, /would install: global Codex and Claude skill copies/);
   assert.match(output, /without duplicate package skills/);
+  const profiledPlan = run(["--dry-run", "--profile=design"], { env: { HOME: dryHome } });
+  assert.match(profiledPlan, /profile: design/);
   assert.doesNotMatch(output, /autofolderrefactor/);
   assert.deepEqual(fs.readdirSync(dryHome), []);
   for (const source of catalogSources) assert.ok(output.includes(`would install: ${source}`));

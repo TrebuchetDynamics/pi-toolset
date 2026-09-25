@@ -82,6 +82,22 @@ try {
   const automationBackups = fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true });
   run("--profile=automation");
   assert.deepEqual(fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true }), automationBackups);
+
+  // install.sh refreshes skills with AGENT_SKILLS_PRESERVE_PROFILE=1 so a recorded
+  // profile survives installer reruns instead of silently returning to core.
+  const profileFile = path.join(tmp, "profile", "skills-profile");
+  env.AGENT_SKILLS_PROFILE_FILE = profileFile;
+  env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "preserve-backups");
+  run("--profile=automation");
+  assert.equal(fs.readFileSync(profileFile, "utf8").trim(), "automation");
+  env.AGENT_SKILLS_PRESERVE_PROFILE = "1";
+  run();
+  for (const directory of [codex, claude]) {
+    assert.doesNotMatch(fs.readFileSync(path.join(directory, hermesName, "SKILL.md"), "utf8"),
+      /^disable-model-invocation: true$/m, "install.sh must preserve the recorded optional profile");
+  }
+  delete env.AGENT_SKILLS_PRESERVE_PROFILE;
+
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "deactivation-backups");
   run();
   for (const directory of [codex, claude]) {
