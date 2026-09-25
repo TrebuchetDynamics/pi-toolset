@@ -86,11 +86,15 @@ try {
   const archive = path.join(bootstrap, "pi-toolset.tar.gz");
   const fakeBin = path.join(bootstrap, "bin");
   const home = path.join(bootstrap, "home");
+  const bootLog = path.join(bootstrap, "boot-args");
   fs.copyFileSync(path.join(root, "install.sh"), remoteScript);
   fs.mkdirSync(path.join(archiveTree, "tmux"), { recursive: true });
   fs.mkdirSync(fakeBin);
   fs.mkdirSync(home);
-  fs.copyFileSync(path.join(root, "install.sh"), path.join(archiveTree, "install.sh"));
+  fs.writeFileSync(
+    path.join(archiveTree, "install.sh"),
+    "#!/bin/sh\nprintf '%s\\n' \"$*\" > \"$BOOT_LOG\"\nprintf 'installation complete\\n'\n",
+  );
   fs.writeFileSync(path.join(archiveTree, "install-agent-skills.sh"), "#!/bin/sh\n");
   fs.writeFileSync(path.join(archiveTree, "install-omniroute-pi.sh"), "#!/bin/sh\n");
   fs.writeFileSync(path.join(archiveTree, "tmux", "install.sh"), "#!/bin/sh\n");
@@ -101,19 +105,22 @@ try {
     "#!/bin/sh\nwhile [ \"$#\" -gt 0 ]; do\n  if [ \"$1\" = -o ]; then shift; cp \"$BOOTSTRAP_ARCHIVE\" \"$1\"; exit; fi\n  shift\ndone\nexit 2\n",
     { mode: 0o755 },
   );
-  const result = spawnSync("sh", [remoteScript], {
+  const result = spawnSync("sh", [remoteScript, "--profile=design"], {
     encoding: "utf8",
     env: {
       ...process.env,
       HOME: home,
       PATH: `${fakeBin}:/usr/bin:/bin`,
       BOOTSTRAP_ARCHIVE: archive,
+      BOOT_LOG: bootLog,
       PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,skills,omniroute,catalog",
     },
   });
   assert.equal(result.status, 0, `bootstrap failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
   assert.match(result.stdout, /downloading: pi-toolset/);
   assert.match(result.stdout, /installation complete/);
+  assert.equal(fs.readFileSync(bootLog, "utf8").trim(), "--profile=design",
+    "bootstrap must forward parsed options to the downloaded installer");
 } finally {
   fs.rmSync(bootstrap, { recursive: true, force: true });
 }

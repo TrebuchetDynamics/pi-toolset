@@ -243,7 +243,12 @@ if [ ! -f "$script_dir/install-agent-skills.sh" ] ||
     printf 'install: failed to unpack pi-toolset\n' >&2
     exit 1
   fi
-  sh "$bootstrap_dir/repo/install.sh"
+  # Forward parsed options so a downloaded bootstrap installs the same way.
+  if [ "$profile_explicit" = 1 ]; then
+    sh "$bootstrap_dir/repo/install.sh" "--profile=$profile"
+  else
+    sh "$bootstrap_dir/repo/install.sh"
+  fi
   exit $?
 fi
 
