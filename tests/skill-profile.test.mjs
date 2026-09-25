@@ -63,7 +63,7 @@ try {
   // Each changed installation uses a fresh backup receipt, as a real run does.
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "automation-backups");
   run("--profile=automation");
-  const hermesReferences = ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "verification.md"];
+  const hermesReferences = ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "root-briefing.md", "verification.md"];
   for (const directory of [codex, claude]) {
     const installed = path.join(directory, hermesName);
     assert.ok(fs.existsSync(path.join(installed, "SKILL.md")), "automation must install the Hermes skill");

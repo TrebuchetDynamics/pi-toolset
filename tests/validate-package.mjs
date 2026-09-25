@@ -1383,7 +1383,7 @@ async function testSkills() {
   assert.ok(profiles.optional.automation.includes("hermes-repo-profiles-team"));
   assert.ok(!readJson("package.json").pi.skills.includes(`./${hermesRoot}`),
     "Hermes team provisioning must remain opt-in");
-  for (const reference of ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "verification.md"]) {
+  for (const reference of ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "root-briefing.md", "verification.md"]) {
     assert.ok(hermesSkill.includes(`](references/${reference})`),
       `Hermes team management must expose its ${reference} resource`);
     assert.ok(fs.statSync(path.join(root, hermesRoot, "references", reference)).isFile());

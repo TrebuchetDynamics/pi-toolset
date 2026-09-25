@@ -23,13 +23,13 @@ Required rows cannot be marked not applicable merely to avoid a gap. For optiona
 
 Reuse an existing owner-approved nonsecret team document. If none exists, propose `<root-profile-home>/TEAM.md` as a plain Markdown briefing, not an automatically loaded Hermes feature or a new registry. Do not overwrite an unrelated file. The record contains:
 
-- Revision/date, repo path, board selector, actual dispatcher owner and config scope.
+- Revision/date, approved repository mission, observable success criteria and exclusions, repo path, board selector, actual dispatcher owner and config scope.
 - Actual root/member IDs and homes, remits, the coverage table, installed/loaded skills and permitted tools.
 - Selected provider/models and explicit overrides; redacted readiness evidence/time or references to it, never credentials or private transcripts.
 - Acceptance/test commands, integration/candidate policy, recovery limits, release and external-action approval boundaries.
 - Root CLI/TUI and Telegram entry/destination details needed for routing, subscription/wake status, unresolved blockers and evidence locations.
 
-Root's profile SOUL must point to the resolved document and instruct root to read it at session start and reload after its revision changes or context is lost. This pointer is an instruction, not proof of loading. Verify root actually retrieved the current revision before using it for routing; on a resumed session, recheck the revision rather than trusting remembered roster data. Propagate accepted changes into this one record during maintenance. Put task-specific requirements and candidate evidence on cards because workers do not inherit root's conversation.
+Root's profile SOUL must contain the approved stable mission and coordinator remit directly, then point to the document by absolute path and instruct root to read it at session start and reload after its revision changes or context is lost. Follow the [root briefing contract](root-briefing.md), including first-contact onboarding and goal-answer checks. This pointer is an instruction, not proof of loading. Verify root actually retrieved the current revision before using it for routing; on a resumed session, recheck the revision rather than trusting remembered roster data. Propagate accepted changes into this one record during maintenance. Put task-specific requirements and candidate evidence on cards because workers do not inherit root's conversation.
 
 ### Root readiness matrix
 
@@ -37,7 +37,7 @@ For each row record **required capability → installed tool/config mapping → 
 
 | Capability | Acceptance evidence |
 | --- | --- |
-| Correct identity and briefing | Actual profile/session, current team-record revision read, effective repository context and loaded skills |
+| Correct identity and briefing | Actual profile/session, current team-record revision read, effective repository context and loaded skills; mission-grounded answer to “What's your goal?” on each intended surface |
 | Repository inspection | Can inspect relevant files, diffs and validation evidence within approved access; not automatically a code-writing worker |
 | Planning and routing | Can use supported task/board tools to inspect, create, assign and express dependencies and scoped acceptance criteria |
 | Progress and intervention | Can inspect card/run/history/heartbeat evidence and use authorized native comment/block/reassign/review transitions; no direct DB surgery |
