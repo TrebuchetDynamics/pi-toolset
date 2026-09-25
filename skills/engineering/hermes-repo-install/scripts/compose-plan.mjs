@@ -45,6 +45,10 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
       HERMES_DASHBOARD: web ? "1" : "0",
       API_SERVER_ENABLED: web ? "true" : "false",
     },
+    // One owner-managed file for provider/channel and optional web credentials.
+    // Raw loading preserves literal dollars/quotes (Compose >=2.30). The planner
+    // only names this file: it never reads, writes, or emits its secret values.
+    env_file: [{ path: literal(path.join(repoPath, ".hermes", ".env")), required: true, format: "raw" }],
     volumes: [
       { type: "volume", source: "data", target: "/opt/data" },
       { type: "bind", source: literal(repoPath), target: "/workspace", bind: { create_host_path: false } },
@@ -57,9 +61,6 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
   if (web) {
     service.environment.API_SERVER_HOST = "0.0.0.0";
     service.environment.HERMES_DASHBOARD_HOST = "0.0.0.0";
-    // Secrets are provisioned separately with owner-only permissions, never emitted.
-    // raw prevents Compose from interpreting $ characters in credentials (Compose >=2.30).
-    service.env_file = [{ path: literal(path.join(repoPath, ".hermes", "web.env")), required: true, format: "raw" }];
     // Omitting published lets the Docker daemon allocate distinct available host ports.
     service.ports = [8642, 9119].map((target) => ({ target, host_ip: "127.0.0.1", protocol: "tcp" }));
   }

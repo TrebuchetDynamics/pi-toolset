@@ -11,7 +11,7 @@ Configure local fact memory for **named existing profiles**, not the ambient def
 
 Example: `/skill:memory-holographic-hermes-setup atlas beacon`. Pi also offers `/memory-holographic-hermes-setup` through the package prompt shortcut.
 
-Arguments identify profiles, not shell code. With no names, discover available profiles read-only and ask which to target. Resolve each canonical home beneath the approved `.hermes` root; reject missing profiles, traversal, ambiguous aliases and shared/symlinked targets. Select the default home only when the user explicitly requests it. Do not create profiles or infer them from bot display names. For an explicitly selected Compose instance, use the reference's container-target adapter instead of host-directory discovery.
+Arguments identify profiles, not shell code. With no names, discover available profiles read-only and ask which to target. Resolve each canonical home beneath the approved `.hermes` root; reject missing profiles, traversal, ambiguous aliases and shared/symlinked targets. Select the default home only when the user explicitly requests it. Do not create profiles or infer them from bot display names. For an explicitly selected Compose instance, use the reference's container-target adapter before any launcher/profile discovery: host Hermes, host Python and host profiles are not required. All runtime checks run inside that verified container; before it exists, return pending runtime checks to the repo installer rather than installing host tools.
 
 ## Workflow
 

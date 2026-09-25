@@ -68,6 +68,11 @@ try {
   assert.equal(service.environment.HERMES_DASHBOARD, "0");
   assert.equal(service.environment.API_SERVER_ENABLED, "false");
   assert.equal(service.ports, undefined, "headless gateway must not reserve host ports");
+  // Break caught: headless installs never receive repo provider credentials,
+  // or web installs split secrets into a second independently managed file.
+  assert.deepEqual(service.env_file, [
+    { path: path.join(fs.realpathSync(a), ".hermes", ".env"), required: true, format: "raw" },
+  ]);
   for (const forbidden of ["container_name", "network_mode", "privileged", "entrypoint", "user"]) {
     assert.equal(service[forbidden], undefined, `unsafe or conflicting override: ${forbidden}`);
   }
@@ -96,7 +101,7 @@ try {
     { target: 9119, host_ip: "127.0.0.1", protocol: "tcp" },
   ]);
   assert.deepEqual(web.compose.services.hermes.env_file, [
-    { path: path.join(fs.realpathSync(a), ".hermes", "web.env"), required: true, format: "raw" },
+    { path: path.join(fs.realpathSync(a), ".hermes", ".env"), required: true, format: "raw" },
   ]);
   assert.equal(web.compose.services.hermes.environment.API_SERVER_HOST, "0.0.0.0");
   assert.equal(web.compose.services.hermes.environment.HERMES_DASHBOARD_HOST, "0.0.0.0");
@@ -109,6 +114,7 @@ try {
   assert.equal(unusual.identity.profileName, path.basename(awkward));
   assert.equal(unusual.compose.services.hermes.volumes[1].source, path.join(tmp, "9 API $${SECRET}: ö"));
   assert.match(unusual.identity.projectName, /^hermes-[a-z0-9-]+-[a-f0-9]{16}$/);
+  assert.equal(unusual.compose.services.hermes.env_file[0].path, path.join(tmp, "9 API $${SECRET}: ö", ".hermes", ".env"));
   const long = path.join(tmp, "x".repeat(180));
   fs.mkdirSync(long);
   assert.ok(makePlan({ ...options, repo: long }).identity.projectName.length <= 63);
@@ -129,6 +135,29 @@ try {
 
   const args = [helper, "--repo", a, "--image", image, "--uid", "1000", "--gid", "1000"];
   assert.deepEqual(JSON.parse(execFileSync(process.execPath, args, { encoding: "utf8" })), first);
+  // No host Hermes executable/home/Python (or Docker) is needed by the planner.
+  const emptyPath = path.join(tmp, "empty-bin");
+  fs.mkdirSync(emptyPath);
+  assert.deepEqual(JSON.parse(execFileSync(process.execPath, args, {
+    encoding: "utf8", env: { PATH: emptyPath, HOME: path.join(tmp, "no-home"), HERMES_HOME: path.join(tmp, "no-hermes") },
+  })), first);
+  assert.equal(fs.existsSync(path.join(tmp, "no-home")), false);
+  assert.equal(fs.existsSync(path.join(tmp, "no-hermes")), false);
+
+  // Planning must not read, print, replace, or chmod a user's existing secrets.
+  // These are synthetic test values, not credentials. Special characters must
+  // survive Compose env_file loading literally rather than shell interpolation.
+  const secretValue = 'fixture-only-${SECRET}-$cash-#hash-"quoted"';
+  const envText = `OPENROUTER_API_KEY=${secretValue}\nAPI_SERVER_KEY=${secretValue}\n`;
+  for (const repo of [a, awkward]) {
+    fs.mkdirSync(path.join(repo, ".hermes"));
+    fs.writeFileSync(path.join(repo, ".hermes", ".env"), envText, { mode: 0o600 });
+  }
+  const planned = execFileSync(process.execPath, args, { encoding: "utf8" });
+  assert.deepEqual(JSON.parse(planned), first);
+  assert.equal(planned.includes(secretValue), false);
+  assert.equal(fs.readFileSync(path.join(a, ".hermes", ".env"), "utf8"), envText);
+  assert.equal(fs.statSync(path.join(a, ".hermes", ".env")).mode & 0o777, 0o600);
   for (const extra of [["--unknown"], ["--uid", "1001"], ["--web", "--web"]]) {
     const result = spawnSync(process.execPath, [...args, ...extra], { encoding: "utf8" });
     assert.notEqual(result.status, 0, "unknown/duplicate options must fail closed");
@@ -142,8 +171,8 @@ try {
     for (const plan of [first, unusual, web]) {
       const composeFile = path.join(tmp, "compose.json");
       fs.writeFileSync(composeFile, JSON.stringify(plan.compose));
-      const result = spawnSync("docker", ["compose", "-p", plan.identity.projectName, "-f", composeFile,
-        "config", "--no-env-resolution", "--format", "json"], {
+      const result = spawnSync("docker", ["compose", "--env-file", "/dev/null", "-p", plan.identity.projectName, "-f", composeFile,
+        "config", "--format", "json"], {
         encoding: "utf8", env: { ...process.env, SECRET: "must-not-expand" },
       });
       assert.equal(result.status, 0, result.stderr);
@@ -153,6 +182,9 @@ try {
       assert.equal(resolved.services.hermes.volumes[1].source, expectedPath);
       assert.equal(resolved.services.hermes.labels["io.pi-toolset.hermes.repo-path"], expectedPath);
       for (const port of resolved.services.hermes.ports ?? []) assert.equal(port.host_ip, "127.0.0.1");
+      // Like paths, Compose escapes dollar signs for round-tripping config output.
+      assert.equal(resolved.services.hermes.environment.OPENROUTER_API_KEY, secretValue.replaceAll("$", () => "$$"));
+      assert.equal(resolved.services.hermes.environment.API_SERVER_KEY, secretValue.replaceAll("$", () => "$$"));
     }
   } else {
     console.log("hermes-repo-install: Compose CLI schema check skipped (unavailable); no runtime claim");
