@@ -27,12 +27,11 @@ want_rtk=0
 want_skills=1
 want_omniroute=1
 want_catalog=1
-profile=""
-profile_explicit=0
+profile=all
 
 usage() {
   cat <<'EOF'
-Usage: sh install.sh [--dry-run]
+Usage: sh install.sh [--dry-run] [--profile=NAME]
 
 Install the pi-toolset setup. When run in a terminal you can deselect any
 component; non-interactive runs use the focused defaults. Understand and RTK
@@ -40,15 +39,16 @@ are optional (select interactively or set PI_TOOLSET_ENABLE).
 
 Components:
   Pi coding agent, pi-toolset package, tmux and tx, Search Hub research
-  extension, pinned Superpowers and eight local skills for Pi, Codex and Claude;
+  extension, pinned Superpowers and all maintained skills for Pi, Codex and Claude;
   optional Understand-Anything and RTK,
   OmniRoute daemon and Pi configuration, curated npm catalog extensions
   (MCP adapter; other catalog tools are opt-in)
 
 Options:
   --dry-run  Print the installation plan without changing the system
-  --profile=NAME  Global skill profile (see install-agent-skills.sh); recorded
-                  profiles are preserved on later runs
+  --profile=NAME  Global skills: all by default, even with a saved narrower profile.
+                  Use default for core only, or a named narrower profile
+                  (see install-agent-skills.sh).
   -h, --help Show this help
 
 Environment:
@@ -63,7 +63,7 @@ EOF
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dry-run) dry_run=1 ;;
-    --profile=*) profile=${1#--profile=}; profile_explicit=1 ;;
+    --profile=*) profile=${1#--profile=} ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'install: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -145,7 +145,7 @@ package:pi-toolset package (Search Hub and subagents)
 tmux:tmux and tx
 understand:Understand-Anything
 rtk:RTK (install/update latest)
-skills:Superpowers + eight specialists for Pi, Codex and Claude
+skills:Superpowers + maintained skills (profile: $profile) for Pi, Codex and Claude
 omniroute:OmniRoute
 catalog:MCP adapter
 EOF
@@ -196,11 +196,7 @@ print_plan() {
   if [ "$want_understand" = 1 ]; then printf '%s\n' 'would install: Understand-Anything'; fi
   if [ "$want_rtk" = 1 ]; then printf '%s\n' 'would install: RTK'; fi
   if [ "$want_skills" = 1 ]; then
-    if [ "$profile_explicit" = 1 ]; then
-      printf 'would install: global Codex and Claude skill copies (profile: %s)\n' "$profile"
-    else
-      printf '%s\n' 'would install: global Codex and Claude skill copies (pinned Superpowers + eight specialists, preserving any recorded profile)'
-    fi
+    printf 'would install: global Codex and Claude skill copies (profile: %s)\n' "$profile"
   fi
   if [ "$want_omniroute" = 1 ]; then
     printf '%s\n' 'would install: OmniRoute'
@@ -244,11 +240,7 @@ if [ ! -f "$script_dir/install-agent-skills.sh" ] ||
     exit 1
   fi
   # Forward parsed options so a downloaded bootstrap installs the same way.
-  if [ "$profile_explicit" = 1 ]; then
-    sh "$bootstrap_dir/repo/install.sh" "--profile=$profile"
-  else
-    sh "$bootstrap_dir/repo/install.sh"
-  fi
+  sh "$bootstrap_dir/repo/install.sh" "--profile=$profile"
   exit $?
 fi
 
@@ -473,13 +465,9 @@ fi
 
 if [ "$want_skills" = 1 ]; then
   ensure_node
-  # Preserve a recorded optional profile so an install/update rerun does not
-  # silently return the global copies to the core set.
-  if [ "$profile_explicit" = 1 ]; then
-    AGENT_SKILLS_PRESERVE_PROFILE=1 sh "$script_dir/install-agent-skills.sh" "--profile=$profile"
-  else
-    AGENT_SKILLS_PRESERVE_PROFILE=1 sh "$script_dir/install-agent-skills.sh"
-  fi
+  # Always pass the selected profile: bare install.sh means all, regardless of
+  # a previous skill-only selection. Explicit narrower flags still take priority.
+  sh "$script_dir/install-agent-skills.sh" "--profile=$profile"
   SUPERPOWERS_DIR=$(node "$script_dir/scripts/superpowers-source.mjs" --path)
   export SUPERPOWERS_DIR
   printf 'installed: global Codex and Claude skill copies\n'

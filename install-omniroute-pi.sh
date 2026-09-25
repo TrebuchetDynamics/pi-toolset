@@ -20,12 +20,13 @@ usage() {
   cat <<'EOF'
 Usage: sh install-omniroute-pi.sh [options]
 
-Install OmniRoute, run it as a daemon, and configure Pi to use OmniRoute.
+Install OmniRoute, run it as a daemon, and register its route in Pi.
+Pi's default provider and model are left unchanged, including when unset.
 
 Options:
   --config-only    Skip package installation and daemon startup
   --base-url URL   OmniRoute base URL (`/v1` is detected automatically)
-  --model ID       OmniRoute model or route (default: auto/best-free)
+  --model ID       Route to register, not Pi's default (default: auto/best-free)
   -h, --help       Show this help
 
 Environment:
@@ -349,8 +350,7 @@ const settingsBefore = fs.existsSync(settingsFile) ? fs.readFileSync(settingsFil
 let settings = {};
 if (settingsBefore.trim()) settings = JSON.parse(settingsBefore);
 if (!settings || typeof settings !== "object" || Array.isArray(settings)) throw new Error(`${settingsFile} must contain a JSON object`);
-settings.defaultProvider = "omniroute";
-settings.defaultModel = process.env.OMNIROUTE_MODEL;
+// Registering a route must not select it: preserve even absent provider/model defaults.
 const retry = settings.retry && typeof settings.retry === "object" && !Array.isArray(settings.retry)
   ? settings.retry
   : {};

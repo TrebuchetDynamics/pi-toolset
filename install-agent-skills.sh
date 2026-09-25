@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-# Install the Superpowers-led profile for Codex and Claude Code.
+# Install maintained skills for Codex and Claude Code (Pi uses the Codex root).
 #
 # Usage:
 #   sh install-agent-skills.sh
@@ -29,23 +29,24 @@ AGENT_SKILLS_DRY_RUN="${AGENT_SKILLS_DRY_RUN:-${CLAUDE_SKILLS_DRY_RUN:-0}}"
 
 install_codex=1
 install_claude=1
-profile=default
+profile=all
 profile_explicit=0
 
 usage() {
   cat <<'EOF'
 Usage: sh install-agent-skills.sh [options]
 
-Install 15 pinned upstream Superpowers skills, eight local specialists,
-and the explicit-use lgtm compatibility command.
-Known optional/retired global copies are archived outside discovery roots.
-Unrelated user skills are preserved.
+Install pinned upstream Superpowers and all maintained local skills on fresh
+installs, including the explicit-use lgtm command. Reuse the recorded profile
+on later runs unless --profile overrides it. Retired and unselected managed
+copies are archived outside discovery roots; unrelated user skills are preserved.
 
 Options:
   --codex-only   Install only to CODEX_SKILLS_DIR (default: ~/.agents/skills)
   --claude-only  Install only to CLAUDE_SKILLS_DIR (default: ~/.claude/skills)
-  --profile=NAME Add one optional profile (design, research, refactor, automation,
-                 authoring, delivery, planning, writing); default is core only
+  --profile=NAME Select all (fresh default), default (core only), or core plus
+                 design, research, refactor, automation, authoring, delivery,
+                 planning, writing. Use --profile=all to expand an existing install.
   --dry-run      Print planned changes without writing files
   --no-backup    Replace same-name skills without backing them up
   -h, --help     Show this help
@@ -106,9 +107,9 @@ if [ ! -d "$src_root" ]; then
   exit 1
 fi
 
-# install.sh (and other updaters) set AGENT_SKILLS_PRESERVE_PROFILE=1 so a recorded
-# profile survives a rerun. Explicit --profile always wins and is recorded again.
-if [ "$profile_explicit" = 0 ] && [ "${AGENT_SKILLS_PRESERVE_PROFILE:-0}" = "1" ] && [ -f "$AGENT_SKILLS_PROFILE_FILE" ]; then
+# Fresh installs use all; ordinary refreshes preserve any saved selection.
+# Explicit --profile always wins. Keep the legacy preservation override for callers.
+if [ "$profile_explicit" = 0 ] && [ "${AGENT_SKILLS_PRESERVE_PROFILE:-1}" = "1" ] && [ -f "$AGENT_SKILLS_PROFILE_FILE" ]; then
   profile=$(cat "$AGENT_SKILLS_PROFILE_FILE")
 fi
 
@@ -119,9 +120,13 @@ import path from 'node:path';
 const [root, profile] = process.argv.slice(2);
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
 const config = JSON.parse(fs.readFileSync(path.join(root, 'skills/shared/profiles.json')));
-if (profile !== 'default' && !config.optional[profile]) throw new Error(`Unknown skill profile: ${profile}`);
+if (profile !== 'default' && profile !== 'all' && !Object.hasOwn(config.optional, profile)) {
+  throw new Error(`Unknown skill profile: ${profile}`);
+}
 const selected = new Set(pkg.pi.skills.map(p => path.basename(p)));
-for (const name of config.optional[profile] || []) selected.add(name);
+const extras = profile === 'all' ? Object.values(config.optional).flat() : (config.optional[profile] || []);
+for (const name of extras) selected.add(name);
+if (profile === 'all') for (const name of config.retired) selected.delete(name);
 for (const rel of fs.readdirSync(path.join(root, 'skills'), {recursive:true})) {
   if (path.basename(rel) === 'SKILL.md' && selected.has(path.basename(path.dirname(rel)))) {
     console.log(path.join(root, 'skills', rel));
@@ -131,6 +136,7 @@ for (const rel of fs.readdirSync(path.join(root, 'skills'), {recursive:true})) {
 if (selected.size) throw new Error(`Missing skills: ${[...selected]}`);
 NODE
 )
+printf 'skill profile: %s\n' "$profile"
 upstream_names=$(node -e 'console.log(require(process.argv[1]).superpowers.skills.join("\n"))' "$src_root/shared/profiles.json")
 if [ "$AGENT_SKILLS_DRY_RUN" = 1 ]; then
   upstream_root=$(node "$script_dir/scripts/superpowers-source.mjs" --path)

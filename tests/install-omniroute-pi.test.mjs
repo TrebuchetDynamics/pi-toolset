@@ -30,7 +30,7 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   path.join(agentDir, "settings.json"),
-  `${JSON.stringify({ theme: "keep-me", retry: { provider: { timeoutMs: 1234 } } }, null, 2)}\n`,
+  `${JSON.stringify({ theme: "keep-me", defaultProvider: "existing", defaultModel: "keep-me", retry: { provider: { timeoutMs: 1234 } } }, null, 2)}\n`,
 );
 fs.writeFileSync(path.join(binDir, "pi"), "#!/bin/sh\nexit 0\n", {
   mode: 0o755,
@@ -147,6 +147,11 @@ try {
     ],
   );
 
+  // A fresh full installation registers OmniRoute without choosing it for Pi.
+  const freshSettings = JSON.parse(fs.readFileSync(path.join(installProbe, "agent/settings.json"), "utf8"));
+  assert.equal(Object.hasOwn(freshSettings, "defaultProvider"), false);
+  assert.equal(Object.hasOwn(freshSettings, "defaultModel"), false);
+
   await assert.rejects(
     execFileAsync("sh", args, {
       cwd: root,
@@ -188,8 +193,8 @@ try {
     fs.readFileSync(path.join(agentDir, "settings.json"), "utf8"),
   );
   assert.equal(settings.theme, "keep-me");
-  assert.equal(settings.defaultProvider, "omniroute");
-  assert.equal(settings.defaultModel, "auto/best-free");
+  assert.equal(settings.defaultProvider, "existing", "registration must preserve the user's provider");
+  assert.equal(settings.defaultModel, "keep-me", "registration must preserve the user's model");
   assert.deepEqual(settings.retry, {
     provider: { timeoutMs: 1234 },
     enabled: true,
@@ -226,6 +231,36 @@ try {
       .filter((name) => name.startsWith("settings.json.bak.")).length,
     1,
   );
+
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(agentDir, "settings.json"), "utf8")), settings,
+    "rerunning configuration must not change the selected defaults or unrelated settings");
+
+  // Break caught: config-only/custom-route setup fills missing defaults or
+  // reselects a model on reruns, including partially configured selections.
+  for (const [name, selection] of [
+    ["unset", {}],
+    ["provider-only", { defaultProvider: "existing" }],
+    ["model-only", { defaultModel: "keep-me" }],
+    ["omniroute-selected", { defaultProvider: "omniroute", defaultModel: "user-chosen-route" }],
+  ]) {
+    const selectedAgent = path.join(fixture, `selection-${name}`);
+    fs.mkdirSync(selectedAgent);
+    fs.writeFileSync(path.join(selectedAgent, "settings.json"), JSON.stringify({ theme: "keep-me", ...selection }));
+    for (let run = 0; run < 2; run++) {
+      await execFileAsync("sh", [...args, "--model", "oc/deepseek-v4-flash-free"], {
+        cwd: root, env: { ...env, PI_CODING_AGENT_DIR: selectedAgent },
+      });
+      const actual = JSON.parse(fs.readFileSync(path.join(selectedAgent, "settings.json"), "utf8"));
+      for (const key of ["defaultProvider", "defaultModel"]) {
+        assert.equal(Object.hasOwn(actual, key), Object.hasOwn(selection, key), `${name}: ${key} presence changed`);
+        assert.equal(actual[key], selection[key], `${name}: ${key} changed`);
+      }
+      assert.equal(actual.theme, "keep-me");
+      const models = JSON.parse(fs.readFileSync(path.join(selectedAgent, "models.json"), "utf8"));
+      assert.equal(models.providers.omniroute.models[0].id, "oc/deepseek-v4-flash-free",
+        "--model must still choose which route is registered, not Pi's default");
+    }
+  }
 
   const explicitRetryAgent = path.join(fixture, "explicit-retry-agent");
   fs.mkdirSync(explicitRetryAgent);
@@ -380,6 +415,8 @@ try {
     /^8\|serve --daemon --no-open$/m,
     "the refreshed daemon must start even when runtime settings are unchanged",
   );
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(agentDir, "settings.json"), "utf8")), settings,
+    "full installer updates must preserve existing provider/model defaults and settings");
   requireDaemonStart = false;
   fs.writeFileSync(omnirouteLog, "");
   await assert.rejects(

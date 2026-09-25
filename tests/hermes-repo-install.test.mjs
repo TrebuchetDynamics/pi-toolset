@@ -6,6 +6,30 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
+// Break caught: a source-only entry/handoff points at a nonexistent skill or
+// loses its resources because the agent resolves paths from the target repo.
+// Agent decision fixtures cover when to use these links; this checks the actual
+// file graph shipped for reading without a registered skill catalog.
+for (const [entry, name] of [
+  ["prompts/hermes-repo-install.md", "hermes-repo-install"],
+  ["prompts/memory-holographic-hermes-setup.md", "memory-holographic-hermes-setup"],
+  ["skills/engineering/hermes-repo-install/SKILL.md", "memory-holographic-hermes-setup"],
+  ["skills/engineering/hermes-repo-install/references/compose.md", "memory-holographic-hermes-setup"],
+]) {
+  const entryFile = path.join(root, entry);
+  const links = [...fs.readFileSync(entryFile, "utf8").matchAll(/\]\(([^)]+\.md)\)/g)].map(match => match[1]);
+  const target = links.find(link => link.endsWith(`/${name}/SKILL.md`));
+  assert.ok(target, `${entry} needs a resolvable source handoff to ${name}`);
+  const skillFile = path.resolve(path.dirname(entryFile), target);
+  const skill = fs.readFileSync(skillFile, "utf8");
+  assert.equal(skill.match(/^name: (.+)$/m)?.[1], name, "handoff must load the intended skill");
+  for (const [, reference] of skill.matchAll(/\]\(([^)]+\.md)\)/g)) {
+    if (/^https?:/.test(reference)) continue;
+    assert.ok(fs.statSync(path.resolve(path.dirname(skillFile), reference)).isFile(),
+      `missing source skill resource: ${reference}`);
+  }
+}
+
 const helper = path.join(root, "skills/engineering/hermes-repo-install/scripts/compose-plan.mjs");
 assert.ok(fs.existsSync(helper), "the install skill needs an offline collision-safe Compose planner");
 const { makePlan } = await import(helper);

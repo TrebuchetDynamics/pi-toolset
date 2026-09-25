@@ -14,7 +14,6 @@ const installer = fs.readFileSync(path.join(root, "install.sh"), "utf8");
 assert.match(installer, /pacman -S --needed --noconfirm tmux/);
 assert.doesNotMatch(installer, /pacman -Sy\b/, "Arch install must not perform a partial package database refresh");
 assert.match(installer, /install-agent-skills\.sh/);
-assert.match(installer, /AGENT_SKILLS_PRESERVE_PROFILE=1/, "install.sh must preserve a recorded skill profile");
 assert.doesNotMatch(installer, /install-autofolderrefactor\.sh/, "autofolderrefactor must remain opt-in");
 assert.match(installer, /install-omniroute-pi\.sh/);
 assert.match(installer, /RTK_INSTALL_URL/);
@@ -60,10 +59,11 @@ try {
   assert.doesNotMatch(output, /would install: Understand-Anything/);
   assert.doesNotMatch(output, /would install: RTK/);
   assert.match(output, /would install: OmniRoute/);
-  assert.match(output, /would install: global Codex and Claude skill copies/);
+  assert.match(output, /would install: global Codex and Claude skill copies \(profile: all\)/);
   assert.match(output, /without duplicate package skills/);
   const profiledPlan = run(["--dry-run", "--profile=design"], { env: { HOME: dryHome } });
   assert.match(profiledPlan, /profile: design/);
+  assert.match(run(["--dry-run", "--profile=all"], { env: { HOME: dryHome } }), /profile: all/);
   assert.doesNotMatch(output, /autofolderrefactor/);
   assert.deepEqual(fs.readdirSync(dryHome), []);
   for (const source of catalogSources) assert.ok(output.includes(`would install: ${source}`));
@@ -105,22 +105,28 @@ try {
     "#!/bin/sh\nwhile [ \"$#\" -gt 0 ]; do\n  if [ \"$1\" = -o ]; then shift; cp \"$BOOTSTRAP_ARCHIVE\" \"$1\"; exit; fi\n  shift\ndone\nexit 2\n",
     { mode: 0o755 },
   );
-  const result = spawnSync("sh", [remoteScript, "--profile=design"], {
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      HOME: home,
-      PATH: `${fakeBin}:/usr/bin:/bin`,
-      BOOTSTRAP_ARCHIVE: archive,
-      BOOT_LOG: bootLog,
-      PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,skills,omniroute,catalog",
-    },
-  });
-  assert.equal(result.status, 0, `bootstrap failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
-  assert.match(result.stdout, /downloading: pi-toolset/);
-  assert.match(result.stdout, /installation complete/);
-  assert.equal(fs.readFileSync(bootLog, "utf8").trim(), "--profile=design",
-    "bootstrap must forward parsed options to the downloaded installer");
+  for (const [args, expected] of [
+    [[], "--profile=all"],
+    [["--profile=design"], "--profile=design"],
+    [["--profile=all"], "--profile=all"],
+  ]) {
+    const result = spawnSync("sh", [remoteScript, ...args], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        HOME: home,
+        PATH: `${fakeBin}:/usr/bin:/bin`,
+        BOOTSTRAP_ARCHIVE: archive,
+        BOOT_LOG: bootLog,
+        PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,skills,omniroute,catalog",
+      },
+    });
+    assert.equal(result.status, 0, `bootstrap failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+    assert.match(result.stdout, /downloading: pi-toolset/);
+    assert.match(result.stdout, /installation complete/);
+    assert.equal(fs.readFileSync(bootLog, "utf8").trim(), expected,
+      "bootstrap must forward parsed options to the downloaded installer");
+  }
 } finally {
   fs.rmSync(bootstrap, { recursive: true, force: true });
 }
@@ -205,6 +211,8 @@ exit 2
       CODEX_SKILLS_DIR: path.join(tmp, "codex-skills"),
       CLAUDE_SKILLS_DIR: path.join(tmp, "claude-skills"),
       AGENT_SKILLS_BACKUP: "0",
+      AGENT_SKILLS_PROFILE_FILE: path.join(tmp, "state", "skills-profile"),
+      XDG_STATE_HOME: path.join(tmp, "state"),
       PI_CODING_AGENT_DIR: agentDir,
       PI_TOOLSET_SKIP_OMNIROUTE: "1",
       PI_LIST_OUTPUT: "git:github.com/TrebuchetDynamics/pi-toolset-extra",
@@ -218,13 +226,16 @@ exit 2
   assert.match(output, /installed: Understand-Anything/);
   assert.match(output, /installed: RTK/);
   assert.equal(fs.readFileSync(path.join(tmp, "rtk-updates"), "utf8"), "v-test\n", "existing RTK must still run the installer with the requested version");
-  const bundledSkills = [...pkg.pi.skills.map(p => path.basename(p)), ...JSON.parse(fs.readFileSync(path.join(root, "skills/shared/profiles.json"))).superpowers.skills];
+  const profiles = JSON.parse(fs.readFileSync(path.join(root, "skills/shared/profiles.json")));
+  const bundledSkills = [...new Set([...pkg.pi.skills.map(p => path.basename(p)),
+    ...profiles.superpowers.skills, ...Object.values(profiles.optional).flat()])];
   for (const name of bundledSkills) {
     for (const target of ["codex-skills", "claude-skills"]) {
       assert.ok(fs.existsSync(path.join(tmp, target, name, "SKILL.md")), `${target} missing ${name}`);
     }
   }
-  assert.equal(bundledSkills.length, 24);
+  assert.equal(fs.readFileSync(path.join(tmp, "state", "skills-profile"), "utf8").trim(), "all",
+    "fresh universal install must record all, not just the core profile");
   assert.equal(fs.existsSync(path.join(tmp, "codex-skills", "ponytail")), false);
   assert.match(output, /Codex skills dir:/);
   assert.match(output, /Claude skills dir:/);
@@ -250,6 +261,8 @@ exit 2
       SUPERPOWERS_DIR: upstreamEnv.SUPERPOWERS_DIR,
       PI_TOOLSET_ENABLE: "rtk,understand",
     PI_CODING_AGENT_DIR: agentDir,
+    AGENT_SKILLS_PROFILE_FILE: path.join(tmp, "state", "skills-profile"),
+    XDG_STATE_HOME: path.join(tmp, "state"),
     CODEX_SKILLS_DIR: path.join(tmp, "codex-skills"),
     CLAUDE_SKILLS_DIR: path.join(tmp, "claude-skills"),
     PI_TOOLSET_SKIP: "pi,package,tmux,understand,rtk,omniroute,catalog",
@@ -260,6 +273,27 @@ exit 2
   const freshAgent = path.join(tmp, "fresh-agent");
   run([], { env: { ...skillsEnv, PI_CODING_AGENT_DIR: freshAgent } });
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(freshAgent, "settings.json"), "utf8")).skills, [path.join(tmp, "codex-skills")]);
+  // Break caught: a saved narrow profile overrides install.sh's all default.
+  // Explicit narrower flags still work, but a subsequent bare run expands all.
+  for (const previous of ["default", "design"]) {
+    run([`--profile=${previous}`], { env: skillsEnv });
+    assert.equal(fs.readFileSync(skillsEnv.AGENT_SKILLS_PROFILE_FILE, "utf8").trim(), previous);
+    for (const target of ["codex-skills", "claude-skills"]) {
+      assert.match(fs.readFileSync(path.join(tmp, target, "hermes-repo-install/SKILL.md"), "utf8"), /<!-- pi-toolset-compatibility -->/);
+    }
+    const plan = run(["--dry-run"], { env: skillsEnv });
+    assert.match(plan, /profile: all/);
+    assert.equal(fs.readFileSync(skillsEnv.AGENT_SKILLS_PROFILE_FILE, "utf8").trim(), previous,
+      "preview must not update the saved selection");
+    run([], { env: skillsEnv });
+    assert.equal(fs.readFileSync(skillsEnv.AGENT_SKILLS_PROFILE_FILE, "utf8").trim(), "all");
+    for (const name of bundledSkills) {
+      for (const target of ["codex-skills", "claude-skills"]) {
+        assert.doesNotMatch(fs.readFileSync(path.join(tmp, target, name, "SKILL.md"), "utf8"), /<!-- pi-toolset-compatibility -->/,
+          `bare universal install must restore full all-profile skill: ${name}`);
+      }
+    }
+  }
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }

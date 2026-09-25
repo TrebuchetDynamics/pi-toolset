@@ -9,6 +9,63 @@ const root = path.resolve(new URL("..", import.meta.url).pathname);
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "skill-profile-"));
 try {
   const upstream = superpowersFixture(path.join(tmp, "source"), root);
+  // Break caught: fresh installs silently omit non-core skills; explicit all
+  // must override a saved narrow profile and survive ordinary later refreshes.
+  const config = JSON.parse(fs.readFileSync(path.join(root, "skills/shared/profiles.json"), "utf8"));
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const allHome = path.join(tmp, "all-home");
+  const allProfileFile = path.join(tmp, "all-state", "skills-profile");
+  const allRoots = [path.join(allHome, ".agents/skills"), path.join(allHome, ".claude/skills")];
+  const allEnv = { ...process.env, ...upstream, HOME: allHome,
+    CODEX_SKILLS_DIR: allRoots[0], CLAUDE_SKILLS_DIR: allRoots[1],
+    CLAUDE_CONFIG_DIR: path.join(allHome, ".claude"),
+    AGENT_SKILLS_PROFILE_FILE: allProfileFile, AGENT_SKILLS_PRESERVE_PROFILE: "1",
+    AGENT_SKILLS_BACKUP: "1", AGENT_SKILLS_DRY_RUN: "0",
+  };
+  let allRun = 0;
+  const runAll = (...args) => execFileSync("sh", ["install-agent-skills.sh", ...args], {
+    cwd: root, encoding: "utf8", env: { ...allEnv, AGENT_SKILLS_BACKUP_DIR: path.join(tmp, `all-backups-${allRun++}`) },
+  });
+  // The profile registry is the membership contract, independent of directory
+  // scanning/selection in the installer. Verify every group, not just Hermes.
+  const maintained = new Set([...pkg.pi.skills.map(p => path.basename(p)), ...Object.values(config.optional).flat(),
+    ...config.superpowers.skills]);
+  const assertAll = () => {
+    assert.equal(fs.readFileSync(allProfileFile, "utf8").trim(), "all");
+    for (const directory of allRoots) {
+      for (const name of maintained) {
+        const file = path.join(directory, name, "SKILL.md");
+        assert.ok(fs.existsSync(file), `all profile missing ${name}`);
+        assert.doesNotMatch(fs.readFileSync(file, "utf8"), /<!-- pi-toolset-compatibility -->/,
+          `all must restore full instructions, not leave a deactivated stub: ${name}`);
+      }
+      for (const name of config.retired) assert.equal(fs.existsSync(path.join(directory, name)), false,
+        `fresh all install must exclude retired skill ${name}`);
+    }
+  };
+  runAll("--dry-run");
+  assert.equal(fs.existsSync(allHome), false, "preview must not install skills");
+  assert.equal(fs.existsSync(allProfileFile), false, "preview must not record a selection");
+  runAll();
+  assertAll();
+  // Standalone refresh must preserve saved profiles too, without a wrapper env flag.
+  delete allEnv.AGENT_SKILLS_PRESERVE_PROFILE;
+  runAll();
+  assertAll();
+  runAll("--profile=design");
+  runAll();
+  assert.equal(fs.readFileSync(allProfileFile, "utf8").trim(), "design");
+  for (const directory of allRoots) {
+    assert.doesNotMatch(fs.readFileSync(path.join(directory, "diagram-design/SKILL.md"), "utf8"), /<!-- pi-toolset-compatibility -->/);
+    assert.match(fs.readFileSync(path.join(directory, "hermes-repo-install/SKILL.md"), "utf8"), /<!-- pi-toolset-compatibility -->/);
+  }
+  runAll("--profile=all", "--dry-run");
+  assert.equal(fs.readFileSync(allProfileFile, "utf8").trim(), "design", "all preview must preserve saved selection");
+  runAll("--profile=all");
+  assertAll();
+  runAll();
+  assertAll();
+
   const home = path.join(tmp, "home");
   const codex = path.join(home, ".agents/skills");
   const claude = path.join(home, ".claude/skills");
@@ -16,6 +73,7 @@ try {
     CODEX_SKILLS_DIR: codex, CLAUDE_SKILLS_DIR: claude,
     CLAUDE_CONFIG_DIR: path.join(home, ".claude"),
     XDG_STATE_HOME: path.join(tmp, "state"), AGENT_SKILLS_BACKUP: "1",
+    AGENT_SKILLS_PROFILE_FILE: path.join(tmp, "state", "skills-profile"),
     AGENT_SKILLS_DRY_RUN: "0", AGENT_SKILLS_BACKUP_DIR: path.join(tmp, "backups"),
   };
   for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team", "user-owned"]) {
@@ -23,9 +81,9 @@ try {
     fs.writeFileSync(path.join(codex, name, "SKILL.md"), `Owner-modified ${name}\n`);
   }
   const run = (...args) => execFileSync("sh", ["install-agent-skills.sh", ...args], { cwd: root, env, encoding: "utf8" });
-  run("--dry-run");
+  run("--dry-run", "--profile=default");
   assert.equal(fs.existsSync(env.AGENT_SKILLS_BACKUP_DIR), false);
-  run();
+  run("--profile=default");
   for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team"]) {
     const compatibility = path.join(codex, name, "SKILL.md");
     assert.ok(fs.existsSync(compatibility), `cached command must remain readable: ${name}`);
@@ -51,7 +109,7 @@ try {
   assert.deepEqual(fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true }), before, "idempotent run must not grow backups");
   run("--profile=research");
   assert.ok(fs.existsSync(path.join(codex, "research-forge/SKILL.md")));
-  run();
+  run("--profile=default");
   assert.match(fs.readFileSync(path.join(codex,"research-forge/SKILL.md"),"utf8"), /^disable-model-invocation: true$/m);
   assert.ok(fs.existsSync(path.join(env.AGENT_SKILLS_BACKUP_DIR, "Codex/research-forge/SKILL.md")));
 
@@ -88,6 +146,14 @@ try {
     for (const [, target] of installSkill.matchAll(/\]\(([^)]+\.md)\)/g)) {
       assert.ok(fs.existsSync(path.resolve(installDir, target)), `broken installed Compose link: ${target}`);
     }
+    // Break caught: sibling-source memory handoff works in the package but not
+    // after flattening, especially when resolved from references/compose.md.
+    const composeReference = path.join(installDir, "references/compose.md");
+    for (const [, target] of fs.readFileSync(composeReference, "utf8").matchAll(/\]\(([^)]+\.md)\)/g)) {
+      if (/^https?:/.test(target)) continue;
+      assert.ok(fs.statSync(path.resolve(path.dirname(composeReference), target)).isFile(),
+        `broken flattened Compose handoff: ${target}`);
+    }
     // Packaged helper must work from flattened installations, not just checkout paths.
     const plan = JSON.parse(execFileSync(process.execPath, [path.join(installDir, "scripts/compose-plan.mjs"),
       "--repo", tmp, "--image", `nousresearch/hermes-agent@sha256:${"a".repeat(64)}`,
@@ -112,8 +178,8 @@ try {
   run("--profile=automation");
   assert.deepEqual(fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true }), automationBackups);
 
-  // install.sh refreshes skills with AGENT_SKILLS_PRESERVE_PROFILE=1 so a recorded
-  // profile survives installer reruns instead of silently returning to core.
+  // Legacy callers can explicitly request preservation on the standalone
+  // installer; the full install.sh selects its own default/explicit profile.
   const profileFile = path.join(tmp, "profile", "skills-profile");
   env.AGENT_SKILLS_PROFILE_FILE = profileFile;
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "preserve-backups");
@@ -124,13 +190,13 @@ try {
   for (const directory of [codex, claude]) {
     for (const name of hermesNames) {
       assert.doesNotMatch(fs.readFileSync(path.join(directory, name, "SKILL.md"), "utf8"),
-        /^disable-model-invocation: true$/m, "install.sh must preserve the recorded optional profile");
+        /^disable-model-invocation: true$/m, "standalone refresh must preserve the recorded optional profile");
     }
   }
   delete env.AGENT_SKILLS_PRESERVE_PROFILE;
 
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "deactivation-backups");
-  run();
+  run("--profile=default");
   for (const directory of [codex, claude]) {
     for (const name of hermesNames) {
       assert.match(fs.readFileSync(path.join(directory, name, "SKILL.md"), "utf8"),

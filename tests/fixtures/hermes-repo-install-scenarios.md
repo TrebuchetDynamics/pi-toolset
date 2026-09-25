@@ -2,6 +2,18 @@
 
 Manual fresh-context read-only agent scenarios. Give scenario inputs without the acceptance notes; load `hermes-repo-install`, its Compose reference, and `memory-holographic-hermes-setup` for the guided run. No Docker mutations, network/model probes or private profiles are authorized by these fictional inputs. These are decision checks, not CI inference or proof of live deployment.
 
+## Source present, catalog absent (reported regression)
+
+Inputs: user explicitly invokes `/hermes-repo-install` without arguments. Cwd resolves to Git worktree root `/home/dev/git/service-api`. Both required skills are absent from the active catalog. Pi's trusted configured package checkout is `/home/dev/.pi/agent/git/github.com/TrebuchetDynamics/pi-toolset`; both full skill files, references and the Compose helper are readable there. The agent already read the install skill and Compose reference. No deployment or skill installation is approved. Read `prompts/hermes-repo-install.md` and choose concrete next actions.
+
+Acceptance: use the actual source paths, read the full sibling memory skill/reference, retain the resolved target, and continue read-only discovery/offline planning as inputs permit. Catalog absence alone is not a blocker. No installer, reload, symlink or settings edit is needed to read these instructions. Do not claim `/skill:name` is registered by a direct file read. Keep deployment, dependencies, provider switches and restart gates; report remaining missing plan inputs without claiming readiness.
+
+Variants:
+- Direct user-supplied install `SKILL.md`, no catalog or known package root: use its own directory and the sibling memory skill; cwd remains the deployment target, not the resource base.
+- Flattened install under `/home/dev/.agents/skills/hermes-repo-install`: the memory skill is its sibling; resolve references from their respective files, not cwd.
+- Memory instructions truly missing from all verified sources: continue independent repo discovery, but block deployment/readiness with the exact missing file and one next action. Do not invent a memory recipe, download/install skills, or switch providers.
+- Package root unknown, or conflicting source candidates: inspect configured package locations read-only; ask one focused path question if unresolved. Do not guess a home checkout, scan unrelated trees, or change resource filters. An explicit trust denial is not mere catalog absence.
+
 ## Two repos named api
 
 Inputs: `/srv/a/api` and `/srv/b/api`; host ports 8642 and 9119 occupied; existing foreign `hermes-api` project and `hermes-data` volume. Pasted example has `container_name: hermes`, `~/.hermes:/opt/data`, `.:/workspace` and dashboard enabled. New Compose files belong inside each repo's `.hermes`. Both human-facing profile names must stay `api`. User wants both running quickly with Holographic by default. Latest image may lack the provider and `/opt/hermes` is immutable.

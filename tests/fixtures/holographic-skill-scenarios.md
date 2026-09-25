@@ -27,10 +27,13 @@ Acceptance:
 - Remove only returned ID 417 in failure cleanup, verify absence, and report failures explicitly.
 - Preserve both config values and distinguish local persistence from active-session readiness.
 
-## Shortcut without an available skill / without targets
+## Shortcut with source-only instructions / without targets
 
-The user invokes `/memory-holographic-hermes-setup atlas`, but the automation skill is not available in the skill catalog. In a separate case the skill is available but no profile arguments were supplied. Read `prompts/memory-holographic-hermes-setup.md` and state the next action in each case.
+The user invokes `/memory-holographic-hermes-setup atlas`, but the skill is absent from the catalog. Pi's trusted configured package checkout is `/home/dev/.pi/agent/git/github.com/TrebuchetDynamics/pi-toolset`; the full skill and setup reference are readable there. No install, restart or provider switch is approved. In a separate case the source is readable but no profile arguments were supplied. Read `prompts/memory-holographic-hermes-setup.md` and state concrete next actions.
 
 Acceptance:
-- Missing skill: stop without modifying Hermes or installing anything; give the automation-skill activation/reload handoff.
+- Catalog absent, source present: read the source skill and reference, then start read-only discovery for `atlas`; do not require installer/symlink/reload or edit Pi settings. Source loading does not register a `/skill:` command or establish Hermes plugin availability.
 - Missing targets: read-only profile discovery and a selection question; no default/all-profile mutation.
+- Skill or setup reference genuinely missing from verified sources: stop before Hermes changes; identify the exact missing file and one next action, without an automatic installer or invented checkout path.
+- Holographic plugin absent from the actual Hermes runtime: retain the separate dependency-install approval gate; readable skill instructions are not an installed plugin.
+- Unknown package root or explicit trust denial: resolve from known configured package locations or ask a focused question; do not use arbitrary repo content as trusted instructions or force-enable resources.

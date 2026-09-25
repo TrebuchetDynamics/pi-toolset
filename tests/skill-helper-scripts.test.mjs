@@ -118,15 +118,19 @@ function testUiVaultDiagnosisContract() {
   assert.match(rubric, /Do not calculate an overall or aggregate score/);
 }
 
-function installedSkillCount(skillsDir) {
-  return fs.readdirSync(skillsDir, { withFileTypes: true })
-    .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && entry.name !== "shared")
-    .filter((entry) => fs.existsSync(path.join(skillsDir, entry.name, "SKILL.md")))
-    .length;
-}
-
 function assertInstalledSkillTree(skillsDir) {
-  assert.equal(installedSkillCount(skillsDir), 24);
+  // Break caught: fresh all installs omit a maintained source (including one
+  // accidentally left out of the profile registry), or activate a retired one.
+  // Derive expected membership from source classification, not the installer's
+  // union of optional groups; compare real installed names rather than a count.
+  const profiles = JSON.parse(fs.readFileSync(path.join(root, "skills/shared/profiles.json"), "utf8"));
+  const sourceSkills = fs.readdirSync(path.join(root, "skills"), { recursive: true })
+    .filter(file => path.basename(file) === "SKILL.md")
+    .map(file => fs.readFileSync(path.join(root, "skills", file), "utf8").match(/^name: (.+)$/m)[1])
+    .filter(name => !profiles.retired.includes(name));
+  const installed = fs.readdirSync(skillsDir)
+    .filter(name => fs.existsSync(path.join(skillsDir, name, "SKILL.md")));
+  assert.deepEqual(installed.sort(), [...sourceSkills, ...profiles.superpowers.skills].sort());
   assert.ok(fs.existsSync(path.join(skillsDir, "systematic-debugging", "SKILL.md")));
   assert.ok(fs.lstatSync(path.join(skillsDir, "test-driven-development")).isSymbolicLink());
   assert.equal(fs.existsSync(path.join(skillsDir, "ponytail")), false);
@@ -148,9 +152,14 @@ function testAgentSkillsInstaller() {
       fs.writeFileSync(path.join(existing, "marker.txt"), "existing skill");
     }
 
+    const env = { ...process.env, ...upstreamEnv, HOME: fixture, XDG_STATE_HOME: stateDir,
+      CODEX_SKILLS_DIR: codexSkillsDir, CLAUDE_SKILLS_DIR: claudeSkillsDir,
+      CLAUDE_CONFIG_DIR: path.join(fixture, ".claude"),
+      AGENT_SKILLS_PROFILE_FILE: path.join(stateDir, "pi-toolset", "skills-profile"),
+    };
     const output = execFileSync("sh", [path.join(root, "install-agent-skills.sh")], {
       cwd: root,
-      env: { ...process.env, ...upstreamEnv, HOME: fixture, XDG_STATE_HOME: stateDir },
+      env,
       encoding: "utf8",
     });
 
@@ -171,7 +180,7 @@ function testAgentSkillsInstaller() {
 
     const secondOutput = execFileSync("sh", [path.join(root, "install-agent-skills.sh")], {
       cwd: root,
-      env: { ...process.env, ...upstreamEnv, HOME: fixture, XDG_STATE_HOME: stateDir },
+      env,
       encoding: "utf8",
     });
     assert.match(secondOutput, /unchanged:/);
@@ -187,7 +196,13 @@ function testClaudeSkillsInstallerCompatibilityWrapper() {
     const upstreamEnv = superpowersFixture(path.join(fixture, "source"), root);
     const output = execFileSync("sh", [path.join(root, "install-claude-skills.sh")], {
       cwd: root,
-      env: { ...process.env, ...upstreamEnv, HOME: fixture, CLAUDE_SKILLS_BACKUP: "0" },
+      env: { ...process.env, ...upstreamEnv, HOME: fixture, CLAUDE_SKILLS_BACKUP: "0",
+        XDG_STATE_HOME: path.join(fixture, "state"),
+        AGENT_SKILLS_PROFILE_FILE: path.join(fixture, "state", "skills-profile"),
+        CODEX_SKILLS_DIR: path.join(fixture, ".agents", "skills"),
+        CLAUDE_SKILLS_DIR: path.join(fixture, ".claude", "skills"),
+        CLAUDE_CONFIG_DIR: path.join(fixture, ".claude"),
+      },
       encoding: "utf8",
     });
     assert.match(output, /Claude skills dir:/);

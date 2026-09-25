@@ -52,7 +52,7 @@ For new state, guide user-entered provider/model setup inside this one home. Kee
 
 ## Required Holographic handoff (before gateway readiness)
 
-Load **memory-holographic-hermes-setup** from the installed skill catalog (package source: `skills/engineering/memory-holographic-hermes-setup/`). If unavailable, stop and request installation/enabling of the automation skills; do not substitute a copied snippet.
+Load the full **memory-holographic-hermes-setup** skill and its setup reference. Use its catalog path when readable; otherwise read [the sibling source skill](../../memory-holographic-hermes-setup/SKILL.md), relative to this reference file (not cwd). This works in both the package tree and flattened installs. Catalog absence is not a blocker when these instruction files are readable; no installation or reload is required. Follow the entry skill's source/trust checks and load the complete instructions, not a copied recipe. Check this handoff's files before provisioning: genuinely missing instructions block deployment/readiness, while independent read-only repo discovery may continue. Report the exact missing path and one next action. Reading the skill does not establish runtime plugin availability or authorize changes.
 
 Pass: canonical host repo + full repo ID; explicit Docker context/project/Compose file; verified owned service/container ID and volume; selected image digest; runtime home `/opt/data`; actual container Python and verified application UID/GID/HOME; approved setup/quiescence boundaries. The memory skill's container adapter treats this as an explicitly selected default home **inside that instance**. It must never run its Python/config commands on the host or another instance. Preserve that mapping across every reopen/cleanup.
 
