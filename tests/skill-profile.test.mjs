@@ -58,13 +58,42 @@ try {
   // Break caught: optional team-management skill missing from automation, or its
   // references/shared contract lost when flattened by the real installer.
   const hermesName = "hermes-repo-profiles-team";
-  assert.equal(fs.existsSync(path.join(codex, hermesName, "SKILL.md")), false,
-    "the core profile must not activate Hermes team provisioning");
+  const memoryName = "memory-holographic-hermes-setup";
+  const installName = "hermes-repo-install";
+  const hermesNames = [hermesName, memoryName, installName];
+  for (const name of hermesNames) {
+    assert.equal(fs.existsSync(path.join(codex, name, "SKILL.md")), false,
+      `the core profile must not activate ${name}`);
+  }
   // Each changed installation uses a fresh backup receipt, as a real run does.
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "automation-backups");
   run("--profile=automation");
   const hermesReferences = ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "root-briefing.md", "verification.md"];
   for (const directory of [codex, claude]) {
+    // Break caught: the setup skill or its operational reference disappears
+    // when the real installer flattens optional skills into another host.
+    const memoryInstalled = path.join(directory, memoryName);
+    assert.ok(fs.existsSync(path.join(memoryInstalled, "SKILL.md")), "automation must install Holographic setup");
+    const memorySkill = fs.readFileSync(path.join(memoryInstalled, "SKILL.md"), "utf8");
+    assert.doesNotMatch(memorySkill, /^disable-model-invocation: true$/m);
+    assert.equal(fs.readFileSync(path.join(memoryInstalled, "references/setup.md"), "utf8"),
+      fs.readFileSync(path.join(root, "skills/engineering", memoryName, "references/setup.md"), "utf8"));
+    for (const [, target] of memorySkill.matchAll(/\]\(([^)]+\.md)\)/g)) {
+      assert.ok(fs.existsSync(path.resolve(memoryInstalled, target)), `broken installed memory link: ${target}`);
+    }
+    const installDir = path.join(directory, installName);
+    assert.ok(fs.existsSync(path.join(installDir, "SKILL.md")), "automation must install repo-scoped Hermes Compose setup");
+    const installSkill = fs.readFileSync(path.join(installDir, "SKILL.md"), "utf8");
+    assert.doesNotMatch(installSkill, /^disable-model-invocation: true$/m);
+    for (const [, target] of installSkill.matchAll(/\]\(([^)]+\.md)\)/g)) {
+      assert.ok(fs.existsSync(path.resolve(installDir, target)), `broken installed Compose link: ${target}`);
+    }
+    // Packaged helper must work from flattened installations, not just checkout paths.
+    const plan = JSON.parse(execFileSync(process.execPath, [path.join(installDir, "scripts/compose-plan.mjs"),
+      "--repo", tmp, "--image", `nousresearch/hermes-agent@sha256:${"a".repeat(64)}`,
+      "--uid", "1000", "--gid", "1000"], { encoding: "utf8" }));
+    assert.equal(plan.requiredConfig.memory.provider, "holographic");
+    assert.equal(plan.compose.services.hermes.volumes[1].source, fs.realpathSync(tmp).replaceAll("$", () => "$$"));
     const installed = path.join(directory, hermesName);
     assert.ok(fs.existsSync(path.join(installed, "SKILL.md")), "automation must install the Hermes skill");
     const skill = fs.readFileSync(path.join(installed, "SKILL.md"), "utf8");
@@ -93,16 +122,20 @@ try {
   env.AGENT_SKILLS_PRESERVE_PROFILE = "1";
   run();
   for (const directory of [codex, claude]) {
-    assert.doesNotMatch(fs.readFileSync(path.join(directory, hermesName, "SKILL.md"), "utf8"),
-      /^disable-model-invocation: true$/m, "install.sh must preserve the recorded optional profile");
+    for (const name of hermesNames) {
+      assert.doesNotMatch(fs.readFileSync(path.join(directory, name, "SKILL.md"), "utf8"),
+        /^disable-model-invocation: true$/m, "install.sh must preserve the recorded optional profile");
+    }
   }
   delete env.AGENT_SKILLS_PRESERVE_PROFILE;
 
   env.AGENT_SKILLS_BACKUP_DIR = path.join(tmp, "deactivation-backups");
   run();
   for (const directory of [codex, claude]) {
-    assert.match(fs.readFileSync(path.join(directory, hermesName, "SKILL.md"), "utf8"),
-      /^disable-model-invocation: true$/m, "returning to core must deactivate the optional skill");
+    for (const name of hermesNames) {
+      assert.match(fs.readFileSync(path.join(directory, name, "SKILL.md"), "utf8"),
+        /^disable-model-invocation: true$/m, "returning to core must deactivate the optional skill");
+    }
   }
   assert.ok(fs.existsSync(path.join(env.AGENT_SKILLS_BACKUP_DIR, "Codex", hermesName, "references/coordination.md")),
     "deactivation must preserve archived skill references");

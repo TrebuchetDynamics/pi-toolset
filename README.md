@@ -102,6 +102,8 @@ Default engineering entry points are Superpowers `brainstorming`, `systematic-de
 | Keep a long task on course               | `/goal <objective>`                         | Objective completed with evidence               |
 | Find useful repository work              | `autonomous-codebase-improver` (opt-in)     | Continuous reviewed slices within approved scope |
 | Create or maintain a Hermes team        | `hermes-repo-profiles-team` (opt-in automation)      | Flat profiles, scoped maintenance, native Kanban, per-profile readiness |
+| Set up local Hermes memory             | `memory-holographic-hermes-setup` (opt-in automation) | Selected existing profiles, isolated SQLite, persistence checks |
+| Install Hermes per repository          | `hermes-repo-install` (opt-in automation) | Isolated Compose project/state, collision-safe ports, required Holographic memory |
 | Diagnose a concrete failure              | `systematic-debugging`                     | Repro fails before and passes after             |
 | Build behavior test-first                | `test-driven-development`                  | Red → green → refactor                          |
 | Understand architecture                  | `/understand`                               | Knowledge graph + agent-readable map            |
@@ -128,8 +130,9 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 
 | Surface                     | Included | Purpose                                                                                              |
 | --------------------------- | -------: | ---------------------------------------------------------------------------------------------------- |
-| Agent skills                |   **8 automatic + 1 manual / 66 stored** | Local specialists plus optional and retired reference sources                       |
+| Agent skills                |   **8 automatic + 1 manual / 68 stored** | Local specialists plus optional and retired reference sources                       |
 | Pi extensions               |   **2 default / 15 stored** | Search Hub and subagents; other extensions are opt-in                            |
+| Pi prompt templates         |    **2** | Holographic memory and repo Compose setup shortcuts; require automation skills |
 | Theme                       |    **1** | `trebuchet-neon`, a complete dark Pi token map                                                       |
 | Package bins                |    **2** | `tx` and `autofolderrefactor`                                                                        |
 | Direct runtime dependencies |    **3** | Bundled `@narumitw/pi-goal`, `pi-posher`, and `pi-subagents`; Pi core packages remain optional peers |
@@ -240,9 +243,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 `autoreview`, `git-commit-push`, `greploop`, `s3upload`
 
-**Engineering (16)**
+**Engineering (18)**
 
-`autonomous-codebase-improver`, `hermes-repo-profiles-team`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
+`autonomous-codebase-improver`, `hermes-repo-profiles-team`, `memory-holographic-hermes-setup`, `hermes-repo-install`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
 
 **Frontend and design (23)**
 
@@ -264,11 +267,33 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 ## Skill curation
 
-The source tree retains 66 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
+The source tree retains 68 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
 
 The [diagram skill](skills/frontend/diagram-design/SKILL.md) is a text-only adaptation of [Diagram Design](https://github.com/cathrynlavery/diagram-design), pinned in [third-party notices](THIRD_PARTY_NOTICES.md). It adds no executable helpers or dependencies. Scouting and authoring use a [candidate inspection checklist](skills/pi/pi-ecosystem-scout/references/candidate-inspection.md): review the exact revision and reachable files, check overlap and host compatibility, preserve licensing, and never bypass a dangerous scanner verdict. Stars are discovery signals, not evidence of quality or safety.
 
 The optional automation skill [`hermes-repo-profiles-team`](skills/engineering/hermes-repo-profiles-team/SKILL.md) creates and maintains repo-specific Hermes profiles with root-only Telegram or CLI/TUI interaction and native Kanban coordination. New teams use flat sibling profiles `<repo>-team` and `<repo>-team-<role>`, not nested directories or Hermes source changes. Maintenance preserves existing IDs, model overrides, sessions, cards and workspaces; retirement retains state, while renaming or deletion requires separate approval. It asks for one provider/model choice for a new team, defaults to `openai-codex` / `gpt-6-luna` unless overridden, and verifies authentication separately for every profile before work release. It uses native session handoff/resume, preserves existing cards and workspaces, and requires approval for live provisioning and shared gateway changes. Its [verification reference](skills/engineering/hermes-repo-profiles-team/references/verification.md) separates decision-probe evidence from unverified live Hermes behavior. The [team contract](skills/engineering/hermes-repo-profiles-team/references/team-contract.md) requires responsibility coverage, a durably briefed and verified root, independent acceptance of combined changes, and bounded recovery. Live canaries require separate authorization; readiness remains unverified until the relevant checks run. Installing the skill does not configure Hermes or start agents.
+
+**Local Holographic memory for Hermes**
+
+The optional automation skill [`memory-holographic-hermes-setup`](skills/engineering/memory-holographic-hermes-setup/SKILL.md) configures memory for selected **existing** Hermes profiles without creating a team or changing models, credentials, SOUL, or gateways. It checks installed provider support, profile/database isolation and NumPy in the Hermes Python environment; preserves existing state; and verifies local persistence with a temporary fact and cleanup. Provider switches, dependency installation, database relocation and service restarts require specific approval. `auto_extract: false` is the default, not a guarantee that the agent cannot save facts.
+
+Install the skill through `sh install-agent-skills.sh --profile=automation` (refreshes the global skill bundle; does not configure Hermes), then `/reload`. Invoke:
+
+```text
+/skill:memory-holographic-hermes-setup atlas beacon
+```
+
+The package also declares the prompt shortcut `/memory-holographic-hermes-setup atlas beacon`. It requires the same skill to be available; if missing, it stops rather than improvising. Enable the prompt in `pi config` if existing package filters exclude it, then `/reload`. The standalone skill installer does not install Pi prompt templates. Omitting profile names asks for a selection; it never means “all profiles” or the default home.
+
+See the [setup reference](skills/engineering/memory-holographic-hermes-setup/references/setup.md) for backups, scoped activation, capability caveats and verification. Holographic may be bundled or separately installed depending on Hermes version. Installing this skill does not install the provider or NumPy, and a successful local probe does not prove an active chat/gateway has loaded the new configuration.
+
+**Hermes Docker Compose per repository**
+
+The automation skill [`hermes-repo-install`](skills/engineering/hermes-repo-install/SKILL.md) prepares one isolated Hermes instance per repo and requires `memory-holographic-hermes-setup` for its default memory. Run `/skill:hermes-repo-install`, or `/hermes-repo-install` when the package prompt is enabled, from inside the repo: the target defaults to the Git worktree root resolved from Pi's current working directory. An explicit repository path is an optional override. Install/refresh the automation skills and `/reload` as above; enable filtered prompts through `pi config`.
+
+The repo basename stays the human-facing profile name. A canonical-path hash distinguishes Compose projects even when two repositories share that name. Each owns a persistent named volume at `/opt/data`, mounts only its repo at `/workspace`, and avoids fixed container/network/volume names. The default gateway publishes no ports; requested dashboard/API access uses authenticated services with Docker-allocated **loopback-only** host ports, reported after startup and rediscovered after recreation. No shared host `~/.hermes`, Docker socket or host networking.
+
+Its [offline planner](skills/engineering/hermes-repo-install/scripts/compose-plan.mjs) prints a digest-pinned Compose plan without creating files or calling Docker. The [procedure](skills/engineering/hermes-repo-install/references/compose.md) requires ownership checks, scoped provisioning approval, secret-safe setup, Holographic verification inside the selected container, and real gateway readiness checks. Missing Holographic support blocks readiness rather than silently selecting another provider. Creating/installing the skill does not deploy a container; published tests do not prove live Docker/Hermes readiness.
 
 Existing engineering, research, and optional Understand workflows remain available. No additional workflow plugin, graph service, broad catalog, or scientific toolchain is needed without a specific task. The opt-in [`autonomous-codebase-improver`](skills/engineering/autonomous-codebase-improver/SKILL.md) treats bare/broad requests as continuous, multi-area campaigns: the parent selects concrete approved work, uses one pi-subagents worker and fresh read-only review per slice, accepts the evidence, then continues. Explicit one-slice, collection/subsystem, audit-only, pause/stop, and budget boundaries still apply; missing required delegation blocks implementation. New designs remain approval-gated, and ownership/recoverable slice baselines protect dirty work. Its [evaluation receipt](skills/engineering/autonomous-codebase-improver/references/evaluation-receipt.md) records decision probes, independent review, and parent-guided two-slice, one-slice, timeout/paused-continuation, rollback/refusal, and regression-repair fixtures. Full behavioral acceptance remains provisional: approval/credential branch continuation, unavailable-role/budget, and other lifecycle/type/race variants remain decision-only or unrun; these samples do not prove autonomous reliability. No measured skill-on/skill-off improvement or global activation is claimed.
 

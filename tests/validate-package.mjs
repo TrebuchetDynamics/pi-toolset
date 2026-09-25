@@ -29,6 +29,8 @@ const expectedSkills = [
   "candidates-folder-refactor",
   "autonomous-codebase-improver",
   "hermes-repo-profiles-team",
+  "memory-holographic-hermes-setup",
+  "hermes-repo-install",
   "prompt-cache-auditor",
   "zoom-out",
   "skill-router",
@@ -111,6 +113,10 @@ function collectMissingPackageManifestPaths(baseDir, pkg) {
   for (const skillPath of stringArray(pkg.pi?.skills)) {
     if (!isManifestExclusion(skillPath) && !pathExists(baseDir, skillPath))
       missing.push(`pi.skills: ${skillPath}`);
+  }
+  for (const promptPath of stringArray(pkg.pi?.prompts)) {
+    if (!isManifestExclusion(promptPath) && !pathExists(baseDir, promptPath))
+      missing.push(`pi.prompts: ${promptPath}`);
   }
   return missing;
 }
@@ -628,6 +634,10 @@ async function testPackageManifest() {
   ]);
   assert.deepEqual(pkg.pi.skills, ["./skills/delivery/git-commit-push", "./skills/engineering/technical-auditor", "./skills/engineering/wiki-docs", "./skills/frontend/frontend-design", "./skills/frontend/modern-web-guidance", "./skills/frontend/redesign-existing-projects", "./skills/pi/pi-extensions-helper", "./skills/planning/handoff", "./skills/planning/lgtm"]);
   assert.deepEqual(pkg.pi.themes, ["./themes"]);
+  assert.ok(pkg.pi.prompts?.includes("./prompts/memory-holographic-hermes-setup.md"),
+    "Pi must discover the exact Holographic setup shortcut");
+  assert.ok(pkg.pi.prompts?.includes("./prompts/hermes-repo-install.md"),
+    "Pi must discover the repo Compose setup shortcut");
   assert.equal(
     pkg.scripts["test:behavioral"],
     "node research/software-development-skill-design/behavioral-run/validate-offline-scorer.mjs",
@@ -1841,6 +1851,18 @@ function testNpmPackContents() {
     false,
     "npm package must not include generated ESLint caches",
   );
+  // Break caught: checkout-only command works locally but is omitted from npm.
+  for (const required of [
+    "prompts/memory-holographic-hermes-setup.md",
+    "skills/engineering/memory-holographic-hermes-setup/SKILL.md",
+    "skills/engineering/memory-holographic-hermes-setup/references/setup.md",
+    "prompts/hermes-repo-install.md",
+    "skills/engineering/hermes-repo-install/SKILL.md",
+    "skills/engineering/hermes-repo-install/references/compose.md",
+    "skills/engineering/hermes-repo-install/scripts/compose-plan.mjs",
+  ]) {
+    assert.ok(packagedPaths.has(required), `missing packaged Holographic resource: ${required}`);
+  }
   const imageSources = [...read("README.md").matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)]
     .map((match) => match[1]);
   for (const source of imageSources) {
