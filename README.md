@@ -136,7 +136,7 @@ Skills load on demand. Invoke them naturally or use `/skill:<name>` when skill c
 
 ### Optional extension surfaces
 
-Only Search Hub and subagents load from this package by default. To try another extension for one session, use `pi -e /absolute/path/to/pi-toolset/extensions/<name>/index.js`. Command bridges also need their corresponding optional skills. Retired Ponytail sources are retained for reference, not recommended for activation.
+Only Search Hub, subagents, and the update command load from this package by default. To try another extension for one session, use `pi -e /absolute/path/to/pi-toolset/extensions/<name>/index.js`. Command bridges also need their corresponding optional skills. Retired Ponytail sources are retained for reference, not recommended for activation.
 
 ### Extension reference
 
@@ -155,6 +155,7 @@ Only Search Hub and subagents load from this package by default. To try another 
 | `/onklaud`                | Advisory Onklaud council while Pi retains mutation ownership                                                       |
 | `/s3upload`               | Upload to private Azure storage with an expiring is.gd link and TinyURL fallback                                   |
 | `/poshify`                | Run configured formatters, linters, fixes, and audits after edits or on demand                                     |
+| `/update-pi-toolset`      | Update the package and refresh global skills from an open session, then `/reload`                                  |
 | `subagent` / `/subagents` | Delegate focused work to foreground or background child Pi sessions                                                |
 | Mobile low-redraw         | Hides the repainting work timer inside SSH + tmux sessions                                                         |
 
@@ -390,7 +391,7 @@ Pi discovers resources through `pi.extensions`, `pi.skills`, and `pi.themes` in 
 ```json
 {
   "pi": {
-    "extensions": ["./extensions/search-hub", "./extensions/pi-subagents"],
+    "extensions": ["./extensions/search-hub", "./extensions/pi-subagents", "./extensions/update-pi-toolset"],
     "skills": ["./skills/delivery/git-commit-push", "./skills/engineering/technical-auditor", "./skills/engineering/wiki-docs", "./skills/frontend/frontend-design", "./skills/frontend/modern-web-guidance", "./skills/frontend/redesign-existing-projects", "./skills/pi/pi-extensions-helper", "./skills/planning/handoff", "./skills/planning/lgtm"],
     "themes": ["./themes"]
   }
@@ -403,7 +404,7 @@ The root `.npmrc` intentionally disables npm's automatic peer installation for g
 
 ## Update or remove
 
-`pi update git:github.com/TrebuchetDynamics/pi-toolset` refreshes the package checkout. The skills Pi loads come from the global copies, so refresh those too; `install.sh` does both and preserves the recorded profile:
+`pi update git:github.com/TrebuchetDynamics/pi-toolset` refreshes the package checkout. The skills Pi loads come from the global copies, so refresh those too; `install.sh` does both and preserves the recorded profile. In an open session, `/update-pi-toolset [--profile=NAME] [--dry-run]` runs that installer for you, then asks you to `/reload`:
 
 ```bash
 sh install.sh                    # update package + global skills

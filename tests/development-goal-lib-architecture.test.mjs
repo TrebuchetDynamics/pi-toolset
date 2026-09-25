@@ -19,7 +19,7 @@ assert.equal(
 );
 assert.deepEqual(
   pkg.pi.extensions,
-  ["./extensions/search-hub", "./extensions/pi-subagents"],
+  ["./extensions/search-hub", "./extensions/pi-subagents", "./extensions/update-pi-toolset"],
   "package must register package extensions",
 );
 assert.deepEqual(

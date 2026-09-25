@@ -594,7 +594,7 @@ async function testPackageManifest() {
     autofolderrefactor:
       "./skills/engineering/candidates-folder-refactor/scripts/autofolderrefactor",
   });
-  assert.deepEqual(pkg.pi.extensions, ["./extensions/search-hub", "./extensions/pi-subagents"]);
+  assert.deepEqual(pkg.pi.extensions, ["./extensions/search-hub", "./extensions/pi-subagents", "./extensions/update-pi-toolset"]);
   for (const extensionPath of pkg.pi.extensions) {
     const absolutePath = path.join(root, extensionPath);
     if (extensionPath.startsWith("./node_modules/")) {
