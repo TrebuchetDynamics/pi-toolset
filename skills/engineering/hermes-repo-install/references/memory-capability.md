@@ -34,16 +34,20 @@ A missing provider, failed FTS5, unsafe database, unresolved writer, failed HRR 
 
 ## Configuration and extraction policy
 
-For a new repo instance require the isolated owned-volume database `/opt/data/memory_store.db`, effective `memory.provider=holographic`, and default `plugins.hermes-memory-store.auto_extract=false`. Verify expansion, canonical path, permissions, application-user access, actual volume identity and relevant inode/mount evidence; two containers reporting the same path string may share one database. Reject shared, symlinked, outside-home or root-only state before initialization/probes. An existing different provider/database needs its separate switch/isolation/migration decision; never silently redirect or abandon data.
+For a new repo instance require the isolated owned-volume database `/opt/data/memory_store.db`, effective `memory.provider=holographic`, and default `plugins.hermes-memory-store.auto_extract=false`.
 
-Merge only required keys. Preserve `default_trust`, `min_trust_threshold`, `hrr_dim`, weights and other existing tuning unless a specific change was requested. Preserve a deliberate existing extraction choice until its change is approved. **`auto_extract=false` disables the inspected automatic session-end extraction, not all writes:** explicit tool saves and native-memory mirroring may still write. It is not a write-approval mechanism or evidence the database is quiescent. Verify this interpretation against the installed provider version.
+- Verify expansion, canonical path, permissions, application-user access, actual volume identity and relevant inode/mount evidence; two containers reporting the same path string may share one database.
+- Reject shared, symlinked, outside-home or root-only state before initialization/probes.
+- An existing different provider/database needs its separate switch/isolation/migration decision; never silently redirect or abandon data.
+- Merge only required keys. Preserve `default_trust`, `min_trust_threshold`, `hrr_dim`, weights and other existing tuning unless a specific change was requested. Preserve a deliberate existing extraction choice until its change is approved.
+- **`auto_extract=false` disables the inspected automatic session-end extraction, not all writes:** explicit tool saves and native-memory mirroring may still write. It is not a write-approval mechanism or evidence the database is quiescent. Verify this interpretation against the installed provider version.
 
 ## HRR function and vector coverage checks
 
 Inspect installed APIs/source and their side effects first; no invented module names or copy-pasted cross-version calls. In a fresh startup-equivalent nonroot process, use harmless synthetic inputs with no private facts to exercise:
 
-- Vector encoding: expected dimension/type, finite output and the provider's supported normalization/invariants.
-- Binding followed by unbinding: recovery under the **installed implementation's expected approximate-recovery/similarity tolerance**, including deterministic inputs or its supported seeded test method. Do not demand exact float equality for approximate HRR, choose a threshold after seeing the result, change dimension/weights, or replace a failing real operation with a NumPy-only toy test.
+- **Vector encoding:** expected dimension/type, finite output and the provider's supported normalization/invariants.
+- **Binding followed by unbinding:** recovery under the **installed implementation's expected approximate-recovery/similarity tolerance**, including deterministic inputs or its supported seeded test method. Do not demand exact float equality for approximate HRR, choose a threshold after seeing the result, change dimension/weights, or replace a failing real operation with a NumPy-only toy test.
 
 Keep these probes in-memory and bounded when a supported side-effect-free interface exists. If the API initializes or migrates a store, require the approved single-writer/backup boundary before use; otherwise mark the function test pending. A functional HRR check does not prove semantic truth or accurate recall for all facts.
 
@@ -55,9 +59,12 @@ Inspect existing vector coverage using supported read-only provider diagnostics 
 
 Retain the memory skill's complete canary contract; use the same nonroot runtime, supported package activation and selected home for **every process**, including reopen and cleanup. Check active turns/writers, DB ownership/isolation and consistent backup requirements before any provider initialization or write. Root-only success is invalid.
 
-Add a unique harmless synthetic marker through supported APIs and retain the returned test ID. Search for that exact ID/content with per-call `min_trust: 0.0`; close, reopen in a fresh equivalent process and find the same record. Remove only that returned ID in a `finally`/equivalent path, then freshly reopen and confirm absence with the same trust override. A filtered empty result is not cleanup proof. Do not change production trust tuning, delete a DB, purge unrelated facts or initialize unselected stores to test isolation. Close all connections and child processes.
-
-Attempt exact-ID cleanup on failure too, within the same safe scope. If cleanup fails or cannot be verified, the canary gate fails: report the synthetic marker/ID, remaining blocker and a safe next action. Retain state/backup for recovery; never claim full setup while a test record or writer may remain. Basic CRUD persistence alone does not verify HRR.
+- Add a unique harmless synthetic marker through supported APIs and retain the returned test ID.
+- Search for that exact ID/content with per-call `min_trust: 0.0`; close, reopen in a fresh equivalent process and find the same record.
+- Remove only that returned ID in a `finally`/equivalent path, then freshly reopen and confirm absence with the same trust override. A filtered empty result is not cleanup proof.
+- Do not change production trust tuning, delete a DB, purge unrelated facts or initialize unselected stores to test isolation. Close all connections and child processes.
+- Attempt exact-ID cleanup on failure too, within the same safe scope. If cleanup fails or cannot be verified, the canary gate fails: report the synthetic marker/ID, remaining blocker and a safe next action.
+- Retain state/backup for recovery; never claim full setup while a test record or writer may remain. Basic CRUD persistence alone does not verify HRR.
 
 ## Installed versus loaded
 

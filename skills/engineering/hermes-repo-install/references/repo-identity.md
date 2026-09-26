@@ -6,9 +6,13 @@ This is a required fresh-install and post-setup gate, not optional personalizati
 
 ## Resolve the effective file
 
-Use the selected image's verified prompt-loader source/configuration to identify the actual SOUL path and precedence. `/opt/data/SOUL.md` is an example for the persistent runtime home, not a universal promise. Inspect any configured override that can shadow it. Do not write `/workspace/SOUL.md`, host `~/.hermes/SOUL.md`, another profile's file or an image template merely because that path exists. If the active file is outside the owned persistent home, shared, symlinked, ambiguous or checked into the repo, stop for the specific boundary instead of guessing or silently changing its authority.
-
-Recheck container/volume ownership, the effective application user and the single-writer window. Read the owned effective SOUL privately enough to identify the narrow change; do not dump its private context into chat or receipts. Back it up consistently in the same approved private state boundary before mutation. Execute file operations as the verified application user, preserving ownership and restrictive permissions. Use atomic replacement after confirming the source has not changed; a concurrent wizard/editor change requires rereading, not overwriting it.
+- Use the selected image's verified prompt-loader source/configuration to identify the actual SOUL path and precedence. `/opt/data/SOUL.md` is an example for the persistent runtime home, not a universal promise.
+- Inspect any configured override that can shadow it.
+- Do not write `/workspace/SOUL.md`, host `~/.hermes/SOUL.md`, another profile's file or an image template merely because that path exists.
+- If the active file is outside the owned persistent home, shared, symlinked, ambiguous or checked into the repo, stop for the specific boundary instead of guessing or silently changing its authority.
+- Recheck container/volume ownership, the effective application user and the single-writer window.
+- Read the owned effective SOUL privately enough to identify the narrow change; do not dump its private context into chat or receipts. Back it up consistently in the same approved private state boundary before mutation.
+- Execute file operations as the verified application user, preserving ownership and restrictive permissions. Use atomic replacement after confirming the source has not changed; a concurrent wizard/editor change requires rereading, not overwriting it.
 
 ## Narrow, repeatable update
 

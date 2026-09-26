@@ -6,7 +6,10 @@ Read-only discovery may identify prerequisites during installation. Actual write
 
 ## Collect the whole prerequisite picture first
 
-Inspect the canonical repo's instructions, task-required skill files/maps, manifests (`go.mod`, applicable `go.work`, toolchain/CI pins), actual workspace mapping and intended execution modes. Record current root/submodule dirtiness read-only before proposed changes. Check runtime-supported tools, effective approval policy and all writers. Reuse unchanged ownership/source/version evidence; do not stop discovery at the first safe-to-inspect blocker.
+- Inspect the canonical repo's instructions, task-required skill files/maps, manifests (`go.mod`, applicable `go.work`, toolchain/CI pins), actual workspace mapping and intended execution modes.
+- Record current root/submodule dirtiness read-only before proposed changes.
+- Check runtime-supported tools, effective approval policy and all writers.
+- Reuse unchanged ownership/source/version evidence; do not stop discovery at the first safe-to-inspect blocker.
 
 Return one consolidated actionable blocker report. Example: **gateway ready; development blocked: tool writes deny `/workspace`; required Go absent; skill registration unavailable but canonical files readable, so direct-file loading is usable.** Resolve all three findings without calling readable skills missing. Do not repeatedly launch a failing coding task to rediscover infrastructure problems.
 
@@ -14,9 +17,14 @@ Return one consolidated actionable blocker report. Example: **gateway ready; dev
 
 A Docker read/write bind, correct UID/GID, terminal `touch` or `pwd` is necessary evidence, not proof that Hermes's write/edit tools may mutate the repo. Inspect the pinned image's actual tool guards and configuration loader, including **`HERMES_WRITE_SAFE_ROOT` where supported**. Verify effective precedence, unset/default behavior, supported root-list syntax and canonical-path/symlink handling. Do not guess that commas, colons, JSON or repeated variables are accepted.
 
-The intended scope is the canonical `/workspace` repository **plus the runtime's required owned state access** (normally inside `/opt/data`), not unrestricted filesystem writes. Preserve unrelated restrictions; adding workspace must not accidentally remove required state access. If the installed guard supports only one root and no reviewed narrow policy can include both, report the limitation. Do not choose `/`, an overbroad common parent, host home, other repos, the Docker socket, privileged execution or policy disablement as a shortcut.
+The intended scope is the canonical `/workspace` repository **plus the runtime's required owned state access** (normally inside `/opt/data`), not unrestricted filesystem writes.
 
-Treat tool permission and Docker mount access as distinct authorization boundaries. Review the exact policy delta and obtain any missing approval; approval to mount a repo does not override an observed tool denial. Fresh setup can include a specifically previewed workspace/state policy within its approved scope. Never route a denied write through shell/Python, another tool or an unguarded internal function. An unattended approval dialog is an incompatible policy, not a timeout problem.
+- Preserve unrelated restrictions; adding workspace must not accidentally remove required state access.
+- If the installed guard supports only one root and no reviewed narrow policy can include both, report the limitation.
+- Do not choose `/`, an overbroad common parent, host home, other repos, the Docker socket, privileged execution or policy disablement as a shortcut.
+- Treat tool permission and Docker mount access as distinct authorization boundaries. Review the exact policy delta and obtain any missing approval; approval to mount a repo does not override an observed tool denial.
+- Fresh setup can include a specifically previewed workspace/state policy within its approved scope.
+- Never route a denied write through shell/Python, another tool or an unguarded internal function. An unattended approval dialog is an incompatible policy, not a timeout problem.
 
 ### Actual-tool canary
 
@@ -32,11 +40,12 @@ Before claiming write readiness, within a disclosed, authorized single-writer wi
 
 For a Go repo, inspect `go.mod` and applicable `go.work` plus recorded CI/toolchain requirements. The `go` directive is a language/minimum-toolchain constraint; `toolchain` can express a suggested toolchain, not universally an exact deployment pin. Resolve conflicting requirements before selecting an exact approved version; do not rewrite module/workspace files to make an available compiler appear compatible. If Go is not required, mark it not applicable—do not install it for every Hermes repo.
 
-Check already available tools before proposing installation. Resolve binary paths, versions, architecture, provenance and persistence in the actual container, not the host or a one-off shell. Avoid Go auto-downloading a toolchain/module during diagnosis: inspect directives first and use the installed version's supported no-download discovery (for example `GOTOOLCHAIN=local` for a bounded check when supported). Record any probe-only override; it does not prove the production context has that setting or authorize silently changing it. No `go get`, module tidy, build/test scripts or network dependency fetch as a version check.
-
-If missing or incompatible, request a concrete scoped plan: exact verified toolchain version, official artifact/source and integrity check, architecture, supported persistent install location or reproducible derived image, storage impact and runtime activation. Do not fetch/install/build without that approval, use an unpinned latest/curl-to-shell installer, modify an immutable image tree, install only on the host, or duplicate a usable runtime. Installation permission is not approval for source changes or dependency downloads by future builds.
-
-Configure activation through the image's supported persistent launcher/environment path, narrowly preserving other settings. An `export PATH=...` in the agent's shell, a host rc edit or a binary under an ephemeral `/tmp` path is not provisioning. Verify the chosen exact version/path in each **required** consumer:
+- Check already available tools before proposing installation. Resolve binary paths, versions, architecture, provenance and persistence in the actual container, not the host or a one-off shell.
+- Avoid Go auto-downloading a toolchain/module during diagnosis: inspect directives first and use the installed version's supported no-download discovery (for example `GOTOOLCHAIN=local` for a bounded check when supported). Record any probe-only override; it does not prove the production context has that setting or authorize silently changing it.
+- No `go get`, module tidy, build/test scripts or network dependency fetch as a version check.
+- If missing or incompatible, request a concrete scoped plan: exact verified toolchain version, official artifact/source and integrity check, architecture, supported persistent install location or reproducible derived image, storage impact and runtime activation. Do not fetch/install/build without that approval, use an unpinned latest/curl-to-shell installer, modify an immutable image tree, install only on the host, or duplicate a usable runtime. Installation permission is not approval for source changes or dependency downloads by future builds.
+- Configure activation through the image's supported persistent launcher/environment path, narrowly preserving other settings. An `export PATH=...` in the agent's shell, a host rc edit or a binary under an ephemeral `/tmp` path is not provisioning.
+- Verify the chosen exact version/path in each **required** consumer:
 
 | Consumer | Evidence |
 | --- | --- |
@@ -57,7 +66,9 @@ When a selected task explicitly requires a missing `codemap.md` or other artifac
 - **Trigger:** exact required artifact is absent/unusable for this task; do not impose that filename on unrelated repos.
 - **Artifact/target:** canonical repo path, required output file and the real source/code facts available to build it; do not invent a map or copy one from another repo.
 - **Next workflow:** available source-backed repository documentation workflow (for example **wiki-docs**) or a bounded manual documentation task. Request the exact write/generation scope if absent; no implicit dependency install or tracker action.
-- **Success signal:** readable source-grounded document satisfying the task's requirement, then recheck only the dependent gate. If it is a maintained artifact, verify trackability through the [ignore-policy contract](ignore-policy.md): obtain any missing narrow ignore-edit scope, prefer `!/codemap.md` over removing broad generated-map rules, and retain `.hermes/` protection. Do not stage/force-add the document or silently untrack secrets.
+- **Success signal:** readable source-grounded document satisfying the task's requirement, then recheck only the dependent gate.
+
+If it is a maintained artifact, verify trackability through the [ignore-policy contract](ignore-policy.md): obtain any missing narrow ignore-edit scope, prefer `!/codemap.md` over removing broad generated-map rules, and retain `.hermes/` protection. Do not stage/force-add the document or silently untrack secrets.
 
 Continue independent authorized discovery; do not turn a missing map into indefinite refusal, silently waive an actual task requirement or present a placeholder as a verified map.
 
@@ -88,7 +99,10 @@ For an **existing** job repeatedly failing on the same infrastructure blocker, i
 
 Keep development results under the existing receipt's **`evidence.development`**, written only during authorized setup/reconciliation, not read-only status. Use a scoped result (`not-assessed`, `pending`, `blocked`, `ready`), intended task/modes, observation time, image/container and applicable process identity, plus per-gate evidence/blockers. Record required tool versions/activation, canonical skill paths/loader-versus-direct mode, tool policy scope and actual write/edit/cleanup outcomes, workspace/selectors, prerequisite handoffs, approval compatibility, writer coordination and recreation result. No secrets, raw command environments or private skill contents.
 
-Missing/stale evidence is unknown. A `ready` setup **phase** continues to mean runtime lifecycle readiness; it does not fill in `evidence.development`. Keep pending development reasons in this section without overwriting an earlier runtime blocker. Invalidate dependent development evidence when repo/task requirements, image/container, toolchain/environment, safe-root or approval policy, skill sources, workspace/selectors or job execution context changes. Reuse unaffected evidence, but a recreated environment needs current consumer/tool-policy checks. Mark not-required modes as not applicable rather than pretending they were tested.
+- Missing/stale evidence is unknown. A `ready` setup **phase** continues to mean runtime lifecycle readiness; it does not fill in `evidence.development`.
+- Keep pending development reasons in this section without overwriting an earlier runtime blocker.
+- Invalidate dependent development evidence when repo/task requirements, image/container, toolchain/environment, safe-root or approval policy, skill sources, workspace/selectors or job execution context changes. Reuse unaffected evidence, but a recreated environment needs current consumer/tool-policy checks.
+- Mark not-required modes as not applicable rather than pretending they were tested.
 
 Use an outcome receipt with four distinct categories:
 

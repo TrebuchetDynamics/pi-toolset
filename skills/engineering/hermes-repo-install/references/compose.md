@@ -6,39 +6,102 @@ Readiness in this lifecycle procedure is **runtime** readiness. Repository codin
 
 This is Hermes **in** Docker, not the Docker terminal backend. Each instance owns one persistent `/opt/data` home and one repo mount at `/workspace`. Its human-facing profile name is the original repository basename; its internal Hermes profile is the default home of that isolated instance, not a shared host profile or nested multi-profile team. Two repos called `api` may both display `api`, but every administrative command must use their distinct Compose IDs.
 
-Resolve the target with Git and canonical filesystem paths; verify it is the worktree root, not its `.hermes` child. Inspect existing files before writing. Load any existing setup/verification receipts and follow [resume and diagnostics](resume-and-diagnostics.md): resume the first incomplete gate, retaining valid prior decisions/evidence instead of repeating release discovery, pulls, setup or alias-persistence questions. Treat linked worktrees with external Git metadata as a boundary: mounting the worktree alone may not expose its Git metadata. Stop and propose a narrowly reviewed additional mount or standalone checkout; never mount broad parent trees to make Git work accidentally.
+### Target resolution and resume
 
-Identify task-required repository toolchains/skills/maps and inspect `.gitmodules`, sanitized remote identity, recorded gitlinks and root/submodule dirtiness read-only. Follow the [upstream preservation boundary](development-readiness.md#4-keep-upstream-maintenance-separate): no submodule refresh, checkout or source cleanup as an installation side effect.
+- Resolve the target with Git and canonical filesystem paths; verify it is the worktree root, not its `.hermes` child.
+- Inspect existing files before writing.
+- Load any existing setup/verification receipts and follow [resume and diagnostics](resume-and-diagnostics.md): resume the first incomplete gate, retaining valid prior decisions/evidence instead of repeating release discovery, pulls, setup or alias-persistence questions.
+- Treat linked worktrees with external Git metadata as a boundary: mounting the worktree alone may not expose its Git metadata. Stop and propose a narrowly reviewed additional mount or standalone checkout; never mount broad parent trees to make Git work accidentally.
+- Identify task-required repository toolchains/skills/maps and inspect `.gitmodules`, sanitized remote identity, recorded gitlinks and root/submodule dirtiness read-only. Follow the [upstream preservation boundary](development-readiness.md#4-keep-upstream-maintenance-separate): no submodule refresh, checkout or source cleanup as an installation side effect.
 
-Host prerequisites are Git, usable Docker with Compose **2.30+** (raw env-file support), and Node for the offline planner. **Host Hermes, host Python/NumPy, `~/.hermes` and host profiles are not prerequisites.** Do not run host `hermes`/`pip` or install them to satisfy container checks. Before the approved pull, inspect matching published image source/metadata; after bootstrap, check provider/dependencies early inside the selected maintenance container using the [real Hermes startup/package environment](memory-capability.md), not merely its Python executable. An image not yet downloaded is not a preflight failure.
+### Host prerequisites and Docker context
 
-Check Docker/Compose versions with harmless version calls. Establish which Docker context/daemon commands address. The baseline assumes a local daemon able to bind the verified host path. A remote daemon, rootless UID mapping, Desktop filesystem translation or unavailable permissions requires an explicit adapted plan, not a blind bind mount. Do not install Docker, enable services, join privileged groups or switch contexts as a side effect.
+Host prerequisites are Git, usable Docker with Compose **2.30+** (raw env-file support), and Node for the offline planner.
 
-Reuse an explicit image choice or the verified existing instance's digest. For a new instance without a choice, resolve the current official stable release for the host architecture from read-only registry/source evidence and pin its immutable digest; include it in the single deployment preview rather than asking a separate version question. If resolution/compatibility is uncertain, report that specific blocker. Pull only within approved scope. `latest`/`stable` are discovery channels, not deployment pins. The planner accepts only `nousresearch/hermes-agent@sha256:<64 lowercase hex>`; it cannot verify that the digest exists or is compatible. Verify the selected image's entrypoint, gateway supervision, config schema, Python, Holographic plugin support and dashboard/auth behavior. Use published source matching that image, not a moving-main snippet. A separately approved derived image requires its own source review and digest; do not disguise it as the official image.
+- **Host Hermes, host Python/NumPy, `~/.hermes` and host profiles are not prerequisites.** Do not run host `hermes`/`pip` or install them to satisfy container checks.
+- Before the approved pull, inspect matching published image source/metadata; after bootstrap, check provider/dependencies early inside the selected maintenance container using the [real Hermes startup/package environment](memory-capability.md), not merely its Python executable. An image not yet downloaded is not a preflight failure.
+- Check Docker/Compose versions with harmless version calls. Establish which Docker context/daemon commands address.
+- The baseline assumes a local daemon able to bind the verified host path. A remote daemon, rootless UID mapping, Desktop filesystem translation or unavailable permissions requires an explicit adapted plan, not a blind bind mount.
+- Do not install Docker, enable services, join privileged groups or switch contexts as a side effect.
+
+### Image selection
+
+- Reuse an explicit image choice or the verified existing instance's digest.
+- For a new instance without a choice, resolve the current official stable release for the host architecture from read-only registry/source evidence and pin its immutable digest; include it in the single deployment preview rather than asking a separate version question. If resolution/compatibility is uncertain, report that specific blocker. Pull only within approved scope.
+- `latest`/`stable` are discovery channels, not deployment pins. The planner accepts only `nousresearch/hermes-agent@sha256:<64 lowercase hex>`; it cannot verify that the digest exists or is compatible.
+- Verify the selected image's entrypoint, gateway supervision, config schema, Python, Holographic plugin support and dashboard/auth behavior. Use published source matching that image, not a moving-main snippet.
+- A separately approved derived image requires its own source review and digest; do not disguise it as the official image.
 
 ## Identity, ownership and collision rules
 
-The offline planner canonicalizes the repo path, keeps its basename as `profileName`, computes full SHA-256 `repoId`, and constructs the internal Compose project `hermes-<bounded-slug>-<first-16-hash-characters>`. Its user-facing `container_name` must be **`hermes-<repo-name>`**, e.g. `hermes-kenworth-cummins-ing`, without a hash or `-hermes-1` tail. Here repo-name is the full basename normalized to lowercase ASCII letters/digits/hyphens (non-alphanumeric runs become hyphens, edge hyphens are trimmed, empty becomes `repo`); unlike the internal project slug, it is not truncated. Project/volume/network identity stays hashed.
+The offline planner canonicalizes the repo path, keeps its basename as `profileName`, computes full SHA-256 `repoId`, and constructs the internal Compose project `hermes-<bounded-slug>-<first-16-hash-characters>`.
 
-Docker container names are daemon-global. Before applying, inspect the exact short name (including stopped containers) in the verified context. If unused, keep it. If fully verified as this repo's existing container, preserve its recorded name/config. If it may be an unidentified installation for this same repo (matching mounts/state without sufficient ownership evidence), stop discovery rather than create a duplicate. If the required name is reserved by an unrelated container, stop with that collision and leave it untouched. Do not add a hash, numeric suffix or substitute name; never adopt, relabel, stop, rename or delete the other instance. Two same-basename repos cannot both use this naming contract on one daemon; resolving that conflict requires a user decision, not an automatic rename or context switch. Recheck before creation and fail closed on a race. The offline planner does not inspect Docker or promise name availability. Short hashes are identifiers, not proof of ownership: compare the **full** hash, canonical path, receipt and mounts.
+- Its user-facing `container_name` must be **`hermes-<repo-name>`**, e.g. `hermes-kenworth-cummins-ing`, without a hash or `-hermes-1` tail. Here repo-name is the full basename normalized to lowercase ASCII letters/digits/hyphens (non-alphanumeric runs become hyphens, edge hyphens are trimmed, empty becomes `repo`); unlike the internal project slug, it is not truncated.
+- Project/volume/network identity stays hashed.
 
-Persist a local identity receipt (for example `.hermes/identity.json`), nonsecret resumable `.hermes/setup-state.json` and the Compose document `.hermes/compose.yaml`. Record completed gates atomically after verification; receipts never create authorization or prove fresh readiness. JSON is valid Compose/YAML; write only the plan's `compose` object, not its `identity`/`requiredConfig` envelope. The helper does not validate Git, inspect Docker, write these files or authorize deployment. Acquire a repo-local exclusive setup lock before applying so two installers cannot race; if ownership/liveness is unclear, stop instead of deleting a lock.
+Docker container names are daemon-global. Before applying, inspect the exact short name (including stopped containers) in the verified context:
 
-Before first write, verify `.hermes` and target files are not symlinked/shared and are not someone else's Hermes home. Back up existing owned files outside tracked paths. Apply the [ignore-policy contract](ignore-policy.md) before writing secrets: classify artifacts, inspect root/nested Git rules plus local/global exclusions, and protect generated `.hermes` runtime files with a narrow reviewed rule. Check tracked sensitive paths separately; report them and stop affected secret provisioning, never silently untrack them. Maintained-doc exceptions must not expose the private tree. Verify both document visibility and representative secret/generated-file exclusion; preserve comments/unrelated rules and make reruns no-ops. Never overwrite a checked-in config or recreate a missing identity receipt by assuming matching names mean ownership.
+- If unused, keep it.
+- If fully verified as this repo's existing container, preserve its recorded name/config.
+- If it may be an unidentified installation for this same repo (matching mounts/state without sufficient ownership evidence), stop discovery rather than create a duplicate.
+- If the required name is reserved by an unrelated container, stop with that collision and leave it untouched.
 
-The Compose service, `data` volume, and `default` network carry `io.pi-toolset.hermes.repo-id`, `repo-path`, and `profile` labels. Inspect existing resources by their exact generated names and Compose project labels. Compare full ownership labels and actual mounts with the receipt and canonical target. The volume is project-scoped (`<project>_data` by ordinary Compose naming); the network is likewise project-scoped. Volumes/networks never set a global `name` or `external: true`; only the single Hermes service has the verified human-friendly `container_name`. Do not scale that named service.
+Do not add a hash, numeric suffix or substitute name; never adopt, relabel, stop, rename or delete the other instance. Two same-basename repos cannot both use this naming contract on one daemon; resolving that conflict requires a user decision, not an automatic rename or context switch. Recheck before creation and fail closed on a race. The offline planner does not inspect Docker or promise name availability. Short hashes are identifiers, not proof of ownership: compare the **full** hash, canonical path, receipt and mounts.
 
-Every Compose command must explicitly select the same Docker context, `--env-file /dev/null`, `-p "$PROJECT"` and `-f "$COMPOSE"` verified absolute file path. The empty CLI env file disables implicit `.env` interpolation; the service's raw `env_file` still injects the selected credentials. Do not rely on cwd, inherited `COMPOSE_FILE`, `COMPOSE_PROJECT_NAME`, overrides or a directory basename. Inspect/neutralize conflicting Compose environment selectors. Validate the **resolved** configuration before acting. Labels are useful evidence, not an authentication boundary against another Docker administrator.
+### Receipts and setup lock
 
-Reruns reuse unchanged identity, container name, volume and configuration. Do not silently rename/recreate an existing long-named container just to shorten it. A requested rename needs a scoped Compose reconciliation preserving the same project and volume; never issue an out-of-band `docker rename` that leaves Compose stale. Changing checkout path (including copying `.hermes` to another checkout), Docker context, image, mounts or ownership requires a new preview; moving a repo is not permission to orphan its old state or clone another repo's secrets. Never fix a collision by stopping another stack. Do not run `--remove-orphans`, daemon-wide prune, volume removal or `down -v`.
+Persist a local identity receipt (for example `.hermes/identity.json`), nonsecret resumable `.hermes/setup-state.json` and the Compose document `.hermes/compose.yaml`.
+
+- Record completed gates atomically after verification; receipts never create authorization or prove fresh readiness.
+- JSON is valid Compose/YAML; write only the plan's `compose` object, not its `identity`/`requiredConfig` envelope. The helper does not validate Git, inspect Docker, write these files or authorize deployment.
+- Acquire a repo-local exclusive setup lock before applying so two installers cannot race; if ownership/liveness is unclear, stop instead of deleting a lock.
+
+### Checks before the first write
+
+- Verify `.hermes` and target files are not symlinked/shared and are not someone else's Hermes home. Back up existing owned files outside tracked paths.
+- Apply the [ignore-policy contract](ignore-policy.md) before writing secrets: classify artifacts, inspect root/nested Git rules plus local/global exclusions, and protect generated `.hermes` runtime files with a narrow reviewed rule.
+- Check tracked sensitive paths separately; report them and stop affected secret provisioning, never silently untrack them. Maintained-doc exceptions must not expose the private tree.
+- Verify both document visibility and representative secret/generated-file exclusion; preserve comments/unrelated rules and make reruns no-ops.
+- Never overwrite a checked-in config or recreate a missing identity receipt by assuming matching names mean ownership.
+
+### Resource labels
+
+The Compose service, `data` volume, and `default` network carry `io.pi-toolset.hermes.repo-id`, `repo-path`, and `profile` labels.
+
+- Inspect existing resources by their exact generated names and Compose project labels. Compare full ownership labels and actual mounts with the receipt and canonical target.
+- The volume is project-scoped (`<project>_data` by ordinary Compose naming); the network is likewise project-scoped.
+- Volumes/networks never set a global `name` or `external: true`; only the single Hermes service has the verified human-friendly `container_name`. Do not scale that named service.
+
+### Compose command selection
+
+Every Compose command must explicitly select the same Docker context, `--env-file /dev/null`, `-p "$PROJECT"` and `-f "$COMPOSE"` verified absolute file path.
+
+- The empty CLI env file disables implicit `.env` interpolation; the service's raw `env_file` still injects the selected credentials.
+- Do not rely on cwd, inherited `COMPOSE_FILE`, `COMPOSE_PROJECT_NAME`, overrides or a directory basename. Inspect/neutralize conflicting Compose environment selectors. Validate the **resolved** configuration before acting.
+- Labels are useful evidence, not an authentication boundary against another Docker administrator.
+
+### Reruns and renames
+
+- Reruns reuse unchanged identity, container name, volume and configuration.
+- Do not silently rename/recreate an existing long-named container just to shorten it. A requested rename needs a scoped Compose reconciliation preserving the same project and volume; never issue an out-of-band `docker rename` that leaves Compose stale.
+- Changing checkout path (including copying `.hermes` to another checkout), Docker context, image, mounts or ownership requires a new preview; moving a repo is not permission to orphan its old state or clone another repo's secrets.
+- Never fix a collision by stopping another stack. Do not run `--remove-orphans`, daemon-wide prune, volume removal or `down -v`.
 
 ## Mounts, ownership and configuration
 
-The baseline uses a Docker-managed named volume for `/opt/data`, avoiding a shared host `~/.hermes` and VM bind-mounted SQLite WAL pitfalls. Keep it across container recreation. Backups must be verified and consistent (quiescent writer or supported SQLite backup), never a raw live WAL database copy. Do not inspect host Docker storage internals directly.
+### Volume and `/workspace`
 
-`/workspace` is an **absolute canonical repo bind**, not `.` relative to `.hermes/compose.yaml`; `create_host_path: false` prevents a typo creating an empty host directory. It is read/write because this is a coding agent: explain in the informational preview that the container can change/delete mounted source. An explicit install request covers this target-repo mount; additional mounts require their own scope decision. The mount is not a security boundary for that source. Do not mount the host Docker socket, home directory, SSH keys or unrelated repos. Bridge networking does not restrict outbound Internet access by itself.
+- The baseline uses a Docker-managed named volume for `/opt/data`, avoiding a shared host `~/.hermes` and VM bind-mounted SQLite WAL pitfalls. Keep it across container recreation. Backups must be verified and consistent (quiescent writer or supported SQLite backup), never a raw live WAL database copy. Do not inspect host Docker storage internals directly.
+- `/workspace` is an **absolute canonical repo bind**, not `.` relative to `.hermes/compose.yaml`; `create_host_path: false` prevents a typo creating an empty host directory.
+- It is read/write because this is a coding agent: explain in the informational preview that the container can change/delete mounted source. An explicit install request covers this target-repo mount; additional mounts require their own scope decision. The mount is not a security boundary for that source. Do not mount the host Docker socket, home directory, SSH keys or unrelated repos. Bridge networking does not restrict outbound Internet access by itself.
 
-Pass the actual non-root host UID/GID (1–65534 in inspected image) through `HERMES_UID`/`HERMES_GID`. Do not add `user: <host-id>` or override the image entrypoint: newer s6 images need their root bootstrap to remap/drop privileges. Named volumes do not magically fix repository-bind permissions. Verify the effective application user; any scoped temporary permission probe may create/remove only its owned test file in `/workspace`. Such terminal/Unix evidence does not prove Hermes write/edit-tool access. Verify `HERMES_WRITE_SAFE_ROOT` syntax/precedence and actual policy-mediated write/edit/cleanup separately through the [development gate](development-readiness.md#1-prove-tool-level-writes-not-just-unix-access); preserve required state access without granting `/`. Never recursively chown the repository or reuse root credentials to hide a mismatch.
+### User, permissions and write policy
+
+- Pass the actual non-root host UID/GID (1–65534 in inspected image) through `HERMES_UID`/`HERMES_GID`. Do not add `user: <host-id>` or override the image entrypoint: newer s6 images need their root bootstrap to remap/drop privileges.
+- Named volumes do not magically fix repository-bind permissions. Verify the effective application user; any scoped temporary permission probe may create/remove only its owned test file in `/workspace`. Such terminal/Unix evidence does not prove Hermes write/edit-tool access.
+- Verify `HERMES_WRITE_SAFE_ROOT` syntax/precedence and actual policy-mediated write/edit/cleanup separately through the [development gate](development-readiness.md#1-prove-tool-level-writes-not-just-unix-access); preserve required state access without granting `/`. Never recursively chown the repository or reuse root credentials to hide a mismatch.
+
+### Required config merge
 
 The plan's `requiredConfig` is a **narrow merge** after installed-schema and memory handoff checks:
 
@@ -54,9 +117,17 @@ plugins:
     auto_extract: false
 ```
 
-`working_dir` alone may not configure the supervised gateway's tool subprocesses. Verify actual tool cwd/backend from the selected image and a bounded authorized probe. The gateway process itself may legitimately use `/opt/data`; verify the terminal tool's `pwd`, not process cwd or a bare exec with a forced workdir. Use the local terminal backend **inside** this container, not a nested Docker backend with the host socket. Preserve existing unrelated config, tuning and credentials; never replace a full config with this fragment. Required memory keys are owned by the Holographic skill's approval and preservation rules.
+- `working_dir` alone may not configure the supervised gateway's tool subprocesses. Verify actual tool cwd/backend from the selected image and a bounded authorized probe. The gateway process itself may legitimately use `/opt/data`; verify the terminal tool's `pwd`, not process cwd or a bare exec with a forced workdir.
+- Use the local terminal backend **inside** this container, not a nested Docker backend with the host socket.
+- Preserve existing unrelated config, tuning and credentials; never replace a full config with this fragment. Required memory keys are owned by the Holographic skill's approval and preservation rules.
 
-Reuse explicit provider/model choices or verified configuration belonging to this repo's instance, without printing credentials. For fresh configuration, the **user runs `hermes setup` privately** and chooses provider/model/channels there; missing choices do not block infrastructure preparation or require a chat interview. Do not invent a paid provider/model or borrow Pi's selection. The agent never drives the secret-bearing wizard. Preconfigure **`/workspace` as the workspace before handoff**, using the supported schema; it is the actual mounted repo root, not state at `/opt/data`. The user should not have to decide it. If this wizard still asks, instruct them only to accept the prefilled value. After setup, verify effective `terminal.backend: local`, `terminal.cwd: /workspace`, actual tool cwd and the canonical bind source; restore only those repo-workspace settings if the wizard changed them. No extra clone or nested workspace. Apply [repository identity in SOUL](repo-identity.md): set the assistant's self-name to the exact repo basename and its role to this repository's assistant. Resolve the effective owned persistent SOUL through the image's actual prompt loader; narrowly replace/add identity, preserving unrelated existing SOUL content and mission. Reverify after private setup, which may rewrite the file. Container naming alone does not set conversational identity; a static `/start` greeting may require a separately verified supported setting.
+### Provider, model and workspace
+
+- Reuse explicit provider/model choices or verified configuration belonging to this repo's instance, without printing credentials.
+- For fresh configuration, the **user runs `hermes setup` privately** and chooses provider/model/channels there; missing choices do not block infrastructure preparation or require a chat interview. Do not invent a paid provider/model or borrow Pi's selection. The agent never drives the secret-bearing wizard.
+- Preconfigure **`/workspace` as the workspace before handoff**, using the supported schema; it is the actual mounted repo root, not state at `/opt/data`. The user should not have to decide it. If this wizard still asks, instruct them only to accept the prefilled value.
+- After setup, verify effective `terminal.backend: local`, `terminal.cwd: /workspace`, actual tool cwd and the canonical bind source; restore only those repo-workspace settings if the wizard changed them. No extra clone or nested workspace.
+- Apply [repository identity in SOUL](repo-identity.md): set the assistant's self-name to the exact repo basename and its role to this repository's assistant. Resolve the effective owned persistent SOUL through the image's actual prompt loader; narrowly replace/add identity, preserving unrelated existing SOUL content and mission. Reverify after private setup, which may rewrite the file. Container naming alone does not set conversational identity; a static `/start` greeting may require a separately verified supported setting.
 
 ## Private setup and credential ownership
 
@@ -64,14 +135,32 @@ The user enters secrets through **`hermes setup` in their own terminal**, never 
 
 Separate storage by owner, with one authoritative source per key:
 
-- Installer-managed bootstrap/API/dashboard secrets use ignored `<repo>/.hermes/.env` (`0600`) in a private `.hermes` directory (`0700`), injected via raw Compose `env_file`. Generate only missing required local values with a CSPRNG, without printing them. No second host `web.env`, placeholder provider keys or project-root `.env` overwrite.
-- User-managed provider/channel credentials use the installed wizard's native stores inside persistent `/opt/data`—typically `.env` for API keys/Telegram tokens and `auth.json` for OAuth. These are **not copies** of the host bootstrap file. Verify the actual paths, restrictive permissions and non-root application ownership, never contents. Do not bind-mount a host `.env` over the native file: atomic wizard writes may fail or detach a bind. Do not move/copy/export tokens between stores.
-- Preserve existing working host-injected credentials on reruns. Inspect supported precedence using source and redacted key-presence checks: a Compose-injected value can shadow a freshly saved native value. Report a conflicting key by name and resolve its authority with the user before removing/migrating it; never silently duplicate or delete secrets. Fresh plans omit provider/channel values from the host file so private setup owns them.
-- Raw host entries are literal single-line `KEY=VALUE`; never source/eval the file or shell-quote values. Redact validation, backups and diagnostics; do not print `.env`, `auth.json`, expanded Compose config, whole `docker inspect`, browser/device codes or setup transcripts. No copying host/other-instance credentials or secret-bearing YAML. Protect backups outside tracked paths.
-- After setup, inspect only nonsecret config/auth-availability status and key names. Reconfirm workspace/memory settings and channel readiness; credential-file presence alone proves neither. Environment injection is not a vault: Docker administrators and runtime processes can access secrets.
-- **Apply changes:** do not assume hot reload. Runtime-file changes need a supported gateway reload/restart; changed Compose `env_file` values require container recreation, because `docker restart`/`compose restart` retain the old injected environment. The generated user-invoked `<alias>-apply` command recreates only this service without pulling/building or deleting volumes, then waits up to 60 seconds for the verified image-specific readiness adapter. Follow [readiness and shortcuts](readiness-and-shortcuts.md); Docker startup alone is not success, and unsupported probes never become a dummy health check. Existing downtime still requires the user's intent; creating the shortcut does not execute it.
+- **Installer-managed bootstrap/API/dashboard secrets** use ignored `<repo>/.hermes/.env` (`0600`) in a private `.hermes` directory (`0700`), injected via raw Compose `env_file`. Generate only missing required local values with a CSPRNG, without printing them. No second host `web.env`, placeholder provider keys or project-root `.env` overwrite.
+- **User-managed provider/channel credentials** use the installed wizard's native stores inside persistent `/opt/data`—typically `.env` for API keys/Telegram tokens and `auth.json` for OAuth. These are **not copies** of the host bootstrap file. Verify the actual paths, restrictive permissions and non-root application ownership, never contents. Do not bind-mount a host `.env` over the native file: atomic wizard writes may fail or detach a bind. Do not move/copy/export tokens between stores.
+- **Precedence on reruns.** Preserve existing working host-injected credentials. Inspect supported precedence using source and redacted key-presence checks: a Compose-injected value can shadow a freshly saved native value. Report a conflicting key by name and resolve its authority with the user before removing/migrating it; never silently duplicate or delete secrets. Fresh plans omit provider/channel values from the host file so private setup owns them.
 
-Default requested web exposure is off; do not ask whether to enable it without a user signal. Verify effective listeners and Docker publication: some reported image behavior enabled an authenticated internal API from the bootstrap key despite `API_SERVER_ENABLED=false`. That is a [version-specific check](telegram-activation.md#api-flag-and-exposure-gotcha), not a universal override rule or proof of public exposure. Do not invent chat-channel credentials or reuse another instance's polling token. If no interface/channel was requested, prepare the no-port plan and report interface readiness separately; an image needing a channel to keep its gateway alive is a real activation blocker, not permission to enable web or invent a health claim.
+Additional secret-handling rules:
+
+- Raw host entries are literal single-line `KEY=VALUE`; never source/eval the file or shell-quote values.
+- Redact validation, backups and diagnostics; do not print `.env`, `auth.json`, expanded Compose config, whole `docker inspect`, browser/device codes or setup transcripts.
+- No copying host/other-instance credentials or secret-bearing YAML. Protect backups outside tracked paths.
+- After setup, inspect only nonsecret config/auth-availability status and key names. Reconfirm workspace/memory settings and channel readiness; credential-file presence alone proves neither. Environment injection is not a vault: Docker administrators and runtime processes can access secrets.
+
+### Applying changes
+
+Do not assume hot reload.
+
+- Runtime-file changes need a supported gateway reload/restart; changed Compose `env_file` values require container recreation, because `docker restart`/`compose restart` retain the old injected environment.
+- The generated user-invoked `<alias>-apply` command recreates only this service without pulling/building or deleting volumes, then waits up to 60 seconds for the verified image-specific readiness adapter. Follow [readiness and shortcuts](readiness-and-shortcuts.md); Docker startup alone is not success, and unsupported probes never become a dummy health check.
+- Existing downtime still requires the user's intent; creating the shortcut does not execute it.
+
+### Web exposure
+
+Default requested web exposure is off; do not ask whether to enable it without a user signal.
+
+- Verify effective listeners and Docker publication: some reported image behavior enabled an authenticated internal API from the bootstrap key despite `API_SERVER_ENABLED=false`. That is a [version-specific check](telegram-activation.md#api-flag-and-exposure-gotcha), not a universal override rule or proof of public exposure.
+- Do not invent chat-channel credentials or reuse another instance's polling token.
+- If no interface/channel was requested, prepare the no-port plan and report interface readiness separately; an image needing a channel to keep its gateway alive is a real activation blocker, not permission to enable web or invent a health claim.
 
 ## Required Holographic handoff (before gateway readiness)
 
@@ -79,13 +168,25 @@ Use the [memory capability acceptance contract](memory-capability.md) alongside 
 
 Load the full **memory-holographic-hermes-setup** skill and its setup reference. Use its catalog path when readable; otherwise read [the sibling source skill](../../memory-holographic-hermes-setup/SKILL.md), relative to this reference file (not cwd). This works in both the package tree and flattened installs. Catalog absence is not a blocker when these instruction files are readable; no installation or reload is required. Follow the entry skill's source/trust checks and load the complete instructions, not a copied recipe. Check this handoff's files before provisioning: genuinely missing instructions block deployment/readiness, while independent read-only repo discovery may continue. Report the exact missing path and one next action. Reading the skill does not establish runtime plugin availability or authorize changes.
 
-Pass: canonical host repo + full repo ID; explicit Docker context/project/Compose file; verified owned service/container ID and volume; selected image digest; runtime home `/opt/data`; actual container Python, verified supported startup/package activation and application UID/GID/HOME; the explicit install request and its setup/quiescence boundaries. Include the separate capability/evidence gates, existing-data preservation requirements and any active turns/writers. For a new instance this covers local configuration, backups, canary, maintenance teardown and first startup without another confirmation. It does not authorize stopping/restarting an existing service. The memory skill's container adapter treats this as an explicitly selected default home **inside that instance**. It must never run its Python/config commands on the host or another instance. Preserve that mapping across every reopen/cleanup.
+Pass: canonical host repo + full repo ID; explicit Docker context/project/Compose file; verified owned service/container ID and volume; selected image digest; runtime home `/opt/data`; actual container Python, verified supported startup/package activation and application UID/GID/HOME; the explicit install request and its setup/quiescence boundaries. Include the separate capability/evidence gates, existing-data preservation requirements and any active turns/writers. For a new instance this covers local configuration, backups, canary, maintenance teardown and first startup without another confirmation. It does not authorize stopping/restarting an existing service.
 
-Direct Python/config/backup commands must execute as the verified non-root gateway user with explicit HOME and HERMES_HOME, not Docker exec's default root. The `hermes` CLI shim does not privilege-drop arbitrary Python. Use exec-time user selection on the already bootstrapped maintenance container (not a Compose service `user:` override), verify effective IDs and database permissions, and perform all canary/reopen/cleanup steps as that same user. Root success is not gateway readiness. Every fresh-process import, HRR probe, canary reopen and cleanup must reproduce the same verified startup activation before importing modules; provider flags may otherwise cache an incorrect dependency result.
+The memory skill's container adapter treats this as an explicitly selected default home **inside that instance**. It must never run its Python/config commands on the host or another instance. Preserve that mapping across every reopen/cleanup.
+
+Direct Python/config/backup commands must execute as the verified non-root gateway user with explicit HOME and HERMES_HOME, not Docker exec's default root.
+
+- The `hermes` CLI shim does not privilege-drop arbitrary Python. Use exec-time user selection on the already bootstrapped maintenance container (not a Compose service `user:` override), verify effective IDs and database permissions, and perform all canary/reopen/cleanup steps as that same user.
+- Root success is not gateway readiness.
+- Every fresh-process import, HRR probe, canary reopen and cleanup must reproduce the same verified startup activation before importing modules; provider flags may otherwise cache an incorrect dependency result.
 
 For a new instance, Holographic with `auto_extract: false` is the required default. For existing state, another provider, shared/outside database, or missing dependencies, honor the memory skill's separate approval gates. No silent fallback to builtin-only or basic-only memory; report the actual capability and incomplete gates. NumPy absent in plain Python is not a diagnosis. After verified runtime parity, proven basic operation must be labeled **“basic keyword mode—not full HRR capability”**, not full setup. Imports alone do not prove HRR: verify supported synthetic encode/bind/unbind behavior and report aggregate existing-vector coverage separately. Preserve tuning and explain that `auto_extract: false` still permits explicit saves and native-memory mirroring. No automatic reindexing or semantic-truth promises.
 
-Recent images keep `/opt/hermes` and its Python install immutable. If a provider/dependency is genuinely absent from the startup-equivalent runtime after existing supported persistent packages are checked, request approval for supported persistent plugin/dependency management under `/opt/data` or a reproducible derived image. Never `pip install` into the running image's immutable venv, chmod it writable or use `docker exec` as root to defeat that policy. Verify actual provider/dependency/config/data/HRR survival across an approved recreation, not just volume retention. Known ephemeral dependencies block that action until a scoped persistence plan is resolved; do not knowingly break the gateway to prove the defect.
+### Immutable image tree
+
+Recent images keep `/opt/hermes` and its Python install immutable.
+
+- If a provider/dependency is genuinely absent from the startup-equivalent runtime after existing supported persistent packages are checked, request approval for supported persistent plugin/dependency management under `/opt/data` or a reproducible derived image.
+- Never `pip install` into the running image's immutable venv, chmod it writable or use `docker exec` as root to defeat that policy.
+- Verify actual provider/dependency/config/data/HRR survival across an approved recreation, not just volume retention. Known ephemeral dependencies block that action until a scoped persistence plan is resolved; do not knowingly break the gateway to prove the defect.
 
 ## Provisioning and lifecycle sequence
 

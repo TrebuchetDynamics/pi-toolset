@@ -18,9 +18,12 @@ For repository write canaries, use an already approved narrow ignore scope or ob
 
 ## 2. Inspect all effective sources and index membership
 
-Work from the verified canonical target repo; preserve existing dirty files, comments and index entries. Read the root `.gitignore`, applicable nested `.gitignore` files along each target path, the repo-local exclude file and effective global exclusions. In worktrees, `.git` can be a pointer file: resolve the actual local exclude location with `git rev-parse --git-path info/exclude`, not a hardcoded directory assumption.
+Work from the verified canonical target repo; preserve existing dirty files, comments and index entries.
 
-Discover configured global exclusions with `git config --show-origin --path --get core.excludesFile`. If unset, Git can still use `$XDG_CONFIG_HOME/git/ignore`, or `$HOME/.config/git/ignore` when XDG is unset. Use effective configuration and rule provenance rather than assuming “no configured path” means “no global rules.” Do not dump all Git config/environment or change global exclusions to solve one repo's problem. Existing `.git/info/exclude` rules should also remain untouched unless that exact repo-local change is covered.
+- Read the root `.gitignore`, applicable nested `.gitignore` files along each target path, the repo-local exclude file and effective global exclusions.
+- In worktrees, `.git` can be a pointer file: resolve the actual local exclude location with `git rev-parse --git-path info/exclude`, not a hardcoded directory assumption.
+- Discover configured global exclusions with `git config --show-origin --path --get core.excludesFile`. If unset, Git can still use `$XDG_CONFIG_HOME/git/ignore`, or `$HOME/.config/git/ignore` when XDG is unset. Use effective configuration and rule provenance rather than assuming “no configured path” means “no global rules.”
+- Do not dump all Git config/environment or change global exclusions to solve one repo's problem. Existing `.git/info/exclude` rules should also remain untouched unless that exact repo-local change is covered.
 
 Check **index membership separately**, using filename-only `git ls-files` for the affected document and sensitive paths. Ignore rules do not remove tracked files, and ordinary `git check-ignore` normally omits tracked paths. A tracked sensitive-path finding is a risk to report, not proof from its filename alone that a real credential was published. Stop new secret provisioning at that path; request a separate private exposure/remediation assessment. Never print secret contents/diffs, silently `git rm --cached`, force-add, stash, commit, rotate credentials or rewrite history to make ignore verification pass.
 

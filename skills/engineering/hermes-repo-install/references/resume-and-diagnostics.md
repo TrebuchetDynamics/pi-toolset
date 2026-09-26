@@ -14,30 +14,45 @@ For “fix Docker”, “bot won't answer” or “setup finished”, run this r
 
 ### Reuse evidence operationally
 
-Read required instruction files fully once and retain their source/version in the task context. Reuse verified pinned image/source, repository discovery, user choices and completed unaffected checks; do not rerun catalog/branch/history searches or pull the same image. At continuation refresh **ownership/mounts, active writers/lock, configuration changes and live readiness**. Source/image change invalidates its version-specific probes; wizard/auth/workspace changes invalidate their dependent gates, not all discovery. If instructions are no longer in context or changed, reload the needed full file. Receipts remember observations and choices, never substitute for live checks or grant approval.
+- Read required instruction files fully once and retain their source/version in the task context.
+- Reuse verified pinned image/source, repository discovery, user choices and completed unaffected checks; do not rerun catalog/branch/history searches or pull the same image.
+- At continuation refresh **ownership/mounts, active writers/lock, configuration changes and live readiness**.
+- Source/image change invalidates its version-specific probes; wizard/auth/workspace changes invalidate their dependent gates, not all discovery.
+- If instructions are no longer in context or changed, reload the needed full file.
+- Receipts remember observations and choices, never substitute for live checks or grant approval.
 
 ## Durable, nonsecret progress
 
-Maintain ignored, owner-only `<repo>/.hermes/setup-state.json` alongside the identity receipt. Create it only during authorized setup; a read-only status or plan-only request does not create/repair it. Reject symlinked/shared/foreign targets. Update atomically under the repo setup lock **after** an action is observed successful, not before attempting it. Preserve the previous valid receipt if a write fails.
+Maintain ignored, owner-only `<repo>/.hermes/setup-state.json` alongside the identity receipt.
+
+- Create it only during authorized setup; a read-only status or plan-only request does not create/repair it. Reject symlinked/shared/foreign targets.
+- Update atomically under the repo setup lock **after** an action is observed successful, not before attempting it. Preserve the previous valid receipt if a write fails.
 
 Required fields:
 
 - `version: 1`, canonical `repoPath`, full `repoId`, Docker `context`, `projectName`, exact `containerName`, pinned `image`, runtime `uid`/`gid`, and `workspace: "/workspace"`.
 - `phase`: `prepared`, `awaiting-user-setup`, `configured`, `memory-verified`, `activated`, or `ready`.
-- `checkedAt`: observation time; nonsecret evidence for completed gates, such as actual container/volume IDs, mount source, workspace/user, memory probe cleanup result and selected channel names. Keep [memory capability evidence](memory-capability.md#nonsecret-capability-receipt-and-readiness-contract) separate: startup activation/versions, NumPy/FTS5, functional HRR, aggregate vector coverage, cleanup, gateway loaded state and recreation durability. Missing fields are unknown, not implicit passes.
+- `checkedAt`: observation time, plus nonsecret evidence for completed gates, such as actual container/volume IDs, mount source, workspace/user, memory probe cleanup result and selected channel names. Keep [memory capability evidence](memory-capability.md#nonsecret-capability-receipt-and-readiness-contract) separate: startup activation/versions, NumPy/FTS5, functional HRR, aggregate vector coverage, cleanup, gateway loaded state and recreation durability. Missing fields are unknown, not implicit passes.
 - `aliasPersistence`: `not-offered`, `declined`, `requested`, or `installed`, plus the known alias file, optional `shortcutMode: "path" | "shell"`, `shortcutDir` and `shortcutNames` (verified installed command names), or explicitly selected shell/rc path when applicable. This field covers both PATH links and shell aliases. A verified core-only set is `installed` with its three names; record apply availability separately in nonsecret evidence. A failed later apply addition preserves that core inventory and installed state. An accepted but wholly blocked attempt remains `requested`, not `blocked`, `not-offered` or `installed`; record the observed blocker/partial entries in nonsecret evidence and follow [persistence recovery](readiness-and-shortcuts.md#when-writable-ancestors-block-persistence). Preserve runtime phase and an earlier pending setup/readiness gate. Do not store whole rc contents.
 - `pending`: the next incomplete runtime gate or a bounded blocker code; keep the last completed phase rather than replacing progress with an ambiguous “failed”.
 
 When development is assessed during authorized reconciliation, keep its task/mode verdict, gate evidence and blockers separately under `evidence.development` as described in the [development receipt](development-readiness.md#6-evidence-invalidation-and-outcome-reporting). An old runtime `ready` does not populate that section. Keep missing evidence unknown and preserve an earlier runtime blocker; read-only status creates no receipt or write probes.
 
-Do not store credentials, token fragments, config/env/auth-file contents, OAuth/device codes, private log bodies, messages or credential fingerprints. Nonsecret input changes may be tracked with schema/version, selected provider/model/channel names and file metadata. Metadata is an invalidation hint, not authentication or proof of unchanged secrets. Existing identity/verification receipts remain authoritative inputs to compare, not files to duplicate wholesale.
+Never store credentials, token fragments, config/env/auth-file contents, OAuth/device codes, private log bodies, messages or credential fingerprints. Nonsecret input changes may be tracked with schema/version, selected provider/model/channel names and file metadata. Metadata is an invalidation hint, not authentication or proof of unchanged secrets. Existing identity/verification receipts remain authoritative inputs to compare, not files to duplicate wholesale.
 
 ## Resume at the first incomplete gate
 
 1. Resolve the same canonical repo and read existing identity/progress/verification receipts. Check schema and selectors against live ownership labels, mounts and runtime. A copied/unknown receipt, changed repo/context, inconsistent phase or unidentified existing installation blocks mutation; do not provision another instance as a repair.
 2. Reacquire the setup lock for mutation and verify writers. If the user is still inside setup or another installer owns the lock, wait without deleting a lock or restarting anything. A previous agent finishing its turn does not prove its subprocess exited.
 3. Reuse the pinned image, generated files, valid keys, aliases, user choices and unaffected verification evidence. Do not repeat upstream release searches, pulls of an already present unchanged image, credential generation, setup interviews, completed wizard runs or persistence offers. Missing receipts trigger targeted read-only reconstruction from real artifacts—not a wipe/reinstall or fabricated progress.
-4. Resume using the table. If relevant inputs changed or evidence is stale, invalidate only dependent gates: workspace changes require workspace verification; a wizard/config/provider/home change invalidates dependent auth/memory checks; changed dependency paths/provider packages invalidate dependent capability evidence but do not prove an older gateway reloaded them; wizard/SOUL/prompt-source changes require [repo-name identity revalidation](repo-identity.md); activation/recreation invalidates live gateway/channel/port evidence. Toolchain/environment, tool-approval/safe-root policy, skill sources, workspace/selectors, task or scheduler-context changes invalidate the corresponding development evidence, not all runtime discovery. A persisted `ready` is **last verified**, not fresh readiness.
+4. Resume using the table. If relevant inputs changed or evidence is stale, invalidate only dependent gates:
+   - Workspace changes require workspace verification.
+   - A wizard/config/provider/home change invalidates dependent auth/memory checks.
+   - Changed dependency paths/provider packages invalidate dependent capability evidence but do not prove an older gateway reloaded them.
+   - Wizard/SOUL/prompt-source changes require [repo-name identity revalidation](repo-identity.md).
+   - Activation/recreation invalidates live gateway/channel/port evidence.
+   - Toolchain/environment, tool-approval/safe-root policy, skill sources, workspace/selectors, task or scheduler-context changes invalidate the corresponding development evidence, not all runtime discovery.
+   - A persisted `ready` is **last verified**, not fresh readiness.
 5. After the successful gate, update progress and state the single next action. Record only facts observed in this run or still-valid prior evidence. The receipt carries context, **not permissions**: restart, migration, provider switch or shell-rc authorization still comes from the user's request/conversation and applicable policy. After verified activation, atomically supersede stale pending/stopped observations with current container ID/start time and gateway/channel evidence; retain old facts only as dated history, and clear only satisfied pending gates.
 
 | Last completed phase | Next action |
@@ -75,9 +90,10 @@ Never automatically send a Telegram message, run inference, change backlog polic
 
 Generate owner-only regular executable `.hermes/bin/hermes-diagnostic-probe` (`0700`) **only after** reviewing this image's supported read-only interfaces. It is separate from `hermes-readiness-probe`: their exit codes differ; never interchange them. The status helper is only a bounded collector/renderer, not a generic Hermes runtime adapter. Copy its `wait-ready.mjs` dependency too. An existing installation needs an authorized, ownership-checked launcher update to gain this behavior; changing this skill alone does not retrofit commands.
 
-Bind the probe to the same verified context/project/absolute Compose file/service as the launcher. Each invocation resolves the current container anew, verifies full identity/mounts/user and inspects current configuration before selecting a diagnosis. On changed identity, stale/contradictory receipts or unresolved writers, fail closed. Do not return cached status, infer maintenance from a receipt or `sleep` alone, or reuse an install-time channel list. For ready, satisfy the full [readiness contract](readiness-and-shortcuts.md#readiness-after-apply), including effective auth/access and valid workspace/memory gates.
-
-Emit no credential values, policy identifiers, log bodies or raw configuration. Use verified redacted presence/access interfaces; do not parse or dump secret stores through agent tools. The helper discards stdout/stderr, but this is not permission for the adapter to collect secrets. Review code and all subprocesses: no login/refresh, inference, external messages, canary writes, dependency installation, automatic repair/restart or detached children. Bound every subprocess and prefer `exec` for the final native check. A missing safe interface remains unsupported; never install a dummy probe.
+- Bind the probe to the same verified context/project/absolute Compose file/service as the launcher. Each invocation resolves the current container anew, verifies full identity/mounts/user and inspects current configuration before selecting a diagnosis. On changed identity, stale/contradictory receipts or unresolved writers, fail closed. Do not return cached status, infer maintenance from a receipt or `sleep` alone, or reuse an install-time channel list.
+- For ready, satisfy the full [readiness contract](readiness-and-shortcuts.md#readiness-after-apply), including effective auth/access and valid workspace/memory gates.
+- Emit no credential values, policy identifiers, log bodies or raw configuration. Use verified redacted presence/access interfaces; do not parse or dump secret stores through agent tools. The helper discards stdout/stderr, but this is not permission for the adapter to collect secrets.
+- Review code and all subprocesses: no login/refresh, inference, external messages, canary writes, dependency installation, automatic repair/restart or detached children. Bound every subprocess and prefer `exec` for the final native check. A missing safe interface remains unsupported; never install a dummy probe.
 
 | Probe exit | Evidence attested (current, same owned instance) |
 | --- | --- |

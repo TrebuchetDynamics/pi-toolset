@@ -1,6 +1,8 @@
 # Host CLI, private setup and applying changes
 
-Every install handoff gives the **actual short container name**, workspace `/workspace`, private setup command, host alias and apply command. Create ignored owner-only launchers under `<repo>/.hermes/bin/` and `<repo>/.hermes/aliases.sh`. These are conveniences, not host Hermes installation or host profiles. CLI command availability is not [development readiness](development-readiness.md): verify required toolchains/skills and tool-write approval in the actual gateway, private-CLI and intended noninteractive job environments, not just this launcher or an exported shell PATH. Runtime state/secrets live in the owned `/opt/data` volume; the **repo root itself** is mounted at `/workspace`.
+Every install handoff gives the **actual short container name**, workspace `/workspace`, private setup command, host alias and apply command. Create ignored owner-only launchers under `<repo>/.hermes/bin/` and `<repo>/.hermes/aliases.sh`. These are conveniences, not host Hermes installation or host profiles.
+
+CLI command availability is not [development readiness](development-readiness.md): verify required toolchains/skills and tool-write approval in the actual gateway, private-CLI and intended noninteractive job environments, not just this launcher or an exported shell PATH. Runtime state/secrets live in the owned `/opt/data` volume; the **repo root itself** is mounted at `/workspace`.
 
 ## The user runs setup, not the agent
 
