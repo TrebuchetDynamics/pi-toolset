@@ -109,6 +109,96 @@ try {
   fs.symlinkSync(foreignLauncher, path.join(repoBin, "hermes-logs"));
   assert.throws(() => installShortcuts({ repo, binDir: path.join(tmp, "another-bin") }), /launcher/i);
   assert.equal(fs.existsSync(path.join(tmp, "another-bin")), false);
+
+  // Break caught: first-install command persistence depends on a not-yet-safe
+  // apply launcher, or later promotion replaces the already installed commands.
+  const coreRepo = path.join(tmp, "core only", "worker");
+  const coreRepoBin = path.join(coreRepo, ".hermes", "bin");
+  const coreHostBin = path.join(tmp, "core-host-bin");
+  fs.mkdirSync(coreRepoBin, { recursive: true, mode: 0o700 });
+  for (const name of ["hermes", "hermes-status", "hermes-logs"]) {
+    fs.writeFileSync(path.join(coreRepoBin, name), `#!${process.execPath}\nconsole.log(JSON.stringify(process.argv.slice(2)));\n`, { mode: 0o700 });
+  }
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: coreHostBin }), /launcher/i,
+    "default full installation must still require apply");
+  assert.equal(fs.existsSync(coreHostBin), false, "failed full preflight must not install core links implicitly");
+  const core = installShortcuts({ repo: coreRepo, binDir: coreHostBin, coreOnly: true });
+  assert.deepEqual(core.names, ["hermes-worker", "hermes-worker-status", "hermes-worker-logs"]);
+  assert.equal(core.created, 3);
+  assert.deepEqual(fs.readdirSync(coreHostBin).sort(), [...core.names].sort());
+  const coreInodes = core.names.map(name => fs.lstatSync(path.join(coreHostBin, name)).ino);
+  const coreArgs = ["space arg", "literal$arg", "single'quote"];
+  const coreCall = spawnSync(path.join(coreHostBin, "hermes-worker"), coreArgs, { encoding: "utf8" });
+  assert.equal(coreCall.status, 0, coreCall.stderr);
+  assert.deepEqual(JSON.parse(coreCall.stdout), coreArgs);
+  const coreCli = spawnSync(process.execPath, [path.join(scripts, "install-shortcuts.mjs"),
+    "--core-only", "--repo", coreRepo, "--bin-dir", coreHostBin], { encoding: "utf8" });
+  assert.equal(coreCli.status, 0, coreCli.stderr);
+  assert.deepEqual(JSON.parse(coreCli.stdout.split("\n")[0]), { binDir: coreHostBin, names: core.names, created: 0 });
+
+  // Unselected apply entries are neither trusted nor removed in core-only mode.
+  const coreApply = path.join(coreRepoBin, "hermes-apply");
+  const hostApply = path.join(coreHostBin, "hermes-worker-apply");
+  fs.symlinkSync(path.join(tmp, "missing-source"), coreApply);
+  fs.symlinkSync(path.join(tmp, "unrelated-command"), hostApply);
+  assert.equal(installShortcuts({ repo: coreRepo, binDir: coreHostBin, coreOnly: true }).created, 0);
+  assert.equal(fs.readlinkSync(coreApply), path.join(tmp, "missing-source"));
+  assert.equal(fs.readlinkSync(hostApply), path.join(tmp, "unrelated-command"));
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: coreHostBin }), /launcher/i);
+  fs.unlinkSync(coreApply);
+  fs.writeFileSync(coreApply, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: coreHostBin }), /conflict/i);
+  assert.equal(fs.readlinkSync(hostApply), path.join(tmp, "unrelated-command"));
+  fs.unlinkSync(hostApply); // Remove only the conflict created by this fixture.
+  const promoted = installShortcuts({ repo: coreRepo, binDir: coreHostBin });
+  assert.equal(promoted.created, 1);
+  assert.deepEqual(promoted.names, ["hermes-worker", "hermes-worker-status", "hermes-worker-logs", "hermes-worker-apply"]);
+  assert.equal(fs.readlinkSync(hostApply), coreApply);
+  assert.equal(installShortcuts({ repo: coreRepo, binDir: coreHostBin }).created, 0);
+  assert.equal(installShortcuts({ repo: coreRepo, binDir: coreHostBin, coreOnly: true }).created, 0);
+  assert.equal(fs.readlinkSync(hostApply), coreApply, "core-only is not an uninstall mode");
+  assert.deepEqual(core.names.map(name => fs.lstatSync(path.join(coreHostBin, name)).ino), coreInodes);
+
+  // Core-only must retain the full mode's replacement-boundary checks and
+  // preflight the entire selected set before writing any link.
+  const coreConflict = path.join(tmp, "core-conflict");
+  fs.mkdirSync(coreConflict, { mode: 0o700 });
+  fs.writeFileSync(path.join(coreConflict, "hermes-worker-logs"), "preserve");
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: coreConflict, coreOnly: true }), /conflict/i);
+  assert.deepEqual(fs.readdirSync(coreConflict), ["hermes-worker-logs"]);
+  assert.equal(fs.readFileSync(path.join(coreConflict, "hermes-worker-logs"), "utf8"), "preserve");
+  const unsafeCoreBin = path.join(tmp, "unsafe-core-destination");
+  fs.chmodSync(path.dirname(coreRepo), 0o775);
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /ancestor|writable/i);
+  assert.equal(fs.existsSync(unsafeCoreBin), false);
+  fs.chmodSync(path.dirname(coreRepo), 0o700);
+  fs.chmodSync(sharedAncestor, 0o775);
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: path.join(privateParent, "core-bin"), coreOnly: true }), /ancestor|writable/i);
+  assert.equal(fs.existsSync(path.join(privateParent, "core-bin")), false);
+  fs.chmodSync(sharedAncestor, 0o1777);
+  const coreLogs = path.join(coreRepoBin, "hermes-logs");
+  fs.chmodSync(coreLogs, 0o770);
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /launcher/i);
+  fs.unlinkSync(coreLogs);
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /launcher/i);
+  fs.symlinkSync(foreignLauncher, coreLogs);
+  assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /launcher/i);
+  assert.equal(fs.existsSync(unsafeCoreBin), false);
+
+  fs.unlinkSync(coreLogs);
+  fs.writeFileSync(coreLogs, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+
+  // Selection must be explicit and typed; malformed CLI flags fail before writes.
+  for (const coreOnly of ["true", "false", 1, null]) {
+    assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly }), /coreOnly/i);
+  }
+  for (const extra of [["--core-only", "--core-only"], ["--core-only", "false"], ["--core-only=true"], ["--core-only", "--unknown"]]) {
+    const invalid = spawnSync(process.execPath, [path.join(scripts, "install-shortcuts.mjs"),
+      "--repo", coreRepo, "--bin-dir", unsafeCoreBin, ...extra], { encoding: "utf8" });
+    assert.notEqual(invalid.status, 0);
+    assert.equal(invalid.stdout, "");
+    assert.equal(fs.existsSync(unsafeCoreBin), false);
+  }
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }

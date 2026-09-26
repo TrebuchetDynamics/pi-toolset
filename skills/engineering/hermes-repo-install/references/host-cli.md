@@ -117,7 +117,7 @@ exec node '/srv/projects/api/.hermes/bin/log-events.mjs' --docker \
 
 ## Create and explain aliases
 
-Use the short verified container name as the preferred CLI alias, e.g. `hermes-api`, with `-status`, `-logs` and `-apply` maintenance aliases. Check the user's shell and known repo alias files for **all four** name conflicts; use the hashed Compose project name as a **shell-alias-only** fallback. This never changes the required `hermes-<repo-name>` container name; a Docker name collision blocks setup. Never replace bare `hermes` or an existing command/alias/function. Same-basename repos remain distinct. Do not add a suffix merely by habit when the short alias is available.
+Use the short verified container name as the preferred CLI alias, e.g. `hermes-api`, with `-status`, `-logs` and, only after its gates pass, `-apply` maintenance aliases. Check the user's shell and known repo alias files for every selected name conflict; use the hashed Compose project name as a **shell-alias-only** fallback. This never changes the required `hermes-<repo-name>` container name; a Docker name collision blocks setup. Never replace bare `hermes` or an existing command/alias/function. Same-basename repos remain distinct. Do not add a suffix merely by habit when the short alias is available.
 
 For Bash/Zsh/POSIX-style aliases, `.hermes/aliases.sh` (`0600`) stores shell-quoted absolute commands:
 
@@ -131,7 +131,7 @@ alias hermes-api-logs="'/srv/projects/api/.hermes/bin/hermes-logs'"
 
 Include only existing verified launchers in the alias file: omit the example `-apply` line until its readiness gates pass. For unusual paths, shell-quote the command first, then quote that entire string as the alias assignment; the simple nested-quote example is not universal. Detect the user's shell. For fish, generate native equivalents or offer the absolute launcher; do not source POSIX aliases in fish.
 
-Repo-local alias files remain available without host installation. For requested persistence, prefer the [cross-shell command links](readiness-and-shortcuts.md) in `~/.local/bin`: the same four names work without `source` when PATH resolution is verified. Offer once, reuse acceptance/decline, and record the installed mode; do not install both PATH links and rc entries automatically. An agent subprocess cannot change its parent shell's aliases or PATH.
+Repo-local alias files remain available without host installation. For requested persistence, prefer the [cross-shell command links](readiness-and-shortcuts.md) in `~/.local/bin`: use `--core-only` for main/status/logs before apply is available, then add apply after its gates pass. Selected names work without `source` when PATH resolution is verified. Offer once, reuse acceptance/decline, and record the installed mode; do not install both PATH links and rc entries automatically. An agent subprocess cannot change its parent shell's aliases or PATH.
 
 If writable ancestors block PATH links, follow [the persistence choices and trust caveat](readiness-and-shortcuts.md#when-writable-ancestors-block-persistence); do not automatically fall back to rc sourcing. A `.bashrc` block activates only interactive Bash sessions that read it, not scripts or Zsh/fish; the POSIX-style aliases themselves can also be sourced explicitly in compatible shells.
 
