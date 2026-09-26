@@ -176,6 +176,80 @@ try {
     assert.equal(result.stdout, "", "invalid input must not emit a usable plan");
   }
 
+  // Break caught: the skill ignores the repository it is run in, or adopts a
+  // foreign/mismatched local identity and creates a duplicate Hermes instance
+  // instead of resuming the owned one.
+  const resolverHelper = path.join(root, "skills/engineering/hermes-repo-install/scripts/resolve-target.mjs");
+  assert.ok(fs.existsSync(resolverHelper), "the install skill needs an offline run-repo resolver");
+  const { resolveTarget } = await import(resolverHelper);
+  const runRepo = path.join(tmp, "run-repo");
+  fs.mkdirSync(runRepo);
+  execFileSync("git", ["-C", runRepo, "init", "-q"]);
+  const runSub = path.join(runRepo, "packages", "app");
+  fs.mkdirSync(runSub, { recursive: true });
+  const runRoot = fs.realpathSync(runRepo);
+  const expectedName = `hermes-${path.basename(runRoot).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "repo"}`;
+  const freshTarget = resolveTarget({ cwd: runSub });
+  assert.equal(freshTarget.repoPath, runRoot, "no-argument runs must target the Git worktree root of the working directory");
+  assert.equal(freshTarget.state, "fresh");
+  assert.equal(freshTarget.action, "create");
+  assert.equal(freshTarget.containerName, expectedName);
+  assert.deepEqual(resolveTarget({ cwd: runSub }), resolveTarget({ cwd: runRoot }), "subdirectories must resolve to the same repository");
+  assert.deepEqual(resolveTarget({ cwd: runSub, repo: runRoot }), { ...freshTarget, explicit: true }, "an explicit path must override the working directory");
+  assert.equal(freshTarget.explicit, false);
+  const notGit = path.join(tmp, "not-a-git-dir");
+  fs.mkdirSync(notGit);
+  assert.throws(() => resolveTarget({ cwd: notGit }), /Git worktree/, "a non-Git working directory must ask for a path, not guess");
+
+  // Matching owned receipt => maintain, reading only the nonsecret phase.
+  const receiptDir = path.join(runRoot, ".hermes");
+  fs.mkdirSync(receiptDir);
+  fs.writeFileSync(path.join(receiptDir, "identity.json"), JSON.stringify({
+    version: 1, repoId: freshTarget.repoId, repoPath: freshTarget.repoPath,
+    projectName: freshTarget.projectName, containerName: freshTarget.containerName,
+  }));
+  fs.writeFileSync(path.join(receiptDir, "setup-state.json"), JSON.stringify({
+    version: 1, phase: "memory-verified", repoId: freshTarget.repoId, repoPath: freshTarget.repoPath,
+  }));
+  fs.writeFileSync(path.join(receiptDir, ".env"), "OPENROUTER_API_KEY=FIXTURE_SECRET\n", { mode: 0o600 });
+  const ownedBefore = fs.readdirSync(receiptDir).sort();
+  const ownedTarget = resolveTarget({ cwd: runSub });
+  assert.equal(ownedTarget.state, "existing");
+  assert.equal(ownedTarget.action, "maintain");
+  assert.equal(ownedTarget.phase, "memory-verified");
+  assert.deepEqual(fs.readdirSync(receiptDir).sort(), ownedBefore, "resolving must not write runtime files");
+  assert.equal(JSON.stringify(ownedTarget).includes("FIXTURE_SECRET"), false, "resolving must not read secrets");
+
+  // CLI is offline, deterministic and fails closed on bad input.
+  const resolverCli = (resolverArgs) => spawnSync(process.execPath, [resolverHelper, ...resolverArgs], { encoding: "utf8" });
+  const cliFresh = JSON.parse(resolverCli(["--repo", a]).stdout);
+  assert.equal(cliFresh.action, "create");
+  assert.equal(cliFresh.repoPath, fs.realpathSync(a));
+  assert.deepEqual(JSON.parse(resolverCli(["--cwd", runSub, "--repo", runRoot]).stdout), { ...ownedTarget, explicit: true });
+  for (const bad of [["--unknown"], ["--repo"], ["--cwd"], ["--repo", a, "--repo", a]]) {
+    const result = resolverCli(bad);
+    assert.notEqual(result.status, 0, "unknown/duplicate options must fail closed");
+    assert.equal(result.stdout, "", "invalid input must not emit a usable target");
+  }
+
+  // Foreign or mismatched identity => blocked, never a duplicate.
+  fs.writeFileSync(path.join(receiptDir, "identity.json"), JSON.stringify({
+    version: 1, repoId: "0".repeat(64), repoPath: "/somewhere/else",
+  }));
+  const foreignTarget = resolveTarget({ cwd: runSub });
+  assert.equal(foreignTarget.state, "foreign");
+  assert.equal(foreignTarget.action, "blocked");
+  assert.equal(foreignTarget.phase, null);
+  assert.match(foreignTarget.reason, /different repository|identity/i);
+
+  // The skill and its prompt must teach run-repo resolution and create-vs-maintain.
+  const installSkillText = fs.readFileSync(path.join(root, "skills/engineering/hermes-repo-install/SKILL.md"), "utf8");
+  assert.match(installSkillText, /resolve-target\.mjs/, "SKILL.md must point at the run-repo resolver");
+  assert.match(installSkillText, /maintain/i, "SKILL.md must route an existing instance to maintenance");
+  const installPromptText = fs.readFileSync(path.join(root, "prompts/hermes-repo-install.md"), "utf8");
+  assert.match(installPromptText, /do not ask for a path/i, "the prompt must not ask for a path while inside a Git worktree");
+  assert.match(installPromptText, /create|maintain/i, "the prompt must state the create-vs-maintain routing");
+
   // Break caught: the documented host launcher picks an ambient project/root
   // user, loses quoted argv, allocates a TTY in pipes, or masks Docker failures.
   // Execute the actual reference template against an argv-recording Docker

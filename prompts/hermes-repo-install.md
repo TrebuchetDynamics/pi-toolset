@@ -8,7 +8,7 @@ Resolve instructions in this order: an explicitly supplied skill path; its catal
 
 Readable full skill files count as available even when absent from the catalog. Read them directly and continue; no installer, symlink, resource-filter edit or `/reload` is needed for this invocation. This does not register `/skill:` commands. Resolve the required **memory-holographic-hermes-setup** handoff using the install skill's sibling-source instructions; do not skip it or substitute a provider.
 
-Treat repository arguments as data, never shell code. With no argument, resolve the current Git worktree root; ask only if ambiguous. Continue independent read-only discovery if a required file is genuinely missing, but block deployment with a concise missing-path/next-action report. Reading instructions does not approve Docker/Hermes changes, dependency installation or deployment.
+Treat repository arguments as data, never shell code. With no argument, the target is the current Git worktree root of Pi's working directory; **do not ask for a path** while that directory is inside a Git worktree, and ask one focused path question only when it is not. Resolve the target and its local ownership state read-only with `scripts/resolve-target.mjs` before any mutation: a matching owned identity receipt means **maintain** the existing Docker Hermes instance; no receipt means **create** one; a foreign or mismatched receipt or unresolved container collision means **blocked** — never create a duplicate. Continue independent read-only discovery if a required file is genuinely missing, but block deployment with a concise missing-path/next-action report. Reading instructions does not approve Docker/Hermes changes, dependency installation or deployment.
 
 Repository request:
 $ARGUMENTS

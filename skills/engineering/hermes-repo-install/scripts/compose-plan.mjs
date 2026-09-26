@@ -7,14 +7,27 @@ import { pathToFileURL } from "node:url";
 
 const literal = (value) => value.split("$").join("$$"); // Compose interpolation, not shell escaping
 
+// Single source of truth for repo-derived Docker/Compose identity. Callers pass a
+// canonical (realpath'd) repo directory; this function performs no I/O.
+export function deriveIdentity(repoPath) {
+  const profileName = path.basename(repoPath);
+  if (!profileName) throw new Error("filesystem root is not a repository directory");
+  const repoId = createHash("sha256").update(repoPath, "utf8").digest("hex");
+  const repoName = profileName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "repo";
+  const projectSlug = repoName.slice(0, 36).replace(/-+$/g, "");
+  const projectName = `hermes-${projectSlug}-${repoId.slice(0, 16)}`;
+  // Docker names are daemon-global: caller must stop on a foreign collision.
+  // Only internal state IDs are hashed/bounded; the container keeps the repo name.
+  const containerName = `hermes-${repoName}`;
+  return { profileName, repoPath, repoId, projectName, containerName };
+}
+
 export function makePlan({ repo, image, uid, gid, web = false }) {
   if (typeof repo !== "string" || !repo || /[\x00-\x1f\x7f]/.test(repo)) {
     throw new Error("repo must be a directory path without control characters");
   }
   const repoPath = fs.realpathSync(repo);
   if (!fs.statSync(repoPath).isDirectory()) throw new Error("repo must be a directory");
-  const profileName = path.basename(repoPath);
-  if (!profileName) throw new Error("filesystem root is not a repository directory");
   if (typeof image !== "string" || !/^nousresearch\/hermes-agent@sha256:[a-f0-9]{64}$/.test(image)) {
     throw new Error("image must be an inspected official nousresearch/hermes-agent@sha256:<digest> pin");
   }
@@ -25,13 +38,7 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
   }
   if (typeof web !== "boolean") throw new Error("web must be boolean");
 
-  const repoId = createHash("sha256").update(repoPath, "utf8").digest("hex");
-  const repoName = profileName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "repo";
-  const projectSlug = repoName.slice(0, 36).replace(/-+$/g, "");
-  const projectName = `hermes-${projectSlug}-${repoId.slice(0, 16)}`;
-  // Docker names are daemon-global: caller must stop on a foreign collision.
-  // Only internal state IDs are hashed/bounded; the container keeps the repo name.
-  const containerName = `hermes-${repoName}`;
+  const { profileName, repoId, projectName, containerName } = deriveIdentity(repoPath);
   const labels = {
     "io.pi-toolset.hermes.repo-id": repoId,
     "io.pi-toolset.hermes.repo-path": literal(repoPath),
