@@ -1,6 +1,6 @@
 # Verified apply readiness and cross-shell commands
 
-These are opt-in operator conveniences for the already verified repo installation. They do not run the user's setup wizard, collect its output or mark setup complete automatically.
+These are opt-in operator conveniences for the already verified repo installation. They do not run the user's setup wizard, collect its output or mark setup complete automatically. This is the **runtime** readiness protocol; [development readiness](development-readiness.md) is separate. Keep all existing exit codes and lifecycle phases unchanged: apply success does not authorize coding jobs or prove tool-write/toolchain/skill readiness.
 
 ## Readiness after apply
 
@@ -12,18 +12,20 @@ Required exit contract, with no secret-bearing output:
 
 | Exit | Meaning |
 | --- | --- |
-| `0` | Current owned gateway is ready; `/workspace` is the repo; required auth/memory evidence remains valid; every configured user interface/channel is currently healthy. No pending configuration apply or incomplete setup gates. |
+| `0` | Current owned gateway is ready; `/workspace` is the repo; required auth, [memory capability](memory-capability.md) and [effective repo-named SOUL](repo-identity.md) evidence remains valid; the current gateway's provider/capability is verified separately from fresh-process imports; every configured user interface/channel is currently healthy. No pending configuration apply or incomplete setup gates. |
 | `10` | Startup/connection is still pending and retrying the same read-only probe is safe. |
 | `20` | A real blocker exists: missing setup/auth, wrong workspace/identity, disconnected channel requiring intervention, or invalidated memory/setup gate. |
 | `30` | This image lacks a supported safe probe, or required evidence cannot be obtained. Readiness is unverified, not successful. |
 
 Any other exit, signal, malformed execution, timeout or excessive output is treated as unavailable. Never install a `true`/`exit 0` placeholder, fabricate a health endpoint, or use Docker uptime as the adapter. If a verified adapter cannot be built, state that the apply shortcut is unavailable until compatible verification is established. The generated apply launcher checks the probe file before recreation; this is a file/permission preflight, **not** a gateway-readiness check.
 
-Keep the adapter local, read-only, non-inference and bounded. No Telegram test messages, OAuth refresh/login, second agent, memory canary writes, automatic repair, dependency install or restart. Any authenticated health request must already be in the approved verification scope and must not print secrets. Subcommands must have their own bounds and no detached/persistent children; prefer `exec` for the final native probe. A secret-safe `0` is meaningful only when the adapter genuinely validates the full contract.
+For the ordinary HRR target, a basic-mode canary or NumPy import alone cannot satisfy the memory gate. Confirmed basic capability remains explicitly qualified (diagnostic exit `24`); unverified startup parity or live loading is pending. An old `memory-verified` receipt cannot substitute for functional HRR, current gateway loading or required recreation evidence. Complete state-writing capability/canary/durability work outside this adapter in its approved window. Missing post-recreation evidence calls for the remaining verification, never automatic repeated recreation.
+
+Keep the adapter local, read-only, non-inference and bounded. One-off authorized [Telegram `getMe` and activation preflight](telegram-activation.md) belong outside this polling loop; use still-valid evidence, invalidated on relevant credential/config changes, rather than contacting Telegram or refreshing model credentials on each probe. No Telegram test messages, OAuth refresh/login, second agent, memory or repo write/edit/cleanup canaries, store initialization/migration, reindexing, job changes, submodule updates, document generation, automatic repair, dependency/toolchain install or restart. Any authenticated health request must already be in the approved verification scope and must not print secrets. Subcommands must have their own bounds and no detached/persistent children; prefer `exec` for the final native probe. A secret-safe `0` is meaningful only when the adapter genuinely validates the full contract.
 
 After Compose recreation succeeds, the waiter polls this adapter for at most **60 seconds**, normally every **2 seconds**, with each invocation limited to **5 seconds** and **64 KiB stdout**; stderr is discarded. It never echoes probe output/error objects. Ready returns zero; timeout/blocker/unavailable returns nonzero with a fixed concise message. No repeated recreation, rollback or volume deletion follows a failure. A probe unsupported after an image upgrade must be reverified, not weakened to force success. Rediscover dynamic ports after recreation.
 
-This waiter does not intercept private setup or infer successful setup from wizard exit. Fresh setup still needs the existing user-completion and workspace/memory gates before apply is offered. Tests exercise synthetic probe outcomes, not a live Hermes version.
+This waiter does not intercept private setup or infer successful setup from wizard exit. Fresh setup still needs the existing user-completion and workspace/memory gates before apply is offered. Tests exercise synthetic probe outcomes, not a live Hermes version. Ready attests current gateway/configured-channel and runtime prerequisite evidence, not a model-generated reply or development readiness. The helper explicitly disclaims coding verification; its exit `0` keeps the same runtime meaning. Inference and external message testing remain separately authorized. Development checks must use the actual intended consumer/approval mode outside this polling loop, never an unguarded shell workaround.
 
 ## Optional cross-shell shortcuts
 

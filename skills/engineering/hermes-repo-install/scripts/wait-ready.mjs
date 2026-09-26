@@ -60,6 +60,7 @@ async function main() {
   const { status } = await waitForReadiness({ probe });
   if (status === "ready") {
     console.log("Ready: gateway and configured channels verified.");
+    console.log("Development readiness not verified by this runtime check.");
   } else {
     const messages = {
       timeout: "Readiness timed out; check status/logs. No automatic retry or rollback.",

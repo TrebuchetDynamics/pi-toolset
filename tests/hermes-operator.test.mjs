@@ -42,6 +42,8 @@ try {
   const cliReady = spawnSync(process.execPath, [path.join(scripts, "wait-ready.mjs"), "--probe", probe], { encoding: "utf8" });
   assert.equal(cliReady.status, 0);
   assert.match(cliReady.stdout, /Ready: gateway and configured channels verified/);
+  assert.match(cliReady.stdout, /Development readiness not verified by this runtime check/,
+    "successful apply polling must not imply coding readiness or authorize jobs");
   assert.equal((cliReady.stdout + cliReady.stderr).includes("PRIVATE_TOKEN"), false);
   privateProbe(20);
   const cliBlocked = spawnSync(process.execPath, [path.join(scripts, "wait-ready.mjs"), "--probe", probe], { encoding: "utf8" });

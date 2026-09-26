@@ -3,7 +3,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 // Break caught: a source-only entry/handoff points at a nonexistent skill or
@@ -200,8 +200,21 @@ try {
   const applyLauncher = path.join(cliBin, "hermes-apply");
   fs.writeFileSync(applyLauncher, applyTemplate.replaceAll("/srv/projects/api", shellPath), { mode: 0o700 });
   fs.copyFileSync(path.join(root, "skills/engineering/hermes-repo-install/scripts/wait-ready.mjs"), path.join(cliBin, "wait-ready.mjs"));
+  const statusHelper = path.join(root, "skills/engineering/hermes-repo-install/scripts/status.mjs");
+  fs.copyFileSync(statusHelper, path.join(cliBin, "status.mjs"));
+  const diagnosticProbe = path.join(cliBin, "hermes-diagnostic-probe");
+  fs.writeFileSync(diagnosticProbe, `#!${process.execPath}\nconsole.log('PRIVATE_DIAGNOSTIC_TOKEN'); console.error('PRIVATE_DIAGNOSTIC_TOKEN'); process.exit(Number(process.env.FAKE_DIAGNOSTIC_CODE || 0));\n`, { mode: 0o700 });
   const readinessProbe = path.join(cliBin, "hermes-readiness-probe");
   fs.writeFileSync(readinessProbe, `#!${process.execPath}\nconsole.log('PRIVATE_PROBE_TOKEN'); console.error('PRIVATE_PROBE_TOKEN'); process.exit(Number(process.env.FAKE_PROBE_CODE || 0));\n`, { mode: 0o700 });
+  // Break caught: the repair recipe recreates before its readiness preflight,
+  // uses ambient selectors, changes another service, or hides readiness failure.
+  const repairGuidePath = path.join(root, "skills/engineering/hermes-repo-install/references/telegram-activation.md");
+  assert.ok(fs.existsSync(repairGuidePath), "Telegram activation needs a scoped, gated recipe");
+  const repairTemplate = fs.readFileSync(repairGuidePath, "utf8")
+    .match(/<!-- telegram-activation -->\n```sh\n(#!\/bin\/sh\n[\s\S]*?)```/)?.[1];
+  assert.ok(repairTemplate, "activation recipe must be runnable for offline safety checks");
+  const repairLauncher = path.join(cliBin, "test-telegram-activation");
+  fs.writeFileSync(repairLauncher, repairTemplate, { mode: 0o700 });
   const statusLauncher = path.join(cliBin, "hermes-status");
   const logsLauncher = path.join(cliBin, "hermes-logs");
   fs.writeFileSync(statusLauncher, statusTemplate.replaceAll("/srv/projects/api", shellPath), { mode: 0o700 });
@@ -221,7 +234,7 @@ try {
   fs.writeFileSync(aliasFile, aliasTemplate.replaceAll("/srv/projects/api", aliasPath));
   const fakeBin = path.join(tmp, "fake-docker");
   fs.mkdirSync(fakeBin);
-  fs.writeFileSync(path.join(fakeBin, "docker"), `#!${process.execPath}\nimport fs from 'node:fs';\nimport { once } from 'node:events';\nconst call = { args: process.argv.slice(2), cwd: process.cwd(), selectors: Object.keys(process.env).filter(k => ["COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES", "COMPOSE_ENV_FILES"].includes(k)) };\nif (process.env.FAKE_CALLS) fs.writeFileSync(process.env.FAKE_CALLS, JSON.stringify(call));\nif (call.args.includes('logs') && process.env.FAKE_LOG_BYTES) {\n  for (let remaining = Number(process.env.FAKE_LOG_BYTES); remaining > 0; remaining -= 65536) {\n    if (!process.stdout.write('S'.repeat(Math.min(65536, remaining)))) await once(process.stdout, 'drain');\n  }\n  if (process.env.FAKE_DRAINED_MARKER) fs.writeFileSync(process.env.FAKE_DRAINED_MARKER, 'completed');\n} else if (call.args.includes('logs')) process.stdout.write(process.env.FAKE_LOG_LINES || '');\nelse console.log(JSON.stringify(call));\nif (process.env.FAKE_STDERR) process.stderr.write(process.env.FAKE_STDERR);\nprocess.exit(Number(process.env.FAKE_EXIT || 0));\n`, { mode: 0o700 });
+  fs.writeFileSync(path.join(fakeBin, "docker"), `#!${process.execPath}\nimport fs from 'node:fs';\nimport { once } from 'node:events';\nconst call = { args: process.argv.slice(2), cwd: process.cwd(), selectors: Object.keys(process.env).filter(k => ["COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES", "COMPOSE_ENV_FILES"].includes(k)) };\nif (process.env.FAKE_CALLS) fs.writeFileSync(process.env.FAKE_CALLS, JSON.stringify(call));\nif (call.args.includes('logs') && process.env.FAKE_LOG_BYTES) {\n  for (let remaining = Number(process.env.FAKE_LOG_BYTES); remaining > 0; remaining -= 65536) {\n    if (!process.stdout.write('S'.repeat(Math.min(65536, remaining)))) await once(process.stdout, 'drain');\n  }\n  if (process.env.FAKE_DRAINED_MARKER) fs.writeFileSync(process.env.FAKE_DRAINED_MARKER, 'completed');\n} else if (call.args.includes('logs')) process.stdout.write(process.env.FAKE_LOG_LINES || '');\nelse if (call.args.includes('ps') && process.env.FAKE_PS_JSON) process.stdout.write(process.env.FAKE_PS_JSON);\nelse console.log(JSON.stringify(call));\nif (process.env.FAKE_STDERR) process.stderr.write(process.env.FAKE_STDERR);\nprocess.exit(Number(process.env.FAKE_EXIT || 0));\n`, { mode: 0o700 });
   const cliEnv = { ...process.env, PATH: `${fakeBin}:${process.env.PATH}`,
     COMPOSE_FILE: "foreign.yaml", COMPOSE_PROJECT_NAME: "foreign", COMPOSE_PROFILES: "foreign", COMPOSE_ENV_FILES: "foreign.env" };
   const cliArgs = ["auth", "add", "openai-codex", "--type", "oauth", "space arg", "$(touch not-created)", "single'quote"];
@@ -244,6 +257,23 @@ try {
   const applyExpected = ["--context", "default", "compose", "--env-file", "/dev/null",
     "-p", "hermes-api-0123456789abcdef", "-f", path.join(cliRepo, ".hermes", "compose.yaml"),
     "up", "-d", "--no-deps", "--force-recreate", "--pull", "never", "--no-build", "hermes"];
+  const repairEnv = { ...cliEnv, CONTEXT: "default", PROJECT: "hermes-api-0123456789abcdef",
+    COMPOSE: path.join(cliRepo, ".hermes", "compose.yaml"), REPO: cliRepo };
+  const runRepair = (env = {}) => spawnSync("sh", [repairLauncher], {
+    encoding: "utf8", env: { ...repairEnv, ...env },
+  });
+  const repair = runRepair();
+  assert.equal(repair.status, 0, repair.stderr);
+  assert.deepEqual(JSON.parse(repair.stdout.split("\n")[0]), { args: applyExpected, cwd: cliRepo, selectors: [] });
+  assert.match(repair.stdout, /Ready: gateway and configured channels verified/);
+  assert.doesNotMatch(repair.stdout + repair.stderr, /PRIVATE_PROBE_TOKEN/);
+  assert.equal(runRepair({ FAKE_EXIT: "24" }).status, 24, "repair must preserve recreation failure");
+  assert.notEqual(runRepair({ FAKE_PROBE_CODE: "20" }).status, 0, "repair cannot succeed from Docker startup alone");
+  for (const key of ["CONTEXT", "PROJECT", "COMPOSE", "REPO"]) {
+    const missingScopeCalls = path.join(tmp, `repair-missing-${key}`);
+    assert.notEqual(runRepair({ [key]: "", FAKE_CALLS: missingScopeCalls }).status, 0);
+    assert.equal(fs.existsSync(missingScopeCalls), false, `${key} must be resolved before any Docker call`);
+  }
   const apply = spawnSync("sh", [applyLauncher], { encoding: "utf8", env: cliEnv });
   assert.equal(apply.status, 0, apply.stderr);
   assert.deepEqual(JSON.parse(apply.stdout.split("\n")[0]), { args: applyExpected, cwd: cliRepo, selectors: [] });
@@ -263,6 +293,8 @@ try {
   const noProbeApply = spawnSync("sh", [applyLauncher], { encoding: "utf8", env: { ...cliEnv, FAKE_CALLS: unprobedCalls } });
   assert.notEqual(noProbeApply.status, 0);
   assert.equal(fs.existsSync(unprobedCalls), false, "missing readiness adapter must block before recreation");
+  assert.notEqual(runRepair({ FAKE_CALLS: unprobedCalls }).status, 0);
+  assert.equal(fs.existsSync(unprobedCalls), false, "repair recipe must also block before recreation when the adapter is missing");
   fs.renameSync(`${readinessProbe}.disabled`, readinessProbe);
   assert.deepEqual(JSON.parse(runCli(["setup"]).stdout).args, [...expectedPrefix, "setup"], "private setup must keep the repo workspace and scoped runtime");
 
@@ -270,12 +302,79 @@ try {
   // mutating Docker command, leak Docker errors, or imply live readiness.
   const dockerPrefix = ["--context", "default", "compose", "--env-file", "/dev/null",
     "-p", "hermes-api-0123456789abcdef", "-f", path.join(cliRepo, ".hermes", "compose.yaml")];
-  const status = spawnSync("sh", [statusLauncher], { encoding: "utf8", env: cliEnv });
-  assert.equal(status.status, 0, status.stderr);
-  assert.match(status.stdout, /not gateway readiness/i);
-  const statusCall = JSON.parse(status.stdout.trim().split("\n").at(-1));
-  assert.deepEqual(statusCall.args, [...dockerPrefix, "ps", "--all", "--format", "table {{.Name}}\\t{{.State}}\\t{{.Health}}", "hermes"]);
+  const statusCalls = path.join(tmp, "status-call.json");
+  cliEnv.FAKE_PS_JSON = JSON.stringify([{ Service: "hermes", State: "running" }]);
+  const runStatus = (env = {}) => spawnSync("sh", [statusLauncher], {
+    encoding: "utf8", env: { ...cliEnv, FAKE_CALLS: statusCalls, ...env },
+  });
+  // Break caught: an Up container masks a stopped gateway after private setup.
+  const maintenance = runStatus({ FAKE_DIAGNOSTIC_CODE: "11" });
+  assert.equal(maintenance.status, 1, "maintenance is not readiness success");
+  assert.match(maintenance.stdout, /MAINTENANCE — container running, gateway stopped/);
+  assert.match(maintenance.stdout, /Telegram credentials present; activation pending/);
+  assert.doesNotMatch(maintenance.stdout + maintenance.stderr, /PRIVATE_DIAGNOSTIC_TOKEN/);
+  const statusCall = JSON.parse(fs.readFileSync(statusCalls, "utf8"));
+  assert.deepEqual(statusCall.args, [...dockerPrefix, "ps", "--all", "--format", "json", "hermes"]);
   assert.deepEqual(statusCall.selectors, []);
+  for (const [code, label, exit] of [
+    [0, /READY/, 0], [10, /MAINTENANCE/, 1], [12, /GATEWAY STOPPED/, 1],
+    [20, /BLOCKED/, 1], [21, /TELEGRAM DISCONNECTED/, 1],
+    [22, /SETUP INCOMPLETE/, 1], [23, /APPLY NEEDED/, 1],
+    [24, /basic keyword mode—not full HRR capability/, 1],
+    [30, /VERIFICATION PENDING/, 3], [99, /VERIFICATION PENDING/, 3],
+  ]) {
+    const result = runStatus({ FAKE_DIAGNOSTIC_CODE: String(code) });
+    assert.equal(result.status, exit);
+    assert.match(result.stdout, label);
+    if (code === 0) {
+      assert.match(result.stdout, /^RUNTIME READY/,
+        "the unchanged success code must be explicitly scoped to runtime readiness");
+      assert.match(result.stdout, /Model-generated reply not verified by this status check/,
+        "channel readiness must not imply a verified model reply");
+      assert.match(result.stdout, /Development readiness not verified by this status check/,
+        "runtime success must not declare tool-write, toolchain, skill or job readiness");
+    }
+    if (code === 24) assert.doesNotMatch(result.stdout, /READY|NumPy missing/,
+      "basic capability must be explicit without guessing a dependency cause or claiming full readiness");
+    assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE_DIAGNOSTIC_TOKEN/);
+  }
+  fs.renameSync(diagnosticProbe, `${diagnosticProbe}.disabled`);
+  assert.equal(runStatus().status, 3, "missing diagnostic adapter is not readiness");
+  assert.match(runStatus().stdout, /VERIFICATION PENDING/);
+  fs.symlinkSync(`${diagnosticProbe}.disabled`, diagnosticProbe);
+  assert.equal(runStatus().status, 3, "symlinked diagnostic adapter must not run");
+  fs.unlinkSync(diagnosticProbe);
+  fs.renameSync(`${diagnosticProbe}.disabled`, diagnosticProbe);
+  fs.chmodSync(diagnosticProbe, 0o722);
+  assert.equal(runStatus().status, 3, "writable probe must not run");
+  fs.chmodSync(diagnosticProbe, 0o700);
+  for (const data of ["PRIVATE_DOCKER_TOKEN", "[]", JSON.stringify([
+    { Service: "hermes", State: "running" }, { Service: "hermes", State: "running" },
+  ]), JSON.stringify([{ Service: "foreign", State: "running" }])]) {
+    const result = runStatus({ FAKE_PS_JSON: data });
+    assert.equal(result.status, 3, "absent, malformed or ambiguous runtime fails closed");
+    assert.doesNotMatch(result.stdout + result.stderr, /PRIVATE_DOCKER_TOKEN/);
+  }
+  const stopped = runStatus({ FAKE_PS_JSON: JSON.stringify({ Service: "hermes", State: "exited" }) });
+  assert.equal(stopped.status, 1);
+  assert.match(stopped.stdout, /STOPPED/);
+  assert.doesNotMatch(stopped.stdout, /READY/);
+  const probeSource = fs.readFileSync(diagnosticProbe, "utf8");
+  fs.writeFileSync(diagnosticProbe, `#!${process.execPath}\nprocess.stdout.write('PRIVATE'.repeat(20000));\n`);
+  assert.equal(runStatus().status, 3, "oversized output is not a successful probe");
+  assert.doesNotMatch(runStatus().stdout, /PRIVATE/);
+  fs.writeFileSync(diagnosticProbe, `#!${process.execPath}\nsetInterval(() => {}, 1000);\n`);
+  const timedStatus = spawnSync(process.execPath, ["--input-type=module", "-e", `
+    import { diagnose } from ${JSON.stringify(pathToFileURL(statusHelper).href)};
+    const result = diagnose(${JSON.stringify({ context: "default", project: "hermes-api-0123456789abcdef",
+      composeFile: path.join(cliRepo, ".hermes", "compose.yaml"), probe: diagnosticProbe, probeTimeoutMs: 50 })});
+    console.log(result.message); process.exitCode = result.code;
+  `], { encoding: "utf8", env: cliEnv, timeout: 10000 });
+  assert.equal(timedStatus.status, 3, "hung probe must terminate without claiming readiness");
+  assert.match(timedStatus.stdout, /VERIFICATION PENDING/);
+  fs.writeFileSync(diagnosticProbe, `#!${process.execPath}\nprocess.kill(process.pid, 'SIGTERM');\n`);
+  assert.equal(runStatus().status, 3, "signaled probe fails closed");
+  fs.writeFileSync(diagnosticProbe, probeSource);
   const logCalls = path.join(tmp, "log-call.json");
   const logEnv = { ...cliEnv, FAKE_CALLS: logCalls, FAKE_LOG_LINES:
     "22:15 Gateway running with 1 platform(s) secret=FIXTURE_SECRET\n22:20 telegram connected bot-token=FIXTURE_SECRET\n22:21 Cold boot: dropping Telegram updates queued while offline\nUser message and private URL: FIXTURE_SECRET\n" };
@@ -353,4 +452,5 @@ try {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 await import("./hermes-operator.test.mjs");
+await import("./hermes-ignore-policy.test.mjs");
 console.log("hermes-repo-install ok");
