@@ -26,8 +26,12 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
   if (typeof web !== "boolean") throw new Error("web must be boolean");
 
   const repoId = createHash("sha256").update(repoPath, "utf8").digest("hex");
-  const slug = profileName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 36).replace(/-+$/g, "") || "repo";
-  const projectName = `hermes-${slug}-${repoId.slice(0, 16)}`;
+  const repoName = profileName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "repo";
+  const projectSlug = repoName.slice(0, 36).replace(/-+$/g, "");
+  const projectName = `hermes-${projectSlug}-${repoId.slice(0, 16)}`;
+  // Docker names are daemon-global: caller must stop on a foreign collision.
+  // Only internal state IDs are hashed/bounded; the container keeps the repo name.
+  const containerName = `hermes-${repoName}`;
   const labels = {
     "io.pi-toolset.hermes.repo-id": repoId,
     "io.pi-toolset.hermes.repo-path": literal(repoPath),
@@ -35,6 +39,7 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
   };
   const service = {
     image,
+    container_name: containerName,
     command: ["gateway", "run"],
     restart: "unless-stopped",
     working_dir: "/workspace",
@@ -45,7 +50,8 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
       HERMES_DASHBOARD: web ? "1" : "0",
       API_SERVER_ENABLED: web ? "true" : "false",
     },
-    // One owner-managed file for provider/channel and optional web credentials.
+    // Installer-managed bootstrap secrets; user-run setup owns native runtime
+    // provider/channel credentials in the persistent home (no automatic copies).
     // Raw loading preserves literal dollars/quotes (Compose >=2.30). The planner
     // only names this file: it never reads, writes, or emits its secret values.
     env_file: [{ path: literal(path.join(repoPath, ".hermes", ".env")), required: true, format: "raw" }],
@@ -65,7 +71,7 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
     service.ports = [8642, 9119].map((target) => ({ target, host_ip: "127.0.0.1", protocol: "tcp" }));
   }
   return {
-    identity: { profileName, repoPath, repoId, projectName },
+    identity: { profileName, repoPath, repoId, projectName, containerName },
     compose: {
       name: projectName,
       services: { hermes: service },
@@ -90,7 +96,7 @@ function parseArgs(args) {
     const key = flag.slice(2);
     if (Object.hasOwn(values, key)) throw new Error(`duplicate option: ${flag}`);
     if (key === "web") {
-      values.web = true;
+      values[key] = true;
     } else {
       const value = args[++i];
       if (!value || value.startsWith("--")) throw new Error(`missing value: ${flag}`);
