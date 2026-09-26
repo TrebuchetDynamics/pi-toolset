@@ -101,7 +101,6 @@ Default engineering entry points are Superpowers `brainstorming`, `systematic-de
 | ---------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
 | Keep a long task on course               | `/goal <objective>`                         | Objective completed with evidence               |
 | Find useful repository work              | `autonomous-codebase-improver` (automation)     | Continuous reviewed slices within approved scope |
-| Create or maintain a Hermes team        | `hermes-repo-profiles-team` (automation)      | Flat profiles, scoped maintenance, native Kanban, per-profile readiness |
 | Set up local Hermes memory             | `memory-holographic-hermes-setup` (automation) | Selected existing profiles, isolated SQLite, persistence checks |
 | Install Hermes per repository          | `hermes-repo-install` (automation) | Isolated Compose project/state, collision-safe ports, required Holographic memory |
 | Diagnose a concrete failure              | `systematic-debugging`                     | Repro fails before and passes after             |
@@ -243,9 +242,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 `autoreview`, `git-commit-push`, `greploop`, `s3upload`
 
-**Engineering (18)**
+**Engineering (17)**
 
-`autonomous-codebase-improver`, `hermes-repo-profiles-team`, `memory-holographic-hermes-setup`, `hermes-repo-install`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
+`autonomous-codebase-improver`, `memory-holographic-hermes-setup`, `hermes-repo-install`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
 
 **Frontend and design (23)**
 
@@ -267,11 +266,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 ## Skill curation
 
-The source tree retains 68 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
+The source tree retains 67 local skill resources, but only eight automatically selectable specialists and the manual `lgtm` command are in the default manifest: The optional `diagram-design` skill replaces the retired standalone `caveman` style skill. Concise, action-first writing belongs in the shared contract; asking for brevity does not enable a persistent grammar-compression mode. `ponytail-gain` now reports only supported measurements, and `ponytail-help` describes this bundle's integration.
 
 The [diagram skill](skills/frontend/diagram-design/SKILL.md) is a text-only adaptation of [Diagram Design](https://github.com/cathrynlavery/diagram-design), pinned in [third-party notices](THIRD_PARTY_NOTICES.md). It adds no executable helpers or dependencies. Scouting and authoring use a [candidate inspection checklist](skills/pi/pi-ecosystem-scout/references/candidate-inspection.md): review the exact revision and reachable files, check overlap and host compatibility, preserve licensing, and never bypass a dangerous scanner verdict. Stars are discovery signals, not evidence of quality or safety.
-
-The automation skill [`hermes-repo-profiles-team`](skills/engineering/hermes-repo-profiles-team/SKILL.md) creates and maintains repo-specific Hermes profiles with root-only Telegram or CLI/TUI interaction and native Kanban coordination. New teams use flat sibling profiles `<repo>-team` and `<repo>-team-<role>`, not nested directories or Hermes source changes. Maintenance preserves existing IDs, model overrides, sessions, cards and workspaces; retirement retains state, while renaming or deletion requires separate approval. It asks for one provider/model choice for a new team, defaults to `openai-codex` / `gpt-6-luna` unless overridden, and verifies authentication separately for every profile before work release. It uses native session handoff/resume, preserves existing cards and workspaces, and requires approval for live provisioning and shared gateway changes. Its [verification reference](skills/engineering/hermes-repo-profiles-team/references/verification.md) separates decision-probe evidence from unverified live Hermes behavior. The [team contract](skills/engineering/hermes-repo-profiles-team/references/team-contract.md) requires responsibility coverage, a durably briefed and verified root, independent acceptance of combined changes, and bounded recovery. Live canaries require separate authorization; readiness remains unverified until the relevant checks run. Installing the skill does not configure Hermes or start agents.
 
 **Local Holographic memory for Hermes**
 

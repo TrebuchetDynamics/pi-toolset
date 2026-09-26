@@ -28,7 +28,6 @@ const expectedSkills = [
   "share-code",
   "candidates-folder-refactor",
   "autonomous-codebase-improver",
-  "hermes-repo-profiles-team",
   "memory-holographic-hermes-setup",
   "hermes-repo-install",
   "prompt-cache-auditor",
@@ -1384,19 +1383,6 @@ async function testSkills() {
       fs.statSync(path.join(root, improverRoot, "references", reference)).isFile(),
       `autonomous improver reference ${reference} must exist`,
     );
-  }
-
-  // Resource reachability, not behavioral proof of Hermes provisioning.
-  const hermesRoot = "skills/engineering/hermes-repo-profiles-team";
-  const hermesSkill = read(`${hermesRoot}/SKILL.md`);
-  const profiles = readJson("skills/shared/profiles.json");
-  assert.ok(profiles.optional.automation.includes("hermes-repo-profiles-team"));
-  assert.ok(!readJson("package.json").pi.skills.includes(`./${hermesRoot}`),
-    "Hermes team provisioning must remain opt-in");
-  for (const reference of ["discovery.md", "profiles-and-auth.md", "coordination.md", "maintenance.md", "team-contract.md", "root-briefing.md", "verification.md"]) {
-    assert.ok(hermesSkill.includes(`](references/${reference})`),
-      `Hermes team management must expose its ${reference} resource`);
-    assert.ok(fs.statSync(path.join(root, hermesRoot, "references", reference)).isFile());
   }
 
   const reviewRoutingRoles = {
