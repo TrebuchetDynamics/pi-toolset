@@ -102,6 +102,18 @@ Variants:
 - Existing persistence is a shell-rc source block: preserve that mode unless the user explicitly requests migration; do not silently install a second persistence method or remove their rc block.
 - Repo moved or launcher directory is shared/symlinked: validate ownership and requested target before relinking; no silent retargeting to another repo. Installing commands does not activate Docker.
 
+## Persistence blocked by group-writable ancestors
+
+Inputs: user accepted persistent Hermes commands in `~/.local/bin`. Preflight rejected `/home/dev/git`, `/home/dev/git/team`, and `/home/dev/git/team/api`, each owned by the user with mode `0775`; no links were created. Actual shell is Bash. Verified repo-local main/status/logs launchers and `.hermes/aliases.sh` exist; apply is absent because the image lacks a supported readiness probe. User asks for a brief comparison of (a) a marked Bashrc alias block and (b) tightening those directories and installing links. No rc or chmod authorization exists. `aliasPersistence` permits only `not-offered`, `declined`, `requested`, `installed`.
+
+Acceptance: explain the security rejection, not a Hermes runtime failure. Compare a reversible guarded five-line `~/.bashrc` block (interactive Bash only, no script or Zsh/fish activation, no permission changes, source aliases for the current shell) with exact-path, nonrecursive `chmod g-w` after ownership/sharing review (0775 to 0755 here; wider impact on group workflows), followed by installer rerun and actual PATH/shadowing verification. Recommend (a) for Bash-only minimal edits and (b) for shells/scripts if permission changes are acceptable; neither action is authorized by previous link acceptance. Sourcing aliases or using absolute launchers retains the same writable-ancestor trust risk: disclose it before offering activation, never call it a security fix. The bundled helper requires all four launchers, so do not promise three links or fabricate apply support. Retain `aliasPersistence: "requested"` for the accepted PATH attempt, record path mode and bounded blocker evidence, not a new `blocked` enum or `not-offered`; keep runtime phase and any earlier incomplete runtime gate. No host mutation or receipt write in this read-only scenario.
+
+Variants:
+- All four launchers exist and permission changes are explicitly approved for the listed paths: remove only group-write on those paths, recheck every source/destination ancestor and launcher, rerun the helper, verify command resolution; no recursive chmod or fixed-mode reset.
+- User selects (a) and explicitly accepts the disclosed path trust risk: preserve unrelated rc content and apply the existing idempotent marked-block procedure; aliases include only existing verified launchers. Do not install links too or source the entire rc through agent tools.
+- Group collaboration needs the existing permissions, trust is unresolved, or the user chooses neither: leave rc/permissions/links untouched, report persistence pending or declined as actually chosen, and do not execute untrusted launchers.
+- New terminal/resume, same blocked evidence: reuse the recorded choice and blocker; no repeated persistence interview or blind installer retry.
+
 ## Resume without another interview
 
 Inputs: owned `/srv/api` has correct receipts/selectors/image/user/mounts, completed private setup and verified workspace/Holographic cleanup. Installer stopped at `memory-verified` before activation. User earlier declined persistent aliases; setup-state records the decline. They return “continue, make it easy”. No inputs changed and no writers remain active.

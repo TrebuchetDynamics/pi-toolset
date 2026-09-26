@@ -129,9 +129,11 @@ alias hermes-api-status="'/srv/projects/api/.hermes/bin/hermes-status'"
 alias hermes-api-logs="'/srv/projects/api/.hermes/bin/hermes-logs'"
 ```
 
-For unusual paths, shell-quote the command first, then quote that entire string as the alias assignment; the simple nested-quote example is not universal. Detect the user's shell. For fish, generate native equivalents or offer the absolute launcher; do not source POSIX aliases in fish.
+Include only existing verified launchers in the alias file: omit the example `-apply` line until its readiness gates pass. For unusual paths, shell-quote the command first, then quote that entire string as the alias assignment; the simple nested-quote example is not universal. Detect the user's shell. For fish, generate native equivalents or offer the absolute launcher; do not source POSIX aliases in fish.
 
 Repo-local alias files remain available without host installation. For requested persistence, prefer the [cross-shell command links](readiness-and-shortcuts.md) in `~/.local/bin`: the same four names work without `source` when PATH resolution is verified. Offer once, reuse acceptance/decline, and record the installed mode; do not install both PATH links and rc entries automatically. An agent subprocess cannot change its parent shell's aliases or PATH.
+
+If writable ancestors block PATH links, follow [the persistence choices and trust caveat](readiness-and-shortcuts.md#when-writable-ancestors-block-persistence); do not automatically fall back to rc sourcing. A `.bashrc` block activates only interactive Bash sessions that read it, not scripts or Zsh/fish; the POSIX-style aliases themselves can also be sourced explicitly in compatible shells.
 
 The following shell-rc path is only for an explicitly selected shell-alias mode or preserving that existing mode. Detect the actual interactive shell/startup file (including `ZDOTDIR`/fish paths); do not assume `$SHELL` alone proves it. Preserve existing aliases, functions, permissions, comments and unrelated contents. Add/update one marked block keyed by the full repo ID, containing only a shell-quoted, existence-guarded source of the alias file. If the exact block exists, do nothing. Back up before changes; symlink/shared/managed rc files need their specific ownership boundary resolved, not blind replacement. No global PATH change or startup-time Docker calls. For example, in a verified Bash/Zsh rc file:
 
