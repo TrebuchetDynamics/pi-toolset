@@ -2,7 +2,7 @@
 
 **Telegram ready is not repository coding ready.** Gateway/channel health, memory capability, model-reply evidence and development readiness are separate results. This contract supplements installation/repair; it does not implement a scheduler or silently provision language runtimes. Diagnose development failures when requested, and complete this gate before claiming coding readiness or enabling a separately approved coding job.
 
-Read-only discovery may identify prerequisites during installation. Actual write probes, toolchain installs, permission changes, repository documentation, builds, recreation and job creation each stay within their applicable scope. A successful installation never authorizes recurring work. An incomplete development gate does not mean the gateway is broken or justify restarting it.
+Read-only discovery may identify prerequisites during installation. The [full reconciliation invocation](authorization.md) covers required supported persistent toolchains, narrow owned workspace/state policy repairs, non-inference actual-tool canaries and recreation without additional approval prompts. Repository documentation/source builds, new jobs and live model probes are separate work, not implied by repair. A successful installation never authorizes recurring work. An incomplete development gate does not mean the gateway is broken or justify restarting it.
 
 ## Collect the whole prerequisite picture first
 
@@ -22,7 +22,7 @@ The intended scope is the canonical `/workspace` repository **plus the runtime's
 - Preserve unrelated restrictions; adding workspace must not accidentally remove required state access.
 - If the installed guard supports only one root and no reviewed narrow policy can include both, report the limitation.
 - Do not choose `/`, an overbroad common parent, host home, other repos, the Docker socket, privileged execution or policy disablement as a shortcut.
-- Treat tool permission and Docker mount access as distinct authorization boundaries. Review the exact policy delta and obtain any missing approval; approval to mount a repo does not override an observed tool denial.
+- Treat tool permission and Docker mount access as distinct authorization boundaries. Review and apply the required supported narrow policy delta under the invocation's scope, then reverify actual tool behavior; approval to mount a repo does not override an observed tool denial or higher-level tool controls.
 - Fresh setup can include a specifically previewed workspace/state policy within its approved scope.
 - Never route a denied write through shell/Python, another tool or an unguarded internal function. An unattended approval dialog is an incompatible policy, not a timeout problem.
 
@@ -43,7 +43,7 @@ For a Go repo, inspect `go.mod` and applicable `go.work` plus recorded CI/toolch
 - Check already available tools before proposing installation. Resolve binary paths, versions, architecture, provenance and persistence in the actual container, not the host or a one-off shell.
 - Avoid Go auto-downloading a toolchain/module during diagnosis: inspect directives first and use the installed version's supported no-download discovery (for example `GOTOOLCHAIN=local` for a bounded check when supported). Record any probe-only override; it does not prove the production context has that setting or authorize silently changing it.
 - No `go get`, module tidy, build/test scripts or network dependency fetch as a version check.
-- If missing or incompatible, request a concrete scoped plan: exact verified toolchain version, official artifact/source and integrity check, architecture, supported persistent install location or reproducible derived image, storage impact and runtime activation. Do not fetch/install/build without that approval, use an unpinned latest/curl-to-shell installer, modify an immutable image tree, install only on the host, or duplicate a usable runtime. Installation permission is not approval for source changes or dependency downloads by future builds.
+- If missing or incompatible, resolve and preview the exact verified version, official artifact/source and integrity check, architecture, supported persistent location or required reproducible derived image, storage impact and activation; then provision it under full reconciliation scope without another approval prompt. Do not use an unpinned latest/curl-to-shell installer, modify a running immutable image tree, install only on the host, or duplicate a usable runtime. Installation permission is not approval for source changes or dependency downloads by future builds.
 - Configure activation through the image's supported persistent launcher/environment path, narrowly preserving other settings. An `export PATH=...` in the agent's shell, a host rc edit or a binary under an ephemeral `/tmp` path is not provisioning.
 - Verify the chosen exact version/path in each **required** consumer:
 
@@ -80,7 +80,9 @@ Install scope does not authorize `submodule update --remote`, pulls/fetches, che
 
 ## 5. Approval compatibility, coordination and coding jobs
 
-Development readiness is scoped to a task and execution modes, not a blanket permission grant. Determine whether the intended operations—write, edit, cleanup, compiler invocation and any network/build actions—can run under the actual policy. Interactive approval compatibility does not prove unattended compatibility. Request the missing narrow scope through supported controls; do not increase timeouts, grant unrestricted writes, suppress dialogs globally or wrap denied mutations in another tool.
+For requested Kanban work, also follow [default-profile orchestration](kanban-orchestration.md). Assess each real specialist's dispatcher-spawned environment, profile home/auth/memory, tools, isolated coding worktree and shared board mapping. Default coordinates through native board tools; it is not a substitute worker when a specialist is missing. A platform-enabled toolset, configured dispatcher or retained worktree does not prove safe execution. Release, model calls, notification wakes and actual task probes require their applicable scope; the ordinary setup lock does not coordinate Kanban workers.
+
+Development readiness is scoped to a task and execution modes, not a blanket permission grant. Determine whether the intended operations—write, edit, cleanup, compiler invocation and any network/build actions—can run under the actual policy. Interactive approval compatibility does not prove unattended compatibility. Apply covered narrow policy repairs through supported controls; an unavailable or denied control remains a blocker, not another generic approval prompt. Do not increase timeouts, grant unrestricted writes, suppress dialogs globally or wrap denied mutations in another tool.
 
 Check cron, interactive coding, builds, wizard and maintenance before stateful probes, installs or restarts. Coordinate **all writers to the same canonical repo/home** using supported no-overlap/lock or operator-managed maintenance semantics; per-job serialization alone does not exclude an interactive builder. Verify who owns any lock and whether its holder is live. Never delete an unknown/live lock, kill another task, restart during an active turn or create a second agent to test concurrency. If all relevant writers cannot participate in a verified coordination scheme, unattended readiness remains blocked. The setup lock alone is not evidence every future writer honors it.
 
@@ -111,7 +113,7 @@ Use an outcome receipt with four distinct categories:
 3. **Denied or not executed:** distinguish an attempted tool request denied before mutation from a command never submitted; neither is completed validation. Record the safe reason, not secrets.
 4. **Validation completed:** exact commands/tools, execution modes, observed results and unresolved limits. A proposed command, terminal touch, stale receipt or successful channel connection is not coding verification.
 
-Example: **Runtime: ready. Development: blocked (Go missing; Hermes write/edit deny `/workspace`). Skills: direct-file usable; registration unavailable. Coding job: not enabled. Next: approve the specific persistent toolchain and narrow policy plan.**
+Example: **Runtime: ready. Development: blocked (Go missing; Hermes write/edit deny `/workspace`). Skills: direct-file usable; registration unavailable. Coding job: not enabled. Next: resolve the supported persistent toolchain and narrow policy repair, apply within full reconciliation scope, then reverify; no extra approval prompt.**
 
 ## Boundary/collision checklist
 

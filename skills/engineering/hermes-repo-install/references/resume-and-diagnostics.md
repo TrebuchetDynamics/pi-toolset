@@ -4,7 +4,7 @@ This is an agent procedure over the verified repo instance, not an autonomous in
 
 ## Fast path: repair or resume
 
-For “fix Docker”, “bot won't answer” or “setup finished”, run this read-only triage before considering installation. Return **one supported diagnosis + one next action**. Do not pull images, rerun setup or start/stop anything merely to diagnose.
+For “fix Docker”, “bot won't answer” or “setup finished”, run this read-only triage before considering installation. For diagnosis/status-only scope, return **one supported diagnosis + one next action** without mutation. For a full repair/resume invocation, this is only the discovery phase: continue into [full reconciliation](authorization.md) and execute every safely supported required correction without repeated approvals. Do not pull images, rerun setup or start/stop anything merely to diagnose.
 
 1. **Resolve identity and mounts.** Match the requested repo/bot to current context/project/service, receipt, full ownership labels, `/workspace` bind and actual state backing (new home `/workspace/.hermes`; legacy volume/home retained). Follow the [workspace-state drift and migration gates](workspace-state.md). Multiple host/Docker candidates or contradictory receipts block mutation. Ask for the repo/instance or public bot username, never its token; do not pick the first container or assume cwd owns the bot.
 2. **Check actual gateway state.** Use the selected image's supported read-only supervisor/runtime signals. Container Up, credential presence and old connected logs are not evidence that the gateway ever started. If no safe signal exists, report verification pending rather than guess.
@@ -23,7 +23,7 @@ For “fix Docker”, “bot won't answer” or “setup finished”, run this r
 
 ## Existing-installation updates cover all applicable rules
 
-For an installation/update/repair request against owned state, continue from triage into [the full-rule reconciliation procedure](existing-installations.md). Inventory every applicable current requirement, preserve explicit choices and reconcile covered deltas with backup/single-writer checks. Do not mistake an old `ready` receipt, a resolved reported symptom or an unchanged image pin for current spec alignment. New defaults are not permission to migrate legacy state, remove existing diagnostic aliases, install optional skills or restart a service. Record uncovered actions/unsupported checks as pending or blocked and report alignment separately from runtime health. Read-only status remains read-only; it need not perform or imply a completed full update.
+For an installation/update/repair request against owned state, continue from triage into [the full-rule reconciliation procedure](existing-installations.md). Inventory every applicable current requirement, preserve explicit choices and reconcile covered deltas with backup/single-writer checks. Do not mistake an old `ready` receipt, a resolved reported symptom or an unchanged image pin for current spec alignment. The explicit invocation supplies required supported migration/dependency/update/recreation scope without another confirmation; new defaults alone do not. Preserve diagnostic aliases and unselected optional features. Record uncovered actions/unsupported checks as pending or blocked and report alignment separately from runtime health. Read-only status remains read-only; it need not perform or imply a completed full update.
 
 ## Durable, nonsecret progress
 
@@ -48,7 +48,7 @@ Never store credentials, token fragments, config/env/auth-file contents, OAuth/d
 
 1. Resolve the same canonical repo and read existing identity/progress/verification receipts. Check schema and selectors against live ownership labels, mounts and runtime. A copied/unknown receipt, changed repo/context, inconsistent phase or unidentified existing installation blocks mutation; do not provision another instance as a repair.
 2. Reacquire the setup lock for mutation and verify writers. If the user is still inside setup or another installer owns the lock, wait without deleting a lock or restarting anything. A previous agent finishing its turn does not prove its subprocess exited.
-3. Reuse the pinned image, generated files, valid keys, aliases, user choices and unaffected verification evidence. Do not repeat upstream release searches, pulls of an already present unchanged image, credential generation, setup interviews, completed wizard runs or persistence offers. Missing receipts trigger targeted read-only reconstruction from real artifacts—not a wipe/reinstall or fabricated progress.
+3. Reuse valid generated files, keys, aliases, user choices and unaffected evidence. Full reconciliation checks the current official stable image unless an explicit hold applies; reuse this invocation's fresh discovery rather than repeatedly searching, and retain the old pin until a verified replacement/recovery path exists. Do not repeat pulls of an unchanged present image, credential generation, setup interviews, completed wizard runs or persistence offers. Missing receipts trigger targeted read-only reconstruction from real artifacts—not a wipe/reinstall or fabricated progress.
 4. Resume using the table. If relevant inputs changed or evidence is stale, invalidate only dependent gates:
    - Workspace changes require workspace verification.
    - A wizard/config/provider/home change invalidates dependent auth/memory checks.
@@ -79,12 +79,12 @@ Choose the first supported diagnosis below; name its evidence without dumping th
 | User-facing status | Required evidence | One next action |
 | --- | --- | --- |
 | **Blocked** | Ownership, permissions, conflicting writers or required name/config boundary failed. | Resolve that exact blocker; never relabel, erase or restart around it. |
-| **Maintenance; activation pending** | Owned running container, verified current maintenance override and gateway stopped. Mention Telegram credentials present only after current effective presence is confirmed. | Ask for setup completion if still pending; otherwise verify auth/access/workspace/memory and obtain any uncovered recreation approval before activation. |
+| **Maintenance; activation pending** | Owned running container, verified current maintenance override and gateway stopped. Mention Telegram credentials present only after current effective presence is confirmed. | Ask for setup completion if still pending; otherwise verify auth/access/workspace/memory and activate within the invocation's covered recreation scope after safety gates pass. |
 | **Gateway stopped** | Owned running container, current gateway stopped, verified not in maintenance. | Inspect its supported stop/crash reason; no blind restart or setup rerun. |
 | **Setup incomplete** | Current required effective configuration is missing, or user setup is still in progress. A stale awaiting-setup receipt alone is insufficient. | `<alias> setup` privately only for missing configuration; otherwise wait for the active wizard to finish. |
 | **Apply needed** | Saved effective config/credential-source changes have not been loaded by the running gateway/container; compare current nonsecret metadata/source precedence with observed startup/application state. | After setup exits and required gates pass, `<alias>-apply`; it briefly recreates only this service. |
 | **Telegram disconnected** | Telegram is selected and current supported gateway/platform evidence shows it disconnected/not polling. Historical log hints alone are insufficient. | Diagnose the specific connection/auth/conflict signal; do not guess token failure or restart blindly. |
-| **Holographic basic** | Basic keyword persistence is confirmed in the real startup-equivalent runtime, but HRR is not available in the evaluated runtime. Never infer this solely from bare Python. | Report **basic keyword mode—not full HRR capability**; resolve the supported dependency/loaded-state remedy within separate approval. |
+| **Holographic basic** | Basic keyword persistence is confirmed in the real startup-equivalent runtime, but HRR is not available in the evaluated runtime. Never infer this solely from bare Python. | Report **basic keyword mode—not full HRR capability**; apply the supported dependency/loaded-state remedy within full reconciliation scope, without an additional approval prompt. |
 | **Runtime ready** | Current owned runtime, repo workspace/identity, effective auth/access, required memory capability/loading evidence and selected interfaces/channels all verified, with no pending apply. This is not development, complete historical vector-coverage or model-reply proof. | Show the usable interface and separate development/reply limits; after verified cold-boot backlog discard, prominently tell the user “Send a fresh message now.” |
 | **Verification pending** | Container exists but required live signals are unavailable, stale or unsupported. | Run the specific safe supported check; no invented success from uptime. |
 
@@ -130,8 +130,8 @@ Prepared — run this in your terminal:
 hermes-api setup
 Workspace is already /workspace (your repo). Enter credentials privately.
 Saving credentials alone does not start Telegram.
-Tell me setup is finished. I'll verify memory/auth/workspace, request any necessary
-recreation approval, and activate this instance once its gates pass. Do not paste setup output.
+Tell me setup is finished. I'll verify memory/auth/workspace and finish reconciliation,
+including required scoped recreation, once its safety gates pass. Do not paste setup output.
 ```
 
 Prefer the [optional cross-shell commands](readiness-and-shortcuts.md) when persistence was requested. If the installed directory is already on the user's PATH and names are unshadowed, no source command is needed. Otherwise show the absolute launcher or the chosen shell-alias mode's source command; do not claim to change the parent shell. Offer `<alias>-apply` only after its gates pass. When diagnostics are needed, give the verified explicit `<repo>/.hermes/bin/hermes-status` and `<repo>/.hermes/bin/hermes-logs` paths; do not create repo-named diagnostic aliases or PATH links, or remove existing ones. Offer persistence once without blocking setup and remember the answer. Full selectors, hashes and verification detail stay in the local receipts.

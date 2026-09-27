@@ -5,7 +5,7 @@ description: Use when installing, resuming or repairing a repository's Docker Co
 
 # Install, resume or repair Hermes for one repository
 
-One repo, one Docker Compose Hermes instance, with Holographic **HRR-capable** memory as the ordinary target. Report confirmed basic mode or pending capability explicitly; never silently degrade. **No host Hermes installation, CLI, profile or Python is required.** Read [the Compose procedure](references/compose.md) and [workspace-local state contract](references/workspace-state.md) before generating files or running Docker. Installing this skill does not deploy Hermes.
+One repo, one Docker Compose Hermes instance, with Holographic **HRR-capable** memory as the ordinary target. Report confirmed basic mode or pending capability explicitly; never silently degrade. **No host Hermes installation, CLI, profile or Python is required.** Read [the Compose procedure](references/compose.md) and [workspace-local state contract](references/workspace-state.md) before generating files or running Docker. Installing this skill does not deploy Hermes. **Running it is a full repair/update request, not a diagnosis-only pass:** read [the no-repeat-approval reconciliation contract](references/authorization.md), fix every applicable detail that can be safely supported, and verify the complete installation.
 
 ## Entry and routing
 
@@ -20,7 +20,8 @@ One repo, one Docker Compose Hermes instance, with Holographic **HRR-capable** m
 - Resolve which existing bot/instance is intended before mutation; cwd alone does not identify a bot among host and Docker installations.
 - **Telegram configured but silent:** use the [conditional activation repair](references/telegram-activation.md) after diagnosis. Saved credentials do not remove a maintenance CMD or start the gateway.
 - Repo write/build or coding-job failures: enter [development readiness](references/development-readiness.md), not another Telegram repair or installation.
-- Preserve existing repo and Hermes configuration while reconciling approved deltas. Status-only requests stay read-only. Existing setups must finish aligned with every applicable current rule or explicitly partially reconciled/blocked with the exact remaining changes, approvals and verification gaps; do not silently grandfather drift or overwrite state with fresh defaults.
+- For Kanban collaboration, follow [default-profile orchestration](references/kanban-orchestration.md): default is the human-facing coordinator, verified specialists execute cards, and one gateway owns dispatch. Configure profile-led task breakdown, not automatic triage decomposition; missing workers or unsupported routing remain blockers.
+- Preserve user choices/data and unrelated repo configuration while reconciling every required supported delta. The invocation covers the [listed repairs, updates, migrations and downtime](references/authorization.md) without repeated approvals. Status-only requests stay read-only. Finish aligned with every applicable rule or explicitly partially reconciled/blocked with exact unsupported/input/safety gaps; do not silently grandfather drift, stop at the first fix or overwrite state with fresh defaults.
 
 ## Instruction loading
 
@@ -37,27 +38,17 @@ One repo, one Docker Compose Hermes instance, with Holographic **HRR-capable** m
 
 ## Request-scoped authorization
 
-An explicit “install Hermes here” request or install-command invocation authorizes ordinary setup for the resolved repository:
+An explicit install/resume/repair/update invocation authorizes the complete [reconciliation scope](references/authorization.md) for the resolved owned instance: ordinary setup plus required image/dependency updates, supported recoverable state migration, narrow owned permissions/configuration/artifact repairs, service interruption/recreation and verification. **No additional approval prompts for those actions.** Discover exact versions/paths/deltas, give one informational impact preview, then execute all safely supported work. Pass this same scope into the memory and integration handoffs instead of creating another approval gate.
 
-- generated `.hermes` files and [narrow ignore rules](references/ignore-policy.md);
-- private bootstrap/native credential-store preparation without duplicating keys;
-- narrow repository identity in the effective SOUL;
-- verified official image pull;
-- isolated owned resources;
-- repo read/write mount;
-- local Holographic configuration/canary;
-- the new instance's maintenance lifecycle and first startup after checks pass.
-
-Give a short informational preview, then proceed without a blanket approval question. Carry this authorization into the memory handoff.
-
-- A plan-only/dry-run restriction permits discovery and offline output only.
+- A narrower status/plan-only/dry-run/no-restart/version-hold request wins.
 - Reading, installing or editing this skill is not a deployment request.
-- Ask only for unresolved inputs or a concrete uncovered action: dependency/toolchain installation or derived image, permission-policy changes, job creation/enablement/pause, repository documentation or submodule mutation, existing-provider switch, data migration, existing-service stop/restart, destructive changes, new costs, public exposure, or access outside the target repo.
-- Honor stricter project rules and tool permission gates; this skill does not bypass them. Reuse exact-scope authorization and continue independent authorized work while a blocker is unresolved.
+- Preserve provider/model choices, credentials/data and unrelated state; selected integrations are reconciled, not an excuse to enable every optional feature or dispatch new work.
+- Missing ownership, required private login, unsafe migration, unsupported runtime or denied tool permission is a concrete blocker, not a reason to invent success or bypass controls. Continue independent safe work and report the exact remainder.
+- Actions outside the listed target/scope remain unperformed. Do not turn that boundary into another generic approval interview or infer Git delivery, public exposure, deletion or host-root authority.
 
 ## Defaults, not an interview
 
-- Reuse explicit choices and verified repo-owned configuration. Otherwise resolve cwd's Git root and host UID/GID, and select a verified current official image digest for a new instance, retaining existing pins on reruns.
+- Reuse explicit choices and verified repo-owned configuration. Resolve cwd's Git root and host UID/GID. On full reconciliation, assess the current official stable image and update to its verified compatible immutable digest; preserve an explicit version hold and keep the existing pin until a safe replacement/recovery path is established. Read-only/narrow reruns do not upgrade.
 - Container names must be **`hermes-<repo-name>`**: the full normalized repo basename with no hash, truncation or Compose service/replica suffix. A foreign name collision blocks setup; never choose another container name automatically. Keep hashed Compose project IDs for isolated networks and any preserved legacy volumes.
 - **The assistant's name is the exact repo basename**, not `Hermes` or the Docker name. Follow [repository identity in SOUL](references/repo-identity.md) to update the owned effective SOUL narrowly and preserve unrelated personality instructions.
 - Keep web off unless requested.
@@ -68,7 +59,7 @@ Prepare infrastructure, then hand off setup in the user's own terminal.
 - **Never run the interactive wizard through agent tools or request its secret-bearing output.**
 - New installs use `HOME=HERMES_HOME=/workspace/.hermes`, directly backed by the repo bind: profiles, memory, caches and supported added dependencies stay there. No fresh writable Hermes state in `/opt`; immutable image executables are not relocated. Verify image support, not just environment settings.
 - Installer-managed bootstrap/web secrets use ignored, mode-`0600` `<repo>/.hermes/bootstrap.env` via raw Compose `env_file`.
-- User-entered provider/channel keys and OAuth tokens use the verified native stores inside `/workspace/.hermes` (typically `.env` and `auth.json`). These are the same bind-backed host files, not copies; never inject native `.env` as the bootstrap source. Existing homes/stores require explicit migration rather than new defaults.
+- User-entered provider/channel keys and OAuth tokens use the verified native stores inside `/workspace/.hermes` (typically `.env` and `auth.json`). These are the same bind-backed host files, not copies; never inject native `.env` as the bootstrap source. Existing homes/stores require a supported recoverable migration under the invocation's scope, never a fresh-default overwrite.
 - Preserve existing working authentication.
 - Read [host CLI, private setup and apply](references/host-cli.md) for credential precedence, short commands and aliases.
 
@@ -90,7 +81,7 @@ Prepare infrastructure, then hand off setup in the user's own terminal.
 5. **Private user setup.**
    - Follow [host CLI access](references/host-cli.md) to create the repo-local launcher and collision-safe aliases. Keep the bootstrapped container running in verified maintenance mode, with gateway writers off.
    - Lead with one next command: **`hermes-<repo-name> setup`** after verified PATH command resolution or alias activation, otherwise the absolute scoped launcher. Keep the verified short Docker command as a fallback, not a second onboarding path to explain by default.
-   - The user chooses provider/model/channels privately; `/workspace` is already preconfigured. Record resumable progress and report **prepared; waiting for user setup**, not ready. State the continuation: “Tell me setup is finished. I'll verify memory/auth/workspace, request any necessary recreation approval, and activate this instance once its gates pass.” Saving credentials alone does not start Telegram.
+   - The user chooses provider/model/channels privately; `/workspace` is already preconfigured. Record resumable progress and report **prepared; waiting for user setup**, not ready. State the continuation: “Tell me setup is finished. I'll verify memory/auth/workspace and finish reconciliation, including required scoped recreation, once its safety gates pass.” Saving credentials alone does not start Telegram.
    - Offer persistent commands once, preferring optional cross-shell links in `~/.local/bin` over rc edits; use `--core-only` for the main command alone while apply is unavailable, following [readiness and shortcuts](references/readiness-and-shortcuts.md). Record acceptance/decline and mode, never repeat the offer or block setup on it.
    - If writable ancestors reject links, use the reference's Bashrc-versus-permissions choices with separate authorization and the path-trust warning; keep accepted-but-blocked persistence `requested`.
    - Reuse existing valid configuration without forcing the wizard again.
@@ -101,7 +92,8 @@ Prepare infrastructure, then hand off setup in the user's own terminal.
    - Use **memory-holographic-hermes-setup**'s verified container adapter with the [capability acceptance contract](references/memory-capability.md): startup-equivalent nonroot checks, preserved configuration/tuning, functional HRR encode/bind/unbind tests, aggregate vector coverage and the cleaned-up persistence canary. Existing packages must be checked before installation; imports alone are not loaded-gateway HRR proof.
    - Reconcile wizard changes narrowly; preserve user choices and secrets. Missing runtime provider or failed verification blocks readiness; no silent fallback or host dependencies.
    - Confirmed basic capability must prominently say **“basic keyword mode—not full HRR capability.”**
-   - Reindexing, dependency changes and recreation retain their separate approval gates.
+   - Required supported dependencies/migration/recreation and metadata-preserving memory index repair use the invocation's approval; provider switches and other changes outside that scope remain unperformed. Safety and actual evidence gates still apply.
+   - When Kanban is requested, prepare its [role/toolsets, shared board, preserved workspaces and bounded dispatch configuration](references/kanban-orchestration.md) before activation. Preserve existing cards/profile choices; do not create specialists or release queued work implicitly. The offline Compose planner does not discover a roster or configure Kanban.
 7. **Activate and apply.**
    - After setup/identity/workspace/auth/access/memory gates, use the [Telegram preflight and scoped activation recipe](references/telegram-activation.md) when applicable. Replace maintenance CMD only when supported by the verified image and within scoped approval.
    - Start only the approved gateway and verify the configured channels, authentication enforcement, mounts, actual terminal-tool cwd, user and persistence—not just uptime or a gateway process cwd. Verify its loaded memory provider/capability separately; prove dependency/config/data/HRR recreation durability only within an approved maintenance window, otherwise report it pending.
@@ -110,8 +102,8 @@ Prepare infrastructure, then hand off setup in the user's own terminal.
    - Verify effective listeners/publication instead of assuming API environment flags control exposure.
 8. **Development readiness, separately.**
    - Assess the [task-scoped development gate](references/development-readiness.md): actual write/edit/cleanup tools and approval mode, narrow supported safe roots, persistent required toolchain across gateway/CLI/cron, readable skills/prerequisites, workspace/selectors and all-writer coordination.
-   - Obtain any uncovered policy/install/probe scope; recheck after approved recreation. Report blocked/pending independently of runtime health.
-   - Never create or enable coding jobs merely because installation or Telegram succeeded; a separately approved job still needs this gate and a reviewed no-overlap/failure policy.
+   - Apply required policy/install/probe corrections covered by the invocation and recheck after scoped recreation without another approval prompt. Report unsupported or out-of-scope work independently of runtime health.
+   - Never create or enable coding jobs merely because installation or Telegram succeeded; a separately approved job still needs this gate and a reviewed no-overlap/failure policy. Kanban dispatch likewise requires its exact release scope, specialist readiness and backlog review; `auto_decompose: false` does not pause ready cards or notification wake turns.
 
 ## Output and boundaries
 
@@ -128,9 +120,9 @@ Report the following:
 - Distinguish prepared files, local probes and live verification; never report secret values. For existing updates report full-rule spec alignment separately from runtime/development readiness and chat availability; unsupported migration/session coordination remains blocked, not completed.
 - Report **identity configured** only after effective SOUL/loader checks; disclose an unsupported hardcoded greeting instead of claiming it changed.
 - Separately report gateway/channel connection, memory verification and model-reply evidence: **Telegram connected does not prove a model-generated reply**. No automatic message/inference test.
-- Runtime status/apply success does not verify coding tools, provision dependencies or authorize jobs.
+- Runtime status/apply success does not verify coding tools, provision dependencies or authorize jobs. For Kanban report configuration, worker readiness, dispatch release and observed execution/notification results separately. Do not treat board connection or `dispatch --dry-run` as inherently read-only; follow the pinned-source side-effect checks.
 - Report memory configuration, startup-equivalent dependencies, functional HRR, aggregate vector coverage, local cleanup, live integration and recreation durability as separate evidence; do not turn unknowns into passes.
-- Use the [four-part outcome receipt](references/development-readiness.md#6-evidence-invalidation-and-outcome-reporting): changed this turn, pre-existing changes preserved, denied/not-executed commands, and validation actually completed. Keep a consolidated actionable blocker instead of repeating identical failed coding attempts.
+- Use the [four-part outcome receipt](references/development-readiness.md#6-evidence-invalidation-and-outcome-reporting): changed this turn, pre-existing changes preserved, denied/not-executed commands, and validation actually completed. Keep a consolidated actionable blocker instead of repeating identical failed coding attempts. Finish the full applicable-rule sweep before reporting success; a remaining required migration/update/support gap means partial, not fully fixed.
 - Check the [boundary/collision checklist](references/development-readiness.md#boundarycollision-checklist) before handoff; preserve existing lifecycle phases and status codes.
 
 Host uninstall is a **separate workflow**, not a repair step. Supply only verified instance identity and preservation requirements; follow the [active-service impact confirmation](references/resume-and-diagnostics.md#host-uninstall-handoff) before any host removal handoff. “Only host” does not authorize undisclosed interruption of active bots.

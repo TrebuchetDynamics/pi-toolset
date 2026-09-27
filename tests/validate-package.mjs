@@ -1851,6 +1851,8 @@ function testNpmPackContents() {
     "skills/engineering/hermes-laya/references/setup.md",
     "skills/engineering/hermes-repo-install/SKILL.md",
     "skills/engineering/hermes-repo-install/references/compose.md",
+    "skills/engineering/hermes-repo-install/references/kanban-orchestration.md",
+    "skills/engineering/hermes-repo-install/references/authorization.md",
     "skills/engineering/hermes-repo-install/scripts/compose-plan.mjs",
   ]) {
     assert.ok(packagedPaths.has(required), `missing packaged Holographic resource: ${required}`);

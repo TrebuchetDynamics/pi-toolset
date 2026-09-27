@@ -168,6 +168,20 @@ try {
       assert.ok(fs.statSync(path.resolve(path.dirname(composeReference), target)).isFile(),
         `broken flattened Compose handoff: ${target}`);
     }
+    // Break caught: orchestration/authorization guidance is missing/truncated
+    // in a real flattened installation, or its local references no longer resolve.
+    for (const name of ["kanban-orchestration", "authorization"]) {
+      const reference = path.join(installDir, `references/${name}.md`);
+      assert.ok(fs.existsSync(reference), `installed Hermes must include ${name} guidance`);
+      const text = fs.readFileSync(reference, "utf8");
+      assert.equal(text, fs.readFileSync(path.join(root,
+        `skills/engineering/hermes-repo-install/references/${name}.md`), "utf8"));
+      for (const [, target] of text.matchAll(/\]\(([^)]+\.md)(?:#[^)]*)?\)/g)) {
+        if (/^https?:/.test(target)) continue;
+        assert.ok(fs.statSync(path.resolve(path.dirname(reference), target)).isFile(),
+          `broken installed ${name} handoff: ${target}`);
+      }
+    }
     // Packaged helper must work from flattened installations, not just checkout paths.
     const plan = JSON.parse(execFileSync(process.execPath, [path.join(installDir, "scripts/compose-plan.mjs"),
       "--repo", tmp, "--image", `nousresearch/hermes-agent@sha256:${"a".repeat(64)}`,
