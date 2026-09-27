@@ -79,7 +79,8 @@
     ],
     "prompts": [
       "./prompts/memory-holographic-hermes-setup.md",
-      "./prompts/hermes-repo-install.md"
+      "./prompts/hermes-repo-install.md",
+      "./prompts/hermes-laya.md"
     ],
     "themes": [
       "./themes"

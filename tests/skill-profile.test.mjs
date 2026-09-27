@@ -117,7 +117,8 @@ try {
   // profile, or their references lost when flattened by the real installer.
   const memoryName = "memory-holographic-hermes-setup";
   const installName = "hermes-repo-install";
-  const hermesNames = [memoryName, installName];
+  const layaName = "hermes-laya";
+  const hermesNames = [memoryName, installName, layaName];
   for (const name of hermesNames) {
     assert.equal(fs.existsSync(path.join(codex, name, "SKILL.md")), false,
       `the core profile must not activate ${name}`);
@@ -137,6 +138,21 @@ try {
     for (const [, target] of memorySkill.matchAll(/\]\(([^)]+\.md)\)/g)) {
       assert.ok(fs.existsSync(path.resolve(memoryInstalled, target)), `broken installed memory link: ${target}`);
     }
+    // Break caught: companion instructions are absent from automation installs,
+    // or a flattened handoff resolves to the wrong skill rather than its sibling.
+    const layaDir = path.join(directory, layaName);
+    assert.ok(fs.existsSync(path.join(layaDir, 'SKILL.md')), 'automation must install hermes-laya');
+    const layaSkill = fs.readFileSync(path.join(layaDir, 'SKILL.md'), 'utf8');
+    assert.doesNotMatch(layaSkill, /^disable-model-invocation: true$/m);
+    const handoff = [...layaSkill.matchAll(/\]\(([^)]+hermes-repo-install\/SKILL\.md)\)/g)];
+    assert.equal(handoff.length, 1, 'one canonical installer handoff');
+    assert.equal(fs.realpathSync(path.resolve(layaDir, handoff[0][1])),
+      fs.realpathSync(path.join(directory, installName, 'SKILL.md')));
+    for (const [, target] of layaSkill.matchAll(/\]\(([^)]+\.md)\)/g)) {
+      if (!/^https?:/.test(target)) assert.ok(fs.statSync(path.resolve(layaDir, target)).isFile());
+    }
+    assert.equal(fs.readFileSync(path.join(layaDir, 'references/setup.md'), 'utf8'),
+      fs.readFileSync(path.join(root, 'skills/engineering/hermes-laya/references/setup.md'), 'utf8'));
     const installDir = path.join(directory, installName);
     assert.ok(fs.existsSync(path.join(installDir, "SKILL.md")), "automation must install repo-scoped Hermes Compose setup");
     const installSkill = fs.readFileSync(path.join(installDir, "SKILL.md"), "utf8");
@@ -157,7 +173,42 @@ try {
       "--repo", tmp, "--image", `nousresearch/hermes-agent@sha256:${"a".repeat(64)}`,
       "--uid", "1000", "--gid", "1000"], { encoding: "utf8" }));
     assert.equal(plan.requiredConfig.memory.provider, "holographic");
-    assert.equal(plan.compose.services.hermes.volumes[1].source, fs.realpathSync(tmp).replaceAll("$", () => "$$"));
+    assert.deepEqual(plan.compose.services.hermes.volumes, [{
+      type: "bind", source: fs.realpathSync(tmp).replaceAll("$", () => "$$"), target: "/workspace",
+      bind: { create_host_path: false },
+    }], "installed planner must not hide repo-local profiles with a volume");
+    assert.equal(plan.compose.services.hermes.environment.HOME, "/workspace/.hermes");
+    assert.equal(plan.compose.services.hermes.environment.HERMES_HOME, "/workspace/.hermes");
+    assert.equal(plan.requiredConfig.plugins["hermes-memory-store"].db_path, "/workspace/.hermes/memory_store.db");
+    assert.equal(plan.compose.services.hermes.env_file[0].path,
+      path.join(fs.realpathSync(tmp), ".hermes", "bootstrap.env").replaceAll("$", () => "$$"));
+
+    // Break caught: the flattened helper still requires/publishes diagnostic
+    // shortcuts although the source helper now selects only main and apply.
+    const shortcutFixture = fs.mkdtempSync(path.join(tmp, "shortcut-contract-"));
+    const shortcutRepo = path.join(shortcutFixture, "api");
+    const sourceBin = path.join(shortcutRepo, ".hermes", "bin");
+    const shortcutBin = path.join(shortcutFixture, "commands");
+    fs.mkdirSync(sourceBin, { recursive: true, mode: 0o700 });
+    fs.writeFileSync(path.join(sourceBin, "hermes"), "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+    const shortcutArgs = [path.join(installDir, "scripts/install-shortcuts.mjs"),
+      "--repo", shortcutRepo, "--bin-dir", shortcutBin];
+    const installedCore = JSON.parse(execFileSync(process.execPath, [...shortcutArgs, "--core-only"],
+      { encoding: "utf8" }).split("\n")[0]);
+    assert.deepEqual(installedCore.names, ["hermes-api"]);
+    assert.deepEqual(fs.readdirSync(shortcutBin), ["hermes-api"]);
+    fs.writeFileSync(path.join(sourceBin, "hermes-apply"), "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+    const installedFull = JSON.parse(execFileSync(process.execPath, shortcutArgs,
+      { encoding: "utf8" }).split("\n")[0]);
+    assert.deepEqual(installedFull.names, ["hermes-api", "hermes-api-apply"]);
+    assert.equal(installedFull.created, 1);
+    assert.deepEqual(fs.readdirSync(shortcutBin).sort(), ["hermes-api", "hermes-api-apply"]);
+    // Installed chat dispatch must retain its module dependency, and never
+    // start a session from the noninteractive package-test process.
+    const chatDispatch = spawnSync(process.execPath, [path.join(installDir, "scripts/chat.mjs"),
+      "--adapter", path.join(sourceBin, "hermes-chat")], { encoding: "utf8" });
+    assert.equal(chatDispatch.status, 3, chatDispatch.stderr);
+    assert.match(chatDispatch.stderr, /Interactive chat unavailable/);
   }
   const automationBackups = fs.readdirSync(env.AGENT_SKILLS_BACKUP_DIR, { recursive: true });
   run("--profile=automation");

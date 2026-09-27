@@ -51,7 +51,22 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
     restart: "unless-stopped",
     working_dir: "/workspace",
     environment: {
-      HERMES_HOME: "/opt/data",
+      // Desired layout, not proof that a selected image honors these overrides.
+      // Verify bootstrap + gateway + CLI parity before deploying this plan.
+      HOME: "/workspace/.hermes",
+      HERMES_HOME: "/workspace/.hermes",
+      HERMES_LAZY_INSTALL_TARGET: "/workspace/.hermes/lazy-packages",
+      XDG_CACHE_HOME: "/workspace/.hermes/.cache",
+      XDG_CONFIG_HOME: "/workspace/.hermes/.config",
+      XDG_DATA_HOME: "/workspace/.hermes/.local/share",
+      XDG_STATE_HOME: "/workspace/.hermes/.local/state",
+      XDG_RUNTIME_DIR: "/workspace/.hermes/run",
+      TMPDIR: "/workspace/.hermes/tmp",
+      UV_CACHE_DIR: "/workspace/.hermes/.cache/uv",
+      PIP_CACHE_DIR: "/workspace/.hermes/.cache/pip",
+      npm_config_cache: "/workspace/.hermes/.cache/npm",
+      HF_HOME: "/workspace/.hermes/.cache/huggingface",
+      CODEX_HOME: "/workspace/.hermes/codex",
       HERMES_UID: String(uid),
       HERMES_GID: String(gid),
       HERMES_DASHBOARD: web ? "1" : "0",
@@ -61,9 +76,9 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
     // provider/channel credentials in the persistent home (no automatic copies).
     // Raw loading preserves literal dollars/quotes (Compose >=2.30). The planner
     // only names this file: it never reads, writes, or emits its secret values.
-    env_file: [{ path: literal(path.join(repoPath, ".hermes", ".env")), required: true, format: "raw" }],
+    env_file: [{ path: literal(path.join(repoPath, ".hermes", "bootstrap.env")), required: true, format: "raw" }],
+    // Do not overlay .hermes: its profiles and receipts must remain visible.
     volumes: [
-      { type: "volume", source: "data", target: "/opt/data" },
       { type: "bind", source: literal(repoPath), target: "/workspace", bind: { create_host_path: false } },
     ],
     labels: { ...labels },
@@ -82,7 +97,6 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
     compose: {
       name: projectName,
       services: { hermes: service },
-      volumes: { data: { labels: { ...labels } } },
       networks: { default: { labels: { ...labels } } },
     },
     // Required narrow merge after runtime/source checks and the memory skill's gates.
@@ -90,7 +104,7 @@ export function makePlan({ repo, image, uid, gid, web = false }) {
     requiredConfig: {
       terminal: { backend: "local", cwd: "/workspace" },
       memory: { provider: "holographic" },
-      plugins: { "hermes-memory-store": { db_path: "/opt/data/memory_store.db", auto_extract: false } },
+      plugins: { "hermes-memory-store": { db_path: "/workspace/.hermes/memory_store.db", auto_extract: false } },
     },
   };
 }

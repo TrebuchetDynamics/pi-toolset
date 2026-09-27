@@ -17,7 +17,7 @@ Return one consolidated actionable blocker report. Example: **gateway ready; dev
 
 A Docker read/write bind, correct UID/GID, terminal `touch` or `pwd` is necessary evidence, not proof that Hermes's write/edit tools may mutate the repo. Inspect the pinned image's actual tool guards and configuration loader, including **`HERMES_WRITE_SAFE_ROOT` where supported**. Verify effective precedence, unset/default behavior, supported root-list syntax and canonical-path/symlink handling. Do not guess that commas, colons, JSON or repeated variables are accepted.
 
-The intended scope is the canonical `/workspace` repository **plus the runtime's required owned state access** (normally inside `/opt/data`), not unrestricted filesystem writes.
+The intended scope is the canonical `/workspace` repository **plus the runtime's required owned state access** (inside `/workspace/.hermes` for new installs; preserve verified legacy homes until approved migration), not unrestricted filesystem writes.
 
 - Preserve unrelated restrictions; adding workspace must not accidentally remove required state access.
 - If the installed guard supports only one root and no reviewed narrow policy can include both, report the limitation.

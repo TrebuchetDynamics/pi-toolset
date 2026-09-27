@@ -30,6 +30,7 @@ const expectedSkills = [
   "autonomous-codebase-improver",
   "memory-holographic-hermes-setup",
   "hermes-repo-install",
+  "hermes-laya",
   "prompt-cache-auditor",
   "zoom-out",
   "skill-router",
@@ -637,6 +638,8 @@ async function testPackageManifest() {
     "Pi must discover the exact Holographic setup shortcut");
   assert.ok(pkg.pi.prompts?.includes("./prompts/hermes-repo-install.md"),
     "Pi must discover the repo Compose setup shortcut");
+  assert.ok(pkg.pi.prompts?.includes("./prompts/hermes-laya.md"),
+    "Pi must discover the Laya companion shortcut");
   assert.equal(
     pkg.scripts["test:behavioral"],
     "node research/software-development-skill-design/behavioral-run/validate-offline-scorer.mjs",
@@ -1843,6 +1846,9 @@ function testNpmPackContents() {
     "skills/engineering/memory-holographic-hermes-setup/SKILL.md",
     "skills/engineering/memory-holographic-hermes-setup/references/setup.md",
     "prompts/hermes-repo-install.md",
+    "prompts/hermes-laya.md",
+    "skills/engineering/hermes-laya/SKILL.md",
+    "skills/engineering/hermes-laya/references/setup.md",
     "skills/engineering/hermes-repo-install/SKILL.md",
     "skills/engineering/hermes-repo-install/references/compose.md",
     "skills/engineering/hermes-repo-install/scripts/compose-plan.mjs",

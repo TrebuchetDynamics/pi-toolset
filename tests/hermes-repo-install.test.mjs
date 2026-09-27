@@ -72,7 +72,24 @@ try {
   assert.equal(service.image, image);
   assert.deepEqual(service.command, ["gateway", "run"]);
   assert.equal(service.working_dir, "/workspace");
-  assert.equal(service.environment.HERMES_HOME, "/opt/data");
+  // Break caught: fresh state escapes the repo or an overlay hides profiles/receipts.
+  assert.equal(service.environment.HERMES_HOME, "/workspace/.hermes");
+  assert.equal(service.environment.HOME, "/workspace/.hermes");
+  for (const [key, value] of Object.entries({
+    HERMES_LAZY_INSTALL_TARGET: "/workspace/.hermes/lazy-packages",
+    XDG_CACHE_HOME: "/workspace/.hermes/.cache",
+    XDG_CONFIG_HOME: "/workspace/.hermes/.config",
+    XDG_DATA_HOME: "/workspace/.hermes/.local/share",
+    XDG_STATE_HOME: "/workspace/.hermes/.local/state",
+    XDG_RUNTIME_DIR: "/workspace/.hermes/run",
+    TMPDIR: "/workspace/.hermes/tmp",
+    UV_CACHE_DIR: "/workspace/.hermes/.cache/uv",
+    PIP_CACHE_DIR: "/workspace/.hermes/.cache/pip",
+    npm_config_cache: "/workspace/.hermes/.cache/npm",
+    HF_HOME: "/workspace/.hermes/.cache/huggingface",
+    CODEX_HOME: "/workspace/.hermes/codex",
+  })) assert.equal(service.environment[key], value, `${key} must not retain image-default writable state outside the repo`);
+  assert.equal(first.compose.volumes, undefined, "do not mask host .hermes with a Docker volume");
   assert.equal(service.environment.HERMES_UID, "1000");
   assert.equal(service.environment.HERMES_GID, "1000");
   assert.equal(service.environment.HERMES_DASHBOARD, "0");
@@ -81,16 +98,15 @@ try {
   // Break caught: headless installs never receive repo provider credentials,
   // or web installs split secrets into a second independently managed file.
   assert.deepEqual(service.env_file, [
-    { path: path.join(fs.realpathSync(a), ".hermes", ".env"), required: true, format: "raw" },
+    { path: path.join(fs.realpathSync(a), ".hermes", "bootstrap.env"), required: true, format: "raw" },
   ]);
   for (const forbidden of ["network_mode", "privileged", "entrypoint", "user"]) {
     assert.equal(service[forbidden], undefined, `unsafe or conflicting override: ${forbidden}`);
   }
   assert.deepEqual(service.volumes, [
-    { type: "volume", source: "data", target: "/opt/data" },
     { type: "bind", source: fs.realpathSync(a), target: "/workspace", bind: { create_host_path: false } },
   ]);
-  for (const [kind, key] of [["volumes", "data"], ["networks", "default"]]) {
+  for (const [kind, key] of [["networks", "default"]]) {
     const resource = first.compose[kind][key];
     assert.equal(resource.name, undefined, "Docker must namespace resources by the explicit project");
     assert.equal(resource.external, undefined);
@@ -101,7 +117,7 @@ try {
   assert.deepEqual(first.requiredConfig, {
     terminal: { backend: "local", cwd: "/workspace" },
     memory: { provider: "holographic" },
-    plugins: { "hermes-memory-store": { db_path: "/opt/data/memory_store.db", auto_extract: false } },
+    plugins: { "hermes-memory-store": { db_path: "/workspace/.hermes/memory_store.db", auto_extract: false } },
   });
 
   // Break caught: two web instances publish a fixed port, or publish to the LAN.
@@ -111,7 +127,7 @@ try {
     { target: 9119, host_ip: "127.0.0.1", protocol: "tcp" },
   ]);
   assert.deepEqual(web.compose.services.hermes.env_file, [
-    { path: path.join(fs.realpathSync(a), ".hermes", ".env"), required: true, format: "raw" },
+    { path: path.join(fs.realpathSync(a), ".hermes", "bootstrap.env"), required: true, format: "raw" },
   ]);
   assert.equal(web.compose.services.hermes.environment.API_SERVER_HOST, "0.0.0.0");
   assert.equal(web.compose.services.hermes.environment.HERMES_DASHBOARD_HOST, "0.0.0.0");
@@ -122,9 +138,9 @@ try {
   fs.mkdirSync(awkward);
   const unusual = makePlan({ ...options, repo: awkward });
   assert.equal(unusual.identity.profileName, path.basename(awkward));
-  assert.equal(unusual.compose.services.hermes.volumes[1].source, path.join(tmp, "9 API $${SECRET}: ö"));
+  assert.equal(unusual.compose.services.hermes.volumes[0].source, path.join(tmp, "9 API $${SECRET}: ö"));
   assert.match(unusual.identity.projectName, /^hermes-[a-z0-9-]+-[a-f0-9]{16}$/);
-  assert.equal(unusual.compose.services.hermes.env_file[0].path, path.join(tmp, "9 API $${SECRET}: ö", ".hermes", ".env"));
+  assert.equal(unusual.compose.services.hermes.env_file[0].path, path.join(tmp, "9 API $${SECRET}: ö", ".hermes", "bootstrap.env"));
   const long = path.join(tmp, "x".repeat(180));
   fs.mkdirSync(long);
   assert.ok(makePlan({ ...options, repo: long }).identity.projectName.length <= 63);
@@ -160,16 +176,23 @@ try {
   // These are synthetic test values, not credentials. Special characters must
   // survive Compose env_file loading literally rather than shell interpolation.
   const secretValue = 'fixture-only-${SECRET}-$cash-#hash-"quoted"';
-  const envText = `OPENROUTER_API_KEY=${secretValue}\nAPI_SERVER_KEY=${secretValue}\n`;
+  const envText = `API_SERVER_KEY=${secretValue}\n`;
+  const nativeText = `OPENROUTER_API_KEY=native-fixture-not-for-compose\n`;
   for (const repo of [a, awkward]) {
     fs.mkdirSync(path.join(repo, ".hermes"));
-    fs.writeFileSync(path.join(repo, ".hermes", ".env"), envText, { mode: 0o600 });
+    fs.writeFileSync(path.join(repo, ".hermes", "bootstrap.env"), envText, { mode: 0o600 });
+    fs.writeFileSync(path.join(repo, ".hermes", ".env"), nativeText, { mode: 0o600 });
   }
+  // Setup's native store and Compose's bootstrap source must not alias.
+  assert.notEqual(service.env_file[0].path, path.join(a, ".hermes", ".env"));
   const planned = execFileSync(process.execPath, args, { encoding: "utf8" });
   assert.deepEqual(JSON.parse(planned), first);
   assert.equal(planned.includes(secretValue), false);
-  assert.equal(fs.readFileSync(path.join(a, ".hermes", ".env"), "utf8"), envText);
-  assert.equal(fs.statSync(path.join(a, ".hermes", ".env")).mode & 0o777, 0o600);
+  assert.equal(planned.includes("native-fixture-not-for-compose"), false);
+  for (const [name, text] of [["bootstrap.env", envText], [".env", nativeText]]) {
+    assert.equal(fs.readFileSync(path.join(a, ".hermes", name), "utf8"), text);
+    assert.equal(fs.statSync(path.join(a, ".hermes", name)).mode & 0o777, 0o600);
+  }
   for (const extra of [["--unknown"], ["--uid", "1001"], ["--web", "--web"], ["--hashed-name"]]) {
     const result = spawnSync(process.execPath, [...args, ...extra], { encoding: "utf8" });
     assert.notEqual(result.status, 0, "unknown/duplicate options must fail closed");
@@ -274,6 +297,12 @@ try {
   const applyLauncher = path.join(cliBin, "hermes-apply");
   fs.writeFileSync(applyLauncher, applyTemplate.replaceAll("/srv/projects/api", shellPath), { mode: 0o700 });
   fs.copyFileSync(path.join(root, "skills/engineering/hermes-repo-install/scripts/wait-ready.mjs"), path.join(cliBin, "wait-ready.mjs"));
+  fs.copyFileSync(path.join(root, "skills/engineering/hermes-repo-install/scripts/chat.mjs"), path.join(cliBin, "chat.mjs"));
+  for (const args of [[], ["--unknown"], ["--adapter", "/unused", "extra"]]) {
+    const invalidChat = spawnSync(process.execPath, [path.join(cliBin, "chat.mjs"), ...args], { encoding: "utf8" });
+    assert.equal(invalidChat.status, 2, "invalid chat dispatch arguments must fail without execution");
+    assert.equal(invalidChat.stdout, "");
+  }
   const statusHelper = path.join(root, "skills/engineering/hermes-repo-install/scripts/status.mjs");
   fs.copyFileSync(statusHelper, path.join(cliBin, "status.mjs"));
   const diagnosticProbe = path.join(cliBin, "hermes-diagnostic-probe");
@@ -314,18 +343,24 @@ try {
   const cliArgs = ["auth", "add", "openai-codex", "--type", "oauth", "space arg", "$(touch not-created)", "single'quote"];
   const expectedPrefix = ["--context", "default", "compose", "--env-file", "/dev/null",
     "-p", "hermes-api-0123456789abcdef", "-f", path.join(cliRepo, ".hermes", "compose.yaml"),
-    "exec", "-T", "--user", "1000:1000", "--workdir", "/workspace", "-e", "HOME=/opt/data",
-    "-e", "HERMES_HOME=/opt/data", "hermes", "/opt/hermes/bin/hermes"];
+    "exec", "-T", "--user", "1000:1000", "--workdir", "/workspace", "-e", "HOME=/workspace/.hermes",
+    "-e", "HERMES_HOME=/workspace/.hermes", "hermes", "/opt/hermes/bin/hermes"];
   const runCli = (args, env = cliEnv) => spawnSync("sh", [launcher, ...args], { encoding: "utf8", env });
   const invocation = runCli(cliArgs);
   assert.equal(invocation.status, 0, invocation.stderr);
   assert.deepEqual(JSON.parse(invocation.stdout), { args: [...expectedPrefix, ...cliArgs], cwd: cliRepo, selectors: [] });
   assert.equal(fs.existsSync(path.join(cliRepo, "not-created")), false);
-  assert.deepEqual(JSON.parse(runCli([]).stdout).args, [...expectedPrefix, "--help"], "bare alias must not start another agent");
+  assert.deepEqual(JSON.parse(runCli([]).stdout).args, [...expectedPrefix, "--help"], "non-TTY bare invocation must show help, not start chat");
   assert.equal(runCli(["--help"], { ...cliEnv, FAKE_EXIT: "23" }).status, 23, "preserve Docker exit status; no auto-start fallback");
   const aliased = spawnSync("sh", ["-c", '. "$1"\nhermes-api --help', "sh", aliasFile], { encoding: "utf8", env: cliEnv });
   assert.equal(aliased.status, 0, aliased.stderr);
   assert.deepEqual(JSON.parse(aliased.stdout).args, [...expectedPrefix, "--help"], "alias must work from outside the repo");
+  // Break caught: the executable alias template still publishes diagnostics
+  // after the installer stops creating their PATH shortcuts.
+  const aliasInventory = spawnSync("sh", ["-c", '. "$1"\nalias', "sh", aliasFile], { encoding: "utf8", env: cliEnv });
+  assert.equal(aliasInventory.status, 0, aliasInventory.stderr);
+  assert.doesNotMatch(aliasInventory.stdout, /hermes-api-(status|logs)=/,
+    "diagnostics must remain explicit-path tools, not generated aliases");
   // Break caught: applying changes merely restarts stale injected env, touches
   // dependencies/other projects, silently pulls, drops volumes, or eats errors.
   const applyExpected = ["--context", "default", "compose", "--env-file", "/dev/null",
@@ -461,13 +496,13 @@ try {
   assert.match(logs.stdout, /not live readiness/i);
   assert.deepEqual(JSON.parse(fs.readFileSync(logCalls, "utf8")).args,
     [...dockerPrefix, "logs", "--no-color", "--no-log-prefix", "--tail", "100", "hermes"]);
-  for (const [command, aliasName] of [[statusLauncher, "hermes-api-status"], [logsLauncher, "hermes-api-logs"]]) {
+  for (const command of [statusLauncher, logsLauncher]) {
     assert.equal(spawnSync("sh", [command, "foreign-service"], { encoding: "utf8", env: cliEnv }).status, 2);
     const failed = spawnSync("sh", [command], { encoding: "utf8", env: { ...logEnv, FAKE_EXIT: "25", FAKE_STDERR: "FIXTURE_SECRET" } });
     assert.notEqual(failed.status, 0);
     assert.equal((failed.stdout + failed.stderr).includes("FIXTURE_SECRET"), false);
-    const fromAlias = spawnSync("sh", ["-c", `. "$1"\n${aliasName}`, "sh", aliasFile], { encoding: "utf8", env: logEnv });
-    assert.equal(fromAlias.status, 0, fromAlias.stderr);
+    const fromPath = spawnSync("sh", ["-c", 'exec "$1"', "sh", command], { encoding: "utf8", env: logEnv });
+    assert.equal(fromPath.status, 0, fromPath.stderr);
   }
   const quietLogs = spawnSync("sh", [logsLauncher], { encoding: "utf8", env: { ...cliEnv, FAKE_LOG_LINES: "password=FIXTURE_SECRET" } });
   assert.equal(quietLogs.status, 0);
@@ -492,6 +527,57 @@ try {
     assert.equal(interactive.status, 0, interactive.stderr);
     assert.deepEqual(JSON.parse(interactive.stdout.trim()).args,
       [...expectedPrefix.filter(arg => arg !== "-T"), "--help"], "interactive terminal must retain Compose TTY");
+    // Break caught: bare interactive use still opens help, or bypasses the
+    // reviewed chat adapter and starts a conflicting agent on the same home.
+    const chatAdapter = path.join(cliBin, "hermes-chat");
+    fs.writeFileSync(chatAdapter, `#!${process.execPath}\nif (process.env.FAKE_CHAT_BUSY) process.exit(20);\nif (process.env.FAKE_CHAT_SIGNAL) process.kill(process.pid, 'SIGTERM');\nconsole.log('FIXTURE_CHAT_SESSION'); process.exit(Number(process.env.FAKE_CHAT_EXIT || 0));\n`, { mode: 0o700 });
+    const chatDockerCalls = path.join(tmp, "chat-must-not-bypass-adapter");
+    const runChat = (extra = {}) => spawnSync("script", ["-q", "-e", "-c", `sh ${quote(launcher)}`, "/dev/null"],
+      { encoding: "utf8", env: { ...cliEnv, FAKE_CALLS: chatDockerCalls, ...extra }, timeout: 10000 });
+    const chat = runChat();
+    assert.equal(chat.status, 0, chat.stderr);
+    assert.match(chat.stdout, /FIXTURE_CHAT_SESSION/, "interactive default must select chat, not help");
+    assert.doesNotMatch(chat.stdout, /"args"/, "chat must not bypass its adapter with a direct Docker exec");
+    assert.equal(runChat({ FAKE_CHAT_EXIT: "27" }).status, 27, "preserve session exit status");
+    const busyChat = runChat({ FAKE_CHAT_BUSY: "1" });
+    assert.equal(busyChat.status, 20, "busy/unsupported adapter result must not fall back to unguarded chat");
+    assert.doesNotMatch(busyChat.stdout, /FIXTURE_CHAT_SESSION/);
+    assert.equal(runChat({ FAKE_CHAT_SIGNAL: "1" }).status, 143, "preserve signaled session failure");
+    const unavailableChat = () => {
+      const result = runChat();
+      assert.equal(result.status, 3, result.stdout + result.stderr);
+      assert.doesNotMatch(result.stdout, /FIXTURE_CHAT_SESSION/);
+    };
+    const chatSource = fs.readFileSync(chatAdapter, "utf8");
+    fs.writeFileSync(chatAdapter, "#!/nonexistent-fixture-interpreter\n");
+    unavailableChat(); // A launch failure must not become a direct Docker fallback.
+    fs.writeFileSync(chatAdapter, chatSource);
+    fs.renameSync(chatAdapter, `${chatAdapter}.saved`);
+    unavailableChat();
+    fs.symlinkSync(`${chatAdapter}.saved`, chatAdapter);
+    unavailableChat();
+    fs.unlinkSync(chatAdapter);
+    fs.renameSync(`${chatAdapter}.saved`, chatAdapter);
+    fs.linkSync(chatAdapter, `${chatAdapter}.hardlink`);
+    unavailableChat();
+    fs.unlinkSync(`${chatAdapter}.hardlink`);
+    fs.chmodSync(chatAdapter, 0o770);
+    unavailableChat();
+    fs.chmodSync(chatAdapter, 0o755);
+    unavailableChat(); // Chat adapter contract is owner-only, not just non-writable.
+    fs.chmodSync(chatAdapter, 0o700);
+    assert.equal(fs.existsSync(chatDockerCalls), false, "no implicit Docker operation on any chat dispatch path");
+
+    const pipedChat = spawnSync(process.execPath, [path.join(cliBin, "chat.mjs"), "--adapter", chatAdapter], { encoding: "utf8" });
+    assert.equal(pipedChat.status, 3, "direct helper also requires a private interactive terminal");
+    assert.doesNotMatch(pipedChat.stdout, /FIXTURE_CHAT_SESSION/);
+    const inputRedirected = spawnSync("script", ["-q", "-e", "-c", `sh ${quote(launcher)} < /dev/null`, "/dev/null"], { encoding: "utf8", env: cliEnv });
+    assert.equal(inputRedirected.status, 0, inputRedirected.stderr);
+    assert.deepEqual(JSON.parse(inputRedirected.stdout.trim()).args, [...expectedPrefix, "--help"]);
+    const redirectedOutput = path.join(tmp, "noninteractive-launcher-output");
+    const outputRedirected = spawnSync("script", ["-q", "-e", "-c", `sh ${quote(launcher)} > ${quote(redirectedOutput)}`, "/dev/null"], { encoding: "utf8", env: cliEnv });
+    assert.equal(outputRedirected.status, 0, outputRedirected.stderr);
+    assert.deepEqual(JSON.parse(fs.readFileSync(redirectedOutput, "utf8")).args, [...expectedPrefix, "--help"]);
   } else {
     console.log("hermes-repo-install: host launcher PTY check skipped (util-linux script unavailable)");
   }
@@ -512,11 +598,12 @@ try {
       assert.equal(resolved.services.hermes.container_name, plan.identity.containerName);
       // Compose serializes literal dollars escaped for round-tripping its output.
       const expectedPath = plan === unusual ? path.join(tmp, "9 API $${SECRET}: ö") : plan.identity.repoPath;
-      assert.equal(resolved.services.hermes.volumes[1].source, expectedPath);
+      assert.equal(resolved.services.hermes.volumes[0].source, expectedPath);
       assert.equal(resolved.services.hermes.labels["io.pi-toolset.hermes.repo-path"], expectedPath);
       for (const port of resolved.services.hermes.ports ?? []) assert.equal(port.host_ip, "127.0.0.1");
       // Like paths, Compose escapes dollar signs for round-tripping config output.
-      assert.equal(resolved.services.hermes.environment.OPENROUTER_API_KEY, secretValue.replaceAll("$", () => "$$"));
+      assert.equal(resolved.services.hermes.environment.OPENROUTER_API_KEY, undefined,
+        "native credentials must not become Compose-injected credentials");
       assert.equal(resolved.services.hermes.environment.API_SERVER_KEY, secretValue.replaceAll("$", () => "$$"));
     }
   } else {

@@ -2,7 +2,7 @@
 
 Every install handoff gives the **actual short container name**, workspace `/workspace`, private setup command, host alias and apply command. Create ignored owner-only launchers under `<repo>/.hermes/bin/` and `<repo>/.hermes/aliases.sh`. These are conveniences, not host Hermes installation or host profiles.
 
-CLI command availability is not [development readiness](development-readiness.md): verify required toolchains/skills and tool-write approval in the actual gateway, private-CLI and intended noninteractive job environments, not just this launcher or an exported shell PATH. Runtime state/secrets live in the owned `/opt/data` volume; the **repo root itself** is mounted at `/workspace`.
+CLI command availability is not [development readiness](development-readiness.md): verify required toolchains/skills and tool-write approval in the actual gateway, private-CLI and intended noninteractive job environments, not just this launcher or an exported shell PATH. For new installs, runtime state/secrets live in bind-backed `/workspace/.hermes`; the **repo root itself** is mounted at `/workspace`. Follow the [workspace-state contract](workspace-state.md); legacy launchers retain their verified home until an explicitly approved migration.
 
 ## The user runs setup, not the agent
 
@@ -10,7 +10,7 @@ For a fresh instance, prepare the bootstrapped container in the image's verified
 
 The user chooses provider/model/channels and enters secrets in **their own terminal**. The agent must not run the interactive wizard through tools, capture its terminal, request screenshots/transcripts/device codes, or ask for secrets in chat. Do not force users to preselect provider/model in conversation. Reuse already-working configuration instead of forcing setup again.
 
-After verifying that this image's `hermes` PATH shim drops to the correct application user, sets `HOME`/`HERMES_HOME` to `/opt/data`, and uses the container working directory `/workspace`, show the simple command with the **real inspected name**, for example:
+After verifying that this image's `hermes` PATH shim drops to the correct application user, preserves the verified `HOME`/`HERMES_HOME` (`/workspace/.hermes` for a new install), and uses the container working directory `/workspace`, show the simple command with the **real inspected name**, for example:
 
 ```sh
 docker exec -it hermes-kenworth-cummins-ing hermes setup
@@ -33,10 +33,17 @@ Write the template with **shell-quoted verified literals**, replace every sample
 set -eu
 cd '/srv/projects/api'
 unset COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_PROFILES COMPOSE_ENV_FILES
-# A bare shortcut shows help instead of spawning a second agent on this home.
-if [ "$#" -eq 0 ]; then set -- --help; fi
+# Interactive default is chat, through the verified session-safe adapter.
+# Scripts/pipes retain help; explicit arguments pass through unchanged.
+if [ "$#" -eq 0 ]; then
+  if [ -t 0 ] && [ -t 1 ]; then
+    exec node '/srv/projects/api/.hermes/bin/chat.mjs' --adapter \
+      '/srv/projects/api/.hermes/bin/hermes-chat'
+  fi
+  set -- --help
+fi
 set -- --user '1000:1000' --workdir /workspace \
-  -e HOME=/opt/data -e HERMES_HOME=/opt/data \
+  -e HOME=/workspace/.hermes -e HERMES_HOME=/workspace/.hermes \
   hermes '/opt/hermes/bin/hermes' "$@"
 # Compose exec is interactive by default; disable its TTY for pipes/scripts.
 if ! [ -t 0 ] || ! [ -t 1 ]; then set -- -T "$@"; fi
@@ -45,11 +52,19 @@ exec docker --context 'default' compose --env-file /dev/null \
   -f '/srv/projects/api/.hermes/compose.yaml' exec "$@"
 ```
 
-This forwards arguments without a container shell, preserves exit status and runs as the application user. It never starts/restarts/pulls a container. Test generated shell syntax and forwarding offline; verify installed `--help` only after confirming it is side-effect-free. A shortcut is not a concurrency guard: setup/auth/config writes need a single-writer window, and no second chat/gateway may share an active home.
+Explicit arguments are forwarded without a container shell, preserving exit status and the application user. Bare invocation opens chat only when both stdin and stdout are terminals; scripts/pipes show help. Copy [chat.mjs](../scripts/chat.mjs) and its [wait-ready.mjs](../scripts/wait-ready.mjs) file-validation dependency into `.hermes/bin/` (`0600`). The dispatcher requires a verified owner-only regular executable `.hermes/bin/hermes-chat` (`0700`); if absent/unsafe, chat is unavailable, not an unguarded fallback. Its output goes directly to the user's terminal, never an installer transcript.
+
+### Chat adapter and existing-launcher updates
+
+Generate `hermes-chat` only after reviewing the selected runtime's supported chat/session interfaces. It must verify the same canonical repo, Docker context/project/file/service, current container, actual UID/GID/home/workspace and setup/auth readiness as the launcher, and handle session ownership **for the entire chat**, not merely check a PID then race another writer. Use a verified attachment to an existing supported session, or a supported exclusive reservation coordinated with gateway/CLI/cron/maintenance writers and held until exit. A host lock ignored by those writers, an old receipt or a one-time gateway-stopped check is insufficient. If supported coordination is unavailable or a conflicting writer is active, fail closed with a clear nonsecret blocker. No dummy adapter, standalone unguarded `hermes chat`, or second agent sharing an active home.
+
+Before qualifying an adapter, use an authorized isolated/session fixture to verify simultaneous-writer rejection, terminal interruption/hangup, dispatcher/adapter termination, reservation cleanup and absence of orphan writers. Never interrupt a production gateway merely to test this. The adapter owns the scoped interactive invocation and cleanup; the generic dispatcher only checks file safety/TTY and preserves its exit result. It must not silently stop/start/restart/recreate services, install dependencies, change credentials or weaken permissions to make chat work. The user's interactive invocation requests that chat session; editing the skill or testing a stub does not authorize live inference. Never test real chat through agent-captured tools. Setup/auth/config writes and explicit subcommands retain their existing single-writer/approval requirements; argument passthrough is not a universal concurrency guard.
+
+For existing installations, use [full rule reconciliation](existing-installations.md), preserve the actual verified selectors/home (never paste the fresh-home example over legacy state), and narrowly update only verified installer-owned launcher files with comparison/backup. Copy the new dispatcher and dependency together; keep setup/help usable when the chat adapter cannot be qualified. Preserve owner customizations and old diagnostic aliases. Report **launcher updated; interactive chat blocked/pending** when support is missing, not chat-ready. Test shell syntax, argv, TTY/default dispatch and missing/busy adapter failures offline; verify side-effect-free installed help only when supported. No production chat adapter is bundled or qualified by these examples.
 
 ## Apply saved changes
 
-Explain: saving setup/configuration is not proof the running gateway reloaded it. Inspect supported version behavior, rather than promise hot reload. A runtime-file change needs the supported reload/restart; a Compose `env_file` change needs **recreation**, since `docker restart` and `compose restart` retain injected env. Use one explicit user-invoked apply command covering both cases. For a silent Telegram bot still in verified maintenance, first follow the [conditional CMD repair and activation gates](telegram-activation.md); apply does not silently edit a sleep override or complete setup. It briefly interrupts only this service, retains the named volume, and does not upgrade the image.
+Explain: saving setup/configuration is not proof the running gateway reloaded it. Inspect supported version behavior, rather than promise hot reload. A runtime-file change needs the supported reload/restart; a Compose `env_file` change needs **recreation**, since `docker restart` and `compose restart` retain injected env. Use one explicit user-invoked apply command covering both cases. For a silent Telegram bot still in verified maintenance, first follow the [conditional CMD repair and activation gates](telegram-activation.md); apply does not silently edit a sleep override or complete setup. It briefly interrupts only this service, retains the verified state backing (repo bind for new installs; existing volumes unchanged), and does not upgrade the image or migrate homes.
 
 Follow [verified readiness and cross-shell commands](readiness-and-shortcuts.md): install the bounded waiter and a reviewed image-specific readiness probe, then generate `<repo>/.hermes/bin/hermes-apply` (`0700`) with the same verified selectors. Offer it for an already-verified installation or after initial setup/workspace/memory gates; the final Compose config must no longer contain maintenance/no-autostart overrides. The command's invocation is the user's request to apply/recreate this instance; merely creating the file/alias does not authorize the agent to execute it. Never auto-apply after emitting the setup command or while a user wizard/other maintenance writer is still active.
 
@@ -58,7 +73,7 @@ Follow [verified readiness and cross-shell commands](readiness-and-shortcuts.md)
 #!/bin/sh
 set -eu
 if [ "$#" -ne 0 ]; then
-  printf '%s\n' 'Usage: hermes-apply (recreates this service; preserves its volume)' >&2
+  printf '%s\n' 'Usage: hermes-apply (recreates this service; preserves its state)' >&2
   exit 2
 fi
 cd '/srv/projects/api'
@@ -115,7 +130,7 @@ exec node '/srv/projects/api/.hermes/bin/log-events.mjs' --docker \
 
 ## Create and explain aliases
 
-Use the short verified container name as the preferred CLI alias, e.g. `hermes-api`, with `-status`, `-logs` and, only after its gates pass, `-apply` maintenance aliases. Check the user's shell and known repo alias files for every selected name conflict; use the hashed Compose project name as a **shell-alias-only** fallback. This never changes the required `hermes-<repo-name>` container name; a Docker name collision blocks setup. Never replace bare `hermes` or an existing command/alias/function. Same-basename repos remain distinct. Do not add a suffix merely by habit when the short alias is available.
+Use the short verified container name as the preferred CLI alias, e.g. `hermes-api`, with only `-apply` after its gates pass. Do not generate `-status` or `-logs` aliases/PATH shortcuts; diagnostics remain available through explicit repo-local paths. Existing diagnostic aliases, links and user-written rc entries are left untouched; removing them requires a separate scoped request. Check the user's shell and known repo alias files for every selected name conflict; use the hashed Compose project name as a **shell-alias-only** fallback. This never changes the required `hermes-<repo-name>` container name; a Docker name collision blocks setup. Never replace bare `hermes` or an existing command/alias/function. Same-basename repos remain distinct. Do not add a suffix merely by habit when the short alias is available.
 
 For Bash/Zsh/POSIX-style aliases, `.hermes/aliases.sh` (`0600`) stores shell-quoted absolute commands:
 
@@ -123,13 +138,11 @@ For Bash/Zsh/POSIX-style aliases, `.hermes/aliases.sh` (`0600`) stores shell-quo
 # aliases.sh
 alias hermes-api="'/srv/projects/api/.hermes/bin/hermes'"
 alias hermes-api-apply="'/srv/projects/api/.hermes/bin/hermes-apply'"
-alias hermes-api-status="'/srv/projects/api/.hermes/bin/hermes-status'"
-alias hermes-api-logs="'/srv/projects/api/.hermes/bin/hermes-logs'"
 ```
 
 Include only existing verified launchers in the alias file: omit the example `-apply` line until its readiness gates pass. For unusual paths, shell-quote the command first, then quote that entire string as the alias assignment; the simple nested-quote example is not universal. Detect the user's shell. For fish, generate native equivalents or offer the absolute launcher; do not source POSIX aliases in fish.
 
-Repo-local alias files remain available without host installation. For requested persistence, prefer the [cross-shell command links](readiness-and-shortcuts.md) in `~/.local/bin`: use `--core-only` for main/status/logs before apply is available, then add apply after its gates pass. Selected names work without `source` when PATH resolution is verified. Offer once, reuse acceptance/decline, and record the installed mode; do not install both PATH links and rc entries automatically. An agent subprocess cannot change its parent shell's aliases or PATH.
+Repo-local alias files remain available without host installation. For requested persistence, prefer the [cross-shell command links](readiness-and-shortcuts.md) in `~/.local/bin`: use `--core-only` for the main command alone before apply is available, then add apply after its gates pass. Selected names work without `source` when PATH resolution is verified. Offer once, reuse acceptance/decline, and record the installed mode; do not install both PATH links and rc entries automatically. An agent subprocess cannot change its parent shell's aliases or PATH.
 
 If writable ancestors block PATH links, follow [the persistence choices and trust caveat](readiness-and-shortcuts.md#when-writable-ancestors-block-persistence); do not automatically fall back to rc sourcing. A `.bashrc` block activates only interactive Bash sessions that read it, not scripts or Zsh/fish; the POSIX-style aliases themselves can also be sourced explicitly in compatible shells.
 
@@ -159,13 +172,13 @@ For an **already verified installation**, after later configuration changes are 
 hermes-api-apply
 ```
 
-Keep optional read-only maintenance on a separate compact line: `hermes-api-status` (verified diagnosis or verification pending), `hermes-api-logs` (historical event summary).
+When diagnostics are needed, show the verified explicit paths: `<repo>/.hermes/bin/hermes-status` (verified diagnosis or verification pending) and `<repo>/.hermes/bin/hermes-logs` (historical event summary). Do not advertise repo-named diagnostic aliases.
 
 Also show `<repo>/.hermes/bin/hermes setup` as the no-alias fallback. For an already configured instance needing only a selected Codex login, offer `hermes-api auth add openai-codex --type oauth` **only if supported by this image**. Prefer simple private setup to a long Docker command or a credentials interview.
 
 ## Native credentials and OAuth
 
-The user's wizard owns provider/channel keys in the runtime's native store (typically `/opt/data/.env`) and OAuth token/refresh state (typically `/opt/data/auth.json`). Verify the installed paths, restrictive permissions, application ownership and owned-volume persistence without reading values into the transcript. Host `.hermes/.env` is for installer-managed bootstrap/web secrets, not a copy of the wizard's store. Preserve legacy injected credentials; detect conflicting key names and settle precedence with the user before changing their authority. Never export rotating OAuth tokens into `.env` or borrow host `~/.codex`/Hermes credentials.
+For a new install, the user's wizard owns provider/channel keys in `/workspace/.hermes/.env` and OAuth token/refresh state in `/workspace/.hermes/auth.json`, subject to the verified native schema. These are the same bind-backed files as host `<repo>/.hermes/.env` and `auth.json`, not copies. Verify paths, restrictive permissions, application ownership and backing persistence without reading values into the transcript. Installer-managed bootstrap/web secrets use the separate `<repo>/.hermes/bootstrap.env`; never inject the native `.env` through Compose. Existing instances retain their verified stores until an explicitly approved migration. Preserve legacy injected credentials; detect conflicting key names and settle precedence with the user before changing their authority. Never export rotating OAuth tokens into `.env` or borrow host `~/.codex`/Hermes credentials.
 
 Prefer supported device-code OAuth for containers: the user opens its URL in their own browser, without new ports. Browser/PKCE callbacks to container localhost may require separately scoped forwarding; no implicit public publishing or host networking. Verify runtime auth availability and selected provider/model separately: successful credential-pool insertion alone is not gateway readiness. Inspect source/help if a version requires a different login path, and give the user that path; no direct auth-store surgery or captured wizard. Inference, external messages and unrequested existing-service restarts remain outside automatic verification.
 

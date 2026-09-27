@@ -56,12 +56,16 @@ try {
   const repoBin = path.join(repo, ".hermes", "bin");
   const hostBin = path.join(tmp, "host-bin");
   fs.mkdirSync(repoBin, { recursive: true, mode: 0o700 });
-  for (const name of ["hermes", "hermes-status", "hermes-logs", "hermes-apply"]) {
+  for (const name of ["hermes", "hermes-apply"]) {
     fs.writeFileSync(path.join(repoBin, name), `#!${process.execPath}\nconsole.log(JSON.stringify(process.argv.slice(2)));\n`, { mode: 0o700 });
   }
-  const result = installShortcuts({ repo, binDir: hostBin });
-  assert.deepEqual(result.names, ["hermes-api", "hermes-api-status", "hermes-api-logs", "hermes-api-apply"]);
-  assert.equal(result.created, 4);
+  let result;
+  assert.doesNotThrow(() => { result = installShortcuts({ repo, binDir: hostBin }); },
+    "main/apply installation must not require diagnostic launchers");
+  assert.deepEqual(result.names, ["hermes-api", "hermes-api-apply"]);
+  assert.equal(result.created, 2);
+  assert.deepEqual(fs.readdirSync(hostBin).sort(), ["hermes-api", "hermes-api-apply"],
+    "diagnostic aliases must not be created or required");
   const firstInodes = result.names.map(name => fs.lstatSync(path.join(hostBin, name)).ino);
   for (const name of result.names) {
     assert.equal(fs.readlinkSync(path.join(hostBin, name)), path.join(repoBin, name.replace("hermes-api", "hermes")));
@@ -81,10 +85,28 @@ try {
   assert.deepEqual(result.names.map(name => fs.lstatSync(path.join(hostBin, name)).ino), firstInodes);
   const conflictBin = path.join(tmp, "conflicts");
   fs.mkdirSync(conflictBin, { mode: 0o700 });
-  fs.writeFileSync(path.join(conflictBin, "hermes-api-logs"), "user-owned");
+  fs.writeFileSync(path.join(conflictBin, "hermes-api-apply"), "user-owned");
   assert.throws(() => installShortcuts({ repo, binDir: conflictBin }), /conflict/i);
-  assert.deepEqual(fs.readdirSync(conflictBin), ["hermes-api-logs"], "preflight all four names before creating any");
-  assert.equal(fs.readFileSync(path.join(conflictBin, "hermes-api-logs"), "utf8"), "user-owned");
+  assert.deepEqual(fs.readdirSync(conflictBin), ["hermes-api-apply"], "preflight both selected names before creating any");
+  assert.equal(fs.readFileSync(path.join(conflictBin, "hermes-api-apply"), "utf8"), "user-owned");
+
+  // Break caught: narrowing new shortcuts removes, replaces or validates legacy
+  // diagnostic commands even though they are no longer selected in either mode.
+  const legacyBin = path.join(tmp, "legacy-bin");
+  fs.mkdirSync(legacyBin, { mode: 0o700 });
+  const legacyStatus = path.join(legacyBin, "hermes-api-status");
+  const legacyLogs = path.join(legacyBin, "hermes-api-logs");
+  fs.symlinkSync(path.join(tmp, "missing-legacy-status"), legacyStatus);
+  fs.writeFileSync(legacyLogs, "user-owned legacy logs", { mode: 0o600 });
+  const legacyInodes = [legacyStatus, legacyLogs].map(file => fs.lstatSync(file).ino);
+  fs.symlinkSync(path.join(tmp, "missing-diagnostic"), path.join(repoBin, "hermes-status"));
+  fs.writeFileSync(path.join(repoBin, "hermes-logs"), "not an executable launcher", { mode: 0o666 });
+  assert.equal(installShortcuts({ repo, binDir: legacyBin, coreOnly: true }).created, 1);
+  assert.equal(installShortcuts({ repo, binDir: legacyBin }).created, 1);
+  assert.equal(installShortcuts({ repo, binDir: legacyBin }).created, 0);
+  assert.deepEqual([legacyStatus, legacyLogs].map(file => fs.lstatSync(file).ino), legacyInodes);
+  assert.equal(fs.readlinkSync(legacyStatus), path.join(tmp, "missing-legacy-status"));
+  assert.equal(fs.readFileSync(legacyLogs, "utf8"), "user-owned legacy logs");
   // A private .hermes directory is insufficient if its repository can be
   // renamed/replaced through a writable ancestor by another user.
   fs.chmodSync(repo, 0o777);
@@ -99,7 +121,7 @@ try {
   assert.throws(() => installShortcuts({ repo, binDir: path.join(privateParent, "bin") }), /ancestor|writable|shared/i);
   assert.equal(fs.existsSync(path.join(privateParent, "bin")), false);
   fs.chmodSync(sharedAncestor, 0o1777);
-  assert.equal(installShortcuts({ repo, binDir: path.join(privateParent, "bin") }).created, 4,
+  assert.equal(installShortcuts({ repo, binDir: path.join(privateParent, "bin") }).created, 2,
     "trusted-owner sticky ancestor protects the private child from replacement");
 
   const linkedBin = path.join(tmp, "bin-link");
@@ -107,8 +129,8 @@ try {
   assert.throws(() => installShortcuts({ repo, binDir: linkedBin }), /symlink/i);
   const foreignLauncher = path.join(tmp, "foreign-launcher");
   fs.writeFileSync(foreignLauncher, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
-  fs.unlinkSync(path.join(repoBin, "hermes-logs"));
-  fs.symlinkSync(foreignLauncher, path.join(repoBin, "hermes-logs"));
+  fs.unlinkSync(path.join(repoBin, "hermes-apply"));
+  fs.symlinkSync(foreignLauncher, path.join(repoBin, "hermes-apply"));
   assert.throws(() => installShortcuts({ repo, binDir: path.join(tmp, "another-bin") }), /launcher/i);
   assert.equal(fs.existsSync(path.join(tmp, "another-bin")), false);
 
@@ -118,15 +140,15 @@ try {
   const coreRepoBin = path.join(coreRepo, ".hermes", "bin");
   const coreHostBin = path.join(tmp, "core-host-bin");
   fs.mkdirSync(coreRepoBin, { recursive: true, mode: 0o700 });
-  for (const name of ["hermes", "hermes-status", "hermes-logs"]) {
+  for (const name of ["hermes"]) {
     fs.writeFileSync(path.join(coreRepoBin, name), `#!${process.execPath}\nconsole.log(JSON.stringify(process.argv.slice(2)));\n`, { mode: 0o700 });
   }
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: coreHostBin }), /launcher/i,
     "default full installation must still require apply");
   assert.equal(fs.existsSync(coreHostBin), false, "failed full preflight must not install core links implicitly");
   const core = installShortcuts({ repo: coreRepo, binDir: coreHostBin, coreOnly: true });
-  assert.deepEqual(core.names, ["hermes-worker", "hermes-worker-status", "hermes-worker-logs"]);
-  assert.equal(core.created, 3);
+  assert.deepEqual(core.names, ["hermes-worker"]);
+  assert.equal(core.created, 1);
   assert.deepEqual(fs.readdirSync(coreHostBin).sort(), [...core.names].sort());
   const coreInodes = core.names.map(name => fs.lstatSync(path.join(coreHostBin, name)).ino);
   const coreArgs = ["space arg", "literal$arg", "single'quote"];
@@ -154,7 +176,7 @@ try {
   fs.unlinkSync(hostApply); // Remove only the conflict created by this fixture.
   const promoted = installShortcuts({ repo: coreRepo, binDir: coreHostBin });
   assert.equal(promoted.created, 1);
-  assert.deepEqual(promoted.names, ["hermes-worker", "hermes-worker-status", "hermes-worker-logs", "hermes-worker-apply"]);
+  assert.deepEqual(promoted.names, ["hermes-worker", "hermes-worker-apply"]);
   assert.equal(fs.readlinkSync(hostApply), coreApply);
   assert.equal(installShortcuts({ repo: coreRepo, binDir: coreHostBin }).created, 0);
   assert.equal(installShortcuts({ repo: coreRepo, binDir: coreHostBin, coreOnly: true }).created, 0);
@@ -165,10 +187,10 @@ try {
   // preflight the entire selected set before writing any link.
   const coreConflict = path.join(tmp, "core-conflict");
   fs.mkdirSync(coreConflict, { mode: 0o700 });
-  fs.writeFileSync(path.join(coreConflict, "hermes-worker-logs"), "preserve");
+  fs.writeFileSync(path.join(coreConflict, "hermes-worker"), "preserve");
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: coreConflict, coreOnly: true }), /conflict/i);
-  assert.deepEqual(fs.readdirSync(coreConflict), ["hermes-worker-logs"]);
-  assert.equal(fs.readFileSync(path.join(coreConflict, "hermes-worker-logs"), "utf8"), "preserve");
+  assert.deepEqual(fs.readdirSync(coreConflict), ["hermes-worker"]);
+  assert.equal(fs.readFileSync(path.join(coreConflict, "hermes-worker"), "utf8"), "preserve");
   const unsafeCoreBin = path.join(tmp, "unsafe-core-destination");
   fs.chmodSync(path.dirname(coreRepo), 0o775);
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /ancestor|writable/i);
@@ -178,17 +200,17 @@ try {
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: path.join(privateParent, "core-bin"), coreOnly: true }), /ancestor|writable/i);
   assert.equal(fs.existsSync(path.join(privateParent, "core-bin")), false);
   fs.chmodSync(sharedAncestor, 0o1777);
-  const coreLogs = path.join(coreRepoBin, "hermes-logs");
-  fs.chmodSync(coreLogs, 0o770);
+  const coreMain = path.join(coreRepoBin, "hermes");
+  fs.chmodSync(coreMain, 0o770);
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /launcher/i);
-  fs.unlinkSync(coreLogs);
+  fs.unlinkSync(coreMain);
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /launcher/i);
-  fs.symlinkSync(foreignLauncher, coreLogs);
+  fs.symlinkSync(foreignLauncher, coreMain);
   assert.throws(() => installShortcuts({ repo: coreRepo, binDir: unsafeCoreBin, coreOnly: true }), /launcher/i);
   assert.equal(fs.existsSync(unsafeCoreBin), false);
 
-  fs.unlinkSync(coreLogs);
-  fs.writeFileSync(coreLogs, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+  fs.unlinkSync(coreMain);
+  fs.writeFileSync(coreMain, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
 
   // Selection must be explicit and typed; malformed CLI flags fail before writes.
   for (const coreOnly of ["true", "false", 1, null]) {

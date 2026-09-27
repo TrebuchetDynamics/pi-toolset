@@ -75,7 +75,7 @@ Use real paths where available. A nonexistent-path policy check is useful planni
 
 ```sh
 # Run from the verified repo. These commands do not add files to the index.
-git check-ignore -v --no-index -- codemap.md .hermes/.env .hermes/setup-state.json .hermes/logs/gateway.log generated/codemap.md
+git check-ignore -v --no-index -- codemap.md .hermes/bootstrap.env .hermes/.env .hermes/setup-state.json .hermes/logs/gateway.log generated/codemap.md
 git ls-files -- codemap.md .hermes/
 git ls-files --others --exclude-standard -- codemap.md
 git status --short

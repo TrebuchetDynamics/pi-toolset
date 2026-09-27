@@ -5,7 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const allSuffixes = ["", "-status", "-logs", "-apply"];
+// Diagnostics stay repo-local; legacy diagnostic links are never selected or removed.
+const allSuffixes = ["", "-apply"];
 const statOrMissing = file => {
   try { return fs.lstatSync(file); } catch (error) {
     if (error.code === "ENOENT") return undefined;
@@ -50,7 +51,7 @@ export function installShortcuts({ repo, binDir = path.join(os.homedir(), ".loca
   const stateDir = statOrMissing(path.dirname(repoBin));
   if (!sourceDir || !stateDir || !owned(sourceDir) || !owned(stateDir)) throw new Error("Unsafe launcher directory");
   const normalized = path.basename(repoPath).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "repo";
-  const suffixes = coreOnly ? allSuffixes.slice(0, 3) : allSuffixes;
+  const suffixes = coreOnly ? allSuffixes.slice(0, 1) : allSuffixes;
   const names = suffixes.map(suffix => `hermes-${normalized}${suffix}`);
   const destination = path.resolve(binDir);
   plainAncestors(destination);

@@ -1,0 +1,53 @@
+# Bring an existing installation up to the current rules
+
+An owned existing setup is a **reconciliation target**, not an excuse to skip current requirements and not a fresh installation. A healthy gateway or old `ready` receipt does not establish current spec alignment. When asked to install/update/repair an existing setup, inventory **every applicable rule**, apply the covered safe deltas, and report the remaining blocked/pending deltas. Do not stop at the reported symptom and claim the setup is up to date.
+
+This is an agent-operated procedure, not an automatic migration tool. The offline planner prints a fresh desired shape; it neither compares an existing installation nor safely upgrades one. Reading/editing this skill authorizes no live reconciliation. Status-only/plan-only requests remain read-only and must not create receipts, run write probes or apply fixes.
+
+## 1. Establish ownership and the actual state
+
+Use the resolver and [read-only triage](resume-and-diagnostics.md#fast-path-repair-or-resume). Match the canonical repo/full ID, receipts, Docker context/project/file/service, container, image, actual mounts/home, user and active writers. Copied paths, conflicting receipts, missing identity amid existing artifacts, unknown resources or another owner's launcher block mutation. Never repair identity by deleting receipts, inferring ownership from a mount, or creating a second stack.
+
+Read the current entry skill, Compose procedure and applicable references. Record their source revision/content identity in the alignment assessment; a historical checklist cannot silently stand for changed rules. Preserve valid user choices and unaffected evidence. Compare generated artifacts, current resolved configuration and runtime facts, not receipts alone; do not expose secrets while inspecting them.
+
+## 2. Build the complete applicable-rule inventory
+
+For **each row**, record observed state/evidence, required target, exact delta, authorization, verification and result (`aligned`, `pending`, `blocked`, or `not applicable` with a reason). These are assessment results, not new lifecycle phases or status exit codes. Missing/unsupported evidence is not aligned. Read linked contracts in full; the table is an index, not permission to omit their rules.
+
+| Rule family | Contract and required comparison |
+| --- | --- |
+| Identity/resources/image | [Compose](compose.md): canonical/full ownership, required repo-based container name/collision handling, exact selectors, pinned verified image/source, isolated network/resources. Preserve current pin/name/backing until a covered reconciliation; no latest-tag upgrade or rename by habit. |
+| Workspace and all writable state | [Workspace state](workspace-state.md): `/workspace` tool cwd and canonical bind, new target home `/workspace/.hermes`, unmasked profiles/config/receipts, native and bootstrap stores separated, memory/package/cache/temp paths and filesystem durability. A legacy `/opt/data` home remains preserved while its migration is pending; it is not relabeled workspace-local. Verify bootstrap support before any move. |
+| Private files and trust | [Ignore policy](ignore-policy.md), [Compose](compose.md): actual ownership/modes, symlink/shared targets, Git rules **and tracked/staged private files**, backups, scoped lock and all active writers. Ignore rules do not untrack secrets. No automatic chmod, untracking or broad cleanup. |
+| Setup/auth/workspace/identity | [Host CLI](host-cli.md), [SOUL](repo-identity.md), [activation](telegram-activation.md): preserve valid provider/model/native auth; effective source precedence, tool cwd and repo-named identity. No repeated wizard, copied credentials, widened allowlist or fabricated greeting success. |
+| Memory and persistence | [Memory capability](memory-capability.md) plus required Holographic skill: effective provider/database agrees with receipt and isolation evidence; startup-equivalent dependencies, NumPy/FTS5, functional HRR, vector coverage, canary cleanup, loaded-gateway state and authorized recreation durability remain separate. Preserve data/tuning; switches, installs, reindexing and migration keep their approvals. |
+| Launchers and command selection | [Host CLI](host-cli.md), [shortcuts](readiness-and-shortcuts.md): current verified selectors/user/home, quoted argv, interactive bare command routes to verified safe chat, non-TTY bare command shows help, explicit arguments unchanged. Generate only main and gated apply aliases/links. Keep diagnostics at explicit repo-local paths and preserve existing diagnostic aliases/links without claiming they were removed or freshly verified. |
+| Lifecycle, probes and interfaces | [Resume/diagnostics](resume-and-diagnostics.md), [readiness](readiness-and-shortcuts.md), [activation](telegram-activation.md), [Compose](compose.md): correct maintenance/activation state, probes bound to current image/mounts/commands/channels, bounded secret-safe diagnostics, valid auth, requested web only with verified loopback publication and supported authentication. No stale generic probe or successful Docker exit substitutes for runtime readiness. |
+| Repository development | [Development readiness](development-readiness.md): task/mode-scoped tool writes, permissions, required persistent toolchains, consumer-visible skills, upstream preservation, scheduler policy and writer coordination. Runtime success does not establish coding readiness or authorize jobs. If no coding task is selected, retain `not assessed` with that scope rather than inventing a pass. |
+| Optional integrations/persistence | [Docker-management instructions](docker-management.md), [shortcuts](readiness-and-shortcuts.md), requested companion skills: apply only selected features and their own contracts. Preserve declined/not-selected choices; installing instructions does not grant daemon access. Laya is not a mandatory base feature. No new socket, sidecar, download, shell persistence or model call from “all rules.” |
+
+A preserved legacy resource/decision must have an explicit reason and remaining limitation. If it conflicts with the requested current target, mark that delta pending/blocked rather than claiming full alignment. Preservation is the safety action until an approved reconciliation, not a waiver of an outstanding requirement.
+
+## 3. Preview and reconcile the deltas, not the entire installation
+
+Group findings into: already aligned; covered changes; concrete uncovered actions; unsupported/runtime blockers; optional features not selected. Show one concise target/impact preview and actionable approval list, not another defaults interview.
+
+An explicit update request covers ordinary bounded changes to verified installer-owned artifacts within that request. It does **not** erase the existing exact-scope gates for data/credential migration, provider switches, dependency/toolchain installation, image changes/pulls/builds, existing-service downtime/recreation, permission-policy changes, rc/PATH changes, destructive work, new costs, public exposure or outside-repo access. Reuse prior authorization only for its exact target/action. Naming “all rules” is not informed consent to newly discovered downtime or data movement.
+
+Under the verified setup lock and single-writer window, back up and narrowly reconcile only covered, owned deltas. Preserve unknown receipt fields, owner-written files, unrelated dirty source, resource identities, credentials, memory and existing decisions. Compare expected preimages before publication; stop on intervening edits. Do not overwrite the whole Compose/config/alias file with the fresh template. If a source-bound feature cannot be supported, leave the relevant operation blocked, not approximated.
+
+Examples:
+
+- Old launcher opens help: update the reviewed template/dispatcher and retain real legacy selectors/home; qualify session-safe chat separately. Missing chat support leaves help/setup available and chat blocked, not a reason to stop the gateway.
+- Legacy home or shared database: prepare the exact backup/migration/runtime-compatibility plan; do not merely rewrite `HERMES_HOME` or a receipt and recreate.
+- Stale two-mount/sleep probe: reconcile to the verified intended current configuration, without allowing arbitrary extra mounts or guessing gateway state.
+- Old diagnostic aliases: leave them untouched as explicitly required; do not recreate them in new output or silently delete them from an existing alias file.
+- Docker-management previously declined: record not selected, retain no-socket policy, and continue unrelated covered work without asking again.
+
+## 4. Verify, record and finish honestly
+
+Validate each changed artifact and its installed dependencies: shell syntax/argv/TTY behavior, helper/module closure, selected shortcut names and preflight safety, resolved configuration without expanded secrets. Refresh the dependent auth/identity/memory/development/probe evidence for changed homes, images, paths, launchers or configuration. Run scoped live checks only when authorized; no surprise chat/inference, restart, canary, skill download or job creation to obtain green results.
+
+During authorized reconciliation, atomically record the per-family assessment under the existing version-1 receipt's nonsecret evidence, with current rule-source identity and observed artifacts/runtime inputs. Preserve existing lifecycle phase, historical evidence and unknown extension fields. No speculative success fields; read-only checks create no receipt.
+
+Report **spec alignment** separately from **runtime readiness**, **development readiness** and **interactive chat availability**. A healthy old gateway can coexist with blocked migration or chat qualification. Finish as **aligned** only when every applicable required row/delta is actually verified and no required work remains pending; otherwise report **partially reconciled / blocked**, the safe changes made, preserved state, exact remaining approvals/support gaps and next action. Optional declines and explicitly permitted legacy preservation are not silently converted to failures or fresh passes. A rerun with no drift performs no mutation; repeat only invalidated or required current checks.
