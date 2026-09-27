@@ -2,7 +2,7 @@
 
 ## Contract and discovery
 
-Read [full reconciliation authorization](authorization.md) first: an explicit install/resume/repair/update invocation covers required supported image/dependency changes, recoverable migration, scoped downtime/recreation and verification without additional approval prompts. Here, “approved” refers to that covered scope, not a new checkpoint. Explicit narrower limits and all safety prerequisites remain binding.
+Read [next actions and compatibility recovery](next-actions.md) and [full reconciliation authorization](authorization.md) first: an explicit install/resume/repair/update invocation covers required supported image/dependency changes, recoverable migration, scoped downtime/recreation and verification without additional approval prompts. Here, “approved” refers to that covered scope, not a new checkpoint. Explicit narrower limits and all safety prerequisites remain binding.
 
 Readiness in this lifecycle procedure is **runtime** readiness. Repository coding has a separate [development-readiness contract](development-readiness.md); gateway/apply success neither verifies tool-level writes/toolchains nor authorizes scheduled work.
 
@@ -32,7 +32,7 @@ Host prerequisites are Git, usable Docker with Compose **2.30+** (raw env-file s
 - Resolve source/registry evidence and include the exact target in the single informational preview; do not ask a separate version or pull/recreation question. If resolution/compatibility is uncertain, report that specific blocker and preserve the working pin. Status-only or explicitly narrower requests do not upgrade.
 - `latest`/`stable` are discovery channels, not deployment pins. The planner accepts only `nousresearch/hermes-agent@sha256:<64 lowercase hex>`; it cannot verify that the digest exists or is compatible.
 - Verify the selected image's entrypoint, gateway supervision, config schema, Python, Holographic plugin support and dashboard/auth behavior. Use published source matching that image, not a moving-main snippet.
-- A required reproducible derived image is within full reconciliation scope, but needs its own reviewed build inputs, provenance, compatibility verification and digest before use. Do not disguise it as official or build one merely to avoid verifying supported persistent packages.
+- A required reproducible derived image is within full reconciliation scope, but needs its own reviewed build inputs, provenance, compatibility verification and immutable identity before use. Follow [the qualified-image substitution procedure](next-actions.md#compatibility-recovery-not-a-layout-menu): the helper retains its official-only validation while the final Compose image selector can use the separately qualified derived reference (or verified local content image ID with pull disabled). Record base and derived identities distinctly. Do not disguise it as official, publish it implicitly or build one merely to avoid verifying supported persistent packages.
 
 ## Identity, ownership and collision rules
 
@@ -64,7 +64,7 @@ Persist a local identity receipt (for example `.hermes/identity.json`), nonsecre
 - Apply the [ignore-policy contract](ignore-policy.md) before writing secrets: classify artifacts, inspect root/nested Git rules plus local/global exclusions, and protect generated `.hermes` runtime files with a narrow reviewed rule.
 - Check tracked sensitive paths separately; report them and stop affected secret provisioning, never silently untrack them. Maintained-doc exceptions must not expose the private tree.
 - Verify both document visibility and representative secret/generated-file exclusion; preserve comments/unrelated rules and make reruns no-ops.
-- Never overwrite a checked-in config or recreate a missing identity receipt by assuming matching names mean ownership.
+- Never overwrite a checked-in config or recreate a missing identity receipt by assuming matching names mean ownership. For copied/tracked `.hermes` state, follow [the single recommended recovery handoff](next-actions.md#copied-receipts-and-tracked-state); no automatic adoption, untracking or unusable old-path alternative.
 
 ### Resource labels
 

@@ -9,13 +9,15 @@ One repo, one Docker Compose Hermes instance, with Holographic **HRR-capable** m
 
 ## Entry and routing
 
+Read [next actions and recovery](references/next-actions.md) with the authorization contract: resolve routine engineering choices yourself, execute covered supported repairs, and ask only for private setup or a concrete missing fact/scope. An explicit invocation **with no arguments or an empty expanded `Repository request:` is an install/full-reconciliation request for cwd's Git root**, not a diagnosis-only request. Reading, testing or improving these instructions (including pasted failure logs) does not deploy anything.
+
 - Example: `/skill:hermes-repo-install /srv/projects/api`. Pi also exposes `/hermes-repo-install` via its prompt shortcut.
 - **The target is the repository where the skill is run.** Use an explicit path when supplied; otherwise resolve the current Git worktree root from the working directory.
 - Do not ask for a path while that directory is inside a Git worktree. Ask one focused path question only when it is not.
 - Resolve the target and its local ownership state read-only with [the offline run-repo resolver](scripts/resolve-target.mjs) before any mutation:
   - Matching owned identity receipt → **maintain**, entering the [fast diagnostic path](references/resume-and-diagnostics.md#fast-path-repair-or-resume) first, then [full current-rule reconciliation](references/existing-installations.md) for an install/update/repair request—not the fresh-install sequence. Assess every applicable rule; a healthy gateway or old receipt does not mean the setup is up to date.
   - No receipt → **create**, using the fresh-install workflow below.
-  - Foreign or mismatched receipt, symlinked `.hermes`, or unresolved container-name collision → **blocked**.
+  - Foreign or mismatched receipt, symlinked `.hermes`, or unresolved container-name collision → **blocked**. Follow the [preservation-first recovery handoff](references/next-actions.md#copied-receipts-and-tracked-state): complete safe discovery, then recommend one viable scoped remedy; never adopt state or auto-untrack it.
 - Never create a duplicate installation to satisfy a maintain request. Creating a second installation is not a repair for an unidentified existing one.
 - Resolve which existing bot/instance is intended before mutation; cwd alone does not identify a bot among host and Docker installations.
 - **Telegram configured but silent:** use the [conditional activation repair](references/telegram-activation.md) after diagnosis. Saved credentials do not remove a maintenance CMD or start the gateway.
@@ -32,6 +34,7 @@ One repo, one Docker Compose Hermes instance, with Holographic **HRR-capable** m
 - If a catalog entry is stale or unreadable, try the verified sibling source. Honor explicit trust denials; do not select arbitrary repo files as a fallback. Resolve unknown source locations from configured package paths or ask; never invent a checkout location.
 - Readable instructions need no installer, symlink, Pi settings change or `/reload`. They do not register slash commands or install the Hermes plugin. Check required files before provisioning.
 - If required installer/memory instructions are genuinely missing, continue independent read-only discovery but block the affected runtime gate with the missing path and one next action.
+- Load conditional references at the gate that needs them; keep an evidence/next-action checklist rather than rereading the entire reference tree or repeatedly debating authorization.
 - Task-required repository skills/maps have a separate [development prerequisite handoff](references/development-readiness.md#3-skills-and-missing-repository-prerequisites). Readable canonical skills remain usable when registration fails.
 - Optional [official Docker-management instructions](references/docker-management.md) require an explicit skill-install decision. Installation and container-control access are separate approvals; retain the no-socket default and never claim the skill alone enables self-management.
 - Runtime plugin/dependency checks and the authorization boundaries below still apply. Carry the installer's [real-runtime memory capability contract](references/memory-capability.md) into the memory handoff: the interpreter alone is not Hermes's startup environment.
@@ -69,8 +72,8 @@ Prepare infrastructure, then hand off setup in the user's own terminal.
    - Inspect repo/README/AGENTS, Docker context, Compose, owned resources and repo-local configuration.
    - Identify task/toolchain requirements, consumer-visible skills/maps and pre-existing root/submodule state without refreshing upstream. Collect all safely discoverable development blockers, not just the first.
    - Use matching image source for pre-pull checks. Missing host Hermes is normal; discover its actual CLI/Python/provider **inside the approved container** later.
-2. **Plan offline.** Run `node scripts/compose-plan.mjs --repo <root> --image <official-digest> --uid <uid> --gid <gid>` with the skill-relative absolute script path; add `--web` only if requested. It prints `{identity, compose, requiredConfig}`, without reading secrets or writing files. Use only `compose` as the Compose document.
-3. **Preview and proceed.** Summarize the target, pinned image, isolated resources, repo write access, memory and interface. The install request supplies ordinary setup authorization; ask only for a missing input or uncovered risk, not confirmation of defaults. Dirty source is preserved, not a reason to demand stash/commit or a whole-repo backup.
+2. **Plan offline.** Run `node scripts/compose-plan.mjs --repo <root> --image <official-digest> --uid <uid> --gid <gid>` with the skill-relative absolute script path; add `--web` only if requested. It prints `{identity, compose, requiredConfig}`, without reading secrets or writing files. Use only `compose` as the Compose document. If the inspected base is incompatible, plan [compatibility recovery](references/next-actions.md#compatibility-recovery-not-a-layout-menu) here; pulls, builds and state-writing qualification probes belong after the impact preview, not in offline planning.
+3. **Preview and proceed.** Summarize the target, pinned image/base, any necessary derived build/qualification, isolated resources, repo write access, memory and interface before the first pull/build/write. After preservation and safety checks, perform the covered qualification work and finalize the derived-image substitution before provisioning the real home; the helper's official-only input is not a reason to ask for a layout exception. The install request supplies ordinary setup authorization; ask only for a missing input or uncovered risk, not confirmation of defaults. Dirty source is preserved, not a reason to demand stash/commit or a whole-repo backup.
 4. **Provision within scope.**
    - Verify ownership, lock and secret-file protection; follow the [ignore-policy checks](references/ignore-policy.md) before writing private files. Preserve maintained docs' trackability without exposing `.hermes/`; report tracked sensitive paths rather than untracking them.
    - Persist identity/Compose and prepare `bootstrap.env`. Follow the reference's single-writer maintenance sequence; protect `.hermes` before native setup writes there.
@@ -110,6 +113,8 @@ Prepare infrastructure, then hand off setup in the user's own terminal.
 - Reuse verified facts while their inputs remain unchanged; refresh stale or changed evidence.
 - Keep immediate pre-mutation ownership/lock/secret/config checks and post-mutation runtime verification.
 - Avoid repeated branch/history/ignore/catalog searches and narrating each reconsideration. Report the next action, result or concrete blocker instead.
+
+Use the [short handoff format](references/next-actions.md#short-accurate-handoff) by default; retain the following detailed evidence in the owned receipt when authorized, expanding in chat only for an actionable risk or on request. Never say reconciliation is complete while a required rule remains blocked. Pulls, builds and scratch writes count as effects even when Git is clean.
 
 Report the following:
 
