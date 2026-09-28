@@ -35,6 +35,9 @@ codebase-map-understand.md
 .env.*
 !.env.example
 
+# Private Hermes runtime state, credentials, receipts and launchers.
+/.hermes/
+
 # Pi local runtime logs; project configs such as .pi/development-goal.json stay trackable.
 .pi/*/logs.jsonl
 .pi/*/logs-*.jsonl

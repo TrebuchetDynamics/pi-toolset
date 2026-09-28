@@ -146,7 +146,7 @@ function globPathExists(baseDir, pattern) {
 
 function listRelativePackagePaths(baseDir) {
   const out = [];
-  const skipDirs = new Set([".git", ".pi", "node_modules"]);
+  const skipDirs = new Set([".git", ".pi", ".hermes", "node_modules"]);
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory() && skipDirs.has(entry.name)) continue;
@@ -310,7 +310,7 @@ function collectSkillInventoryIssues(baseDir, expectedNames) {
 
 function listMarkdownFiles(baseDir) {
   const out = [];
-  const skipDirs = new Set([".git", ".pi", "node_modules"]);
+  const skipDirs = new Set([".git", ".pi", ".hermes", "node_modules"]);
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory() && skipDirs.has(entry.name)) continue;
