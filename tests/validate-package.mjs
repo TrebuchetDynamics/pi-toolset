@@ -17,6 +17,7 @@ const expectedSkills = [
   "bug-harvest",
   "unused-code",
   "wiki-docs",
+  "repo-docs",
   "improve-codebase-architecture",
   "technical-auditor",
   "wayfinder",

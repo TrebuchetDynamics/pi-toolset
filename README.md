@@ -243,9 +243,9 @@ Generated `.ua/` data (or legacy `.understand-anything/`) and `codebase-map-unde
 
 `autoreview`, `git-commit-push`, `greploop`, `s3upload`
 
-**Engineering (18)**
+**Engineering (19)**
 
-`autonomous-codebase-improver`, `memory-holographic-hermes-setup`, `hermes-repo-install`, `hermes-laya`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
+`autonomous-codebase-improver`, `memory-holographic-hermes-setup`, `hermes-repo-install`, `hermes-laya`, `bug-harvest`, `candidates-folder-refactor`, `diagnose`, `improve-codebase-architecture`, `prompt-cache-auditor`, `prototype`, `repo-docs`, `share-code`, `skill-folder-refactor`, `tdd`, `technical-auditor`, `unused-code`, `wayfinder`, `wayfinder-next`, `wiki-docs`
 
 **Frontend and design (23)**
 
