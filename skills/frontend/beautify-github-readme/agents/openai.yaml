@@ -1,4 +1,4 @@
 interface:
   display_name: "Beautify GitHub README"
-  short_description: "Improve whole READMEs or create standalone SVG assets"
-  default_prompt: "Use $beautify-github-readme to improve the whole README or create standalone SVG decorations; ask which scope I want if it is unclear."
+  short_description: "Improve README visuals, create SVG assets, or audit presentation"
+  default_prompt: "Use $beautify-github-readme for a README visual refresh/redesign, standalone SVG assets, or a read-only audit. Reuse my stated scope; ask only if it is unclear."

@@ -305,6 +305,7 @@ function testStitchSkillUsesBundledResourcePrefix() {
 testPromptCacheSummary();
 testPiLogAuditRedactsFreeText();
 testBeautifyReadmeAudit();
+runNode("tests/beautify-github-readme.test.mjs");
 testUiVaultSearch();
 testUiVaultDiagnosisContract();
 testAgentSkillsInstaller();

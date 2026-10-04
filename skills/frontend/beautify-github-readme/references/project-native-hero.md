@@ -77,15 +77,17 @@ Ask these before deciding:
 3. Is the title likely to change often enough that an editable SVG should stay separate?
 4. Would combining title and proof reduce clarity, or merely save vertical space?
 
-## Combine title and demonstration
+## Combine title and demonstration when legible
 
-When the first screenshot, output, or diagram explains the project, combine it with the title into one composition:
+If the first screenshot, output, or diagram explains the project **and remains useful at the narrow display width**, combine it with the title into one composition:
 
 ```text
 category + repository name + concrete description + real proof
 ```
 
-For vector material, keep the whole composition in SVG. For screenshots, photos, or generated raster work, compose the title and images in a layout tool or HTML canvas and export one PNG/WebP. If many artifacts need more room, keep the SVG title and raster proof as two adjacent README modules. Do not rely on fragile external image links inside SVG.
+For vector material, keep the whole composition in SVG. In README mode, screenshots/photos can use one raster board when this improves clarity; otherwise keep title and proof separate. In SVG-only mode, retain the requested vector output and propose raster proof as an optional separate deliverable. Do not rely on external image links inside SVG.
+
+Test the title at approximately 800 px and 320 px display widths before adding fine detail. A dense terminal trace is usually better as a short real excerpt plus copyable Markdown, not tiny text inside the hero. Keep purpose and first action in Markdown even when the hero repeats them visually. If the title-only opening is clearer than the combined composition, keep it; integration is an option, not a goal.
 
 ## Use project-specific tests
 

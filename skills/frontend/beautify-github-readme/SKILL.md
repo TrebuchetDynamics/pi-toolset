@@ -1,6 +1,6 @@
 ---
 name: beautify-github-readme
-description: Redesigns a GitHub repository README or creates GitHub-safe README SVG assets from real project evidence. Use for README visual overhauls, heroes, section banners, diagrams, badges, or read-only README audits; not general website UI or ordinary documentation maintenance.
+description: Use when improving a GitHub repository README visually, creating GitHub-safe README SVG assets, or auditing README presentation; not general website UI or ordinary documentation maintenance.
 license: MIT
 source: https://github.com/oil-oil/beautify-github-readme
 source_commit: 4119e6a7c58d1b48fe883784133413391b148180
@@ -8,178 +8,110 @@ source_commit: 4119e6a7c58d1b48fe883784133413391b148180
 
 # Beautify GitHub README
 
-Turn a repository homepage or a requested SVG asset into a concise, theme-specific visual story. Treat SVG as the visual layer and Markdown as the content layer.
+Make the project easier to understand, trust, and try. Use repository evidence as the visual material, SVG/raster as the visual layer, and Markdown as the usable content layer. Fewer, more informative visuals beat more decoration.
 
-## Package execution
+## Setup and scope
 
-Set `SKILL_DIR` to the directory containing this `SKILL.md`. Resolve every bundled reference and script from that directory; do not assume the target repository contains this skill's `scripts/` folder. The audit helper is read-only and uses only Python's standard library.
+Set `SKILL_DIR` to the directory containing this `SKILL.md`. Resolve bundled references and scripts there, not in the target repository. The read-only audit uses Python 3.10+ and its standard library; it does not install anything or fetch remote resources.
 
-## Workflow
+Select scope from the user's request; reuse explicit decisions:
 
-### 1. Confirm the mode before editing
+| Mode | Allowed changes | Required handoff |
+| --- | --- | --- |
+| **Audit** | None | Prioritized findings with file/section evidence |
+| **README mode** | Requested README and supporting assets | Diff, asset paths, validation evidence |
+| **SVG-only mode** | Requested SVG assets only | Asset paths, previews, optional embed snippets |
 
-Use exactly one execution mode:
+For an ambiguous request such as “beautify it,” ask once: “Whole-README improvement or SVG-only assets?” A repository path or invoking this skill alone does not authorize a whole-README rewrite. Explicit audits need no mode question. Read-only inspection may precede clarification.
 
-- **README mode** — improve the whole README: information order, copy hierarchy, proof, Markdown, and visual system.
-- **SVG-only mode** — create only the requested SVG decoration or asset set. Do not rewrite, reorder, or embed anything in the README unless the user explicitly adds that scope.
+In README mode, distinguish a **visual refresh** (preserve section order and content structure) from a **full redesign** (restructure the story). Use the smallest change that meets the request. In SVG-only mode, do not edit README text, links, embeds, or ordering without new authorization.
 
-If the mode is not explicit, ask one compact question before making changes:
+## 1. Inspect and establish the story
 
-> Would you like me to improve the whole README or only create SVG decorations? If SVG-only, tell me whether you need a hero, section headers, workflow, badge, or a coordinated visual set.
+Read the relevant README, tree, metadata, usage examples, screenshots, output, logos, and design tokens. For a GitHub URL, inspect the current remote README and default branch; do not assume local content is current. Keep SVG-only inspection proportional to the asset request.
 
-Read-only inspection is allowed before the answer when it helps understand the repository. Do not interpret “use this Skill,” a repository path, or “beautify it” as permission to modify the whole README. Once the user chooses SVG-only mode, expanding into README edits requires new authorization.
-
-If the user explicitly asks only for an audit, audit without editing and do not force the two-mode question.
-
-### 2. Inspect before designing
-
-- Read the existing README, repository tree, package metadata, screenshots, examples, design tokens, logo, and real outputs.
-- In SVG-only mode, inspect only the context needed to design the requested assets. Reading the README for context does not authorize changing it.
-- For a GitHub URL, inspect the current remote page and default branch before proposing changes.
-- Identify the audience, the problem solved, the clearest proof, the shortest path to first use, and any claims that lack evidence.
-- Preserve unrelated user changes. Start read-only; do not commit, push, rename, or publish without explicit authorization.
-
-### 3. Extract the project story
-
-Write these before drawing:
+Record a compact brief before drawing:
 
 ```text
-Audience:
-One-sentence value:
-Primary proof:
-First successful action:
-Visual theme:
+Mode / depth / files allowed to change:
+Audience / one-sentence value:
+Primary proof / exact source path or URL:
+First successful action / source for the command:
+Existing identity to preserve:
 ```
 
-Do not invent adoption, benchmarks, compatibility, testimonials, or features. Prefer a real screenshot, output, diagram, or generated artifact over decorative stock imagery.
+Claims need evidence: never invent features, adoption, benchmarks, compatibility, testimonials, or output. Label conceptual diagrams as conceptual. With no honest visual proof, choose a typographic opening and a real example rather than fabricate a screenshot. Preserve existing notices, useful links, limitations, and unrelated user changes.
 
-### 4. Define a theme-specific visual system
+## 2. Choose art direction from the project
 
-Read [references/visual-direction.md](references/visual-direction.md). Freeze a compact art-direction spec:
+Read [visual-direction.md](references/visual-direction.md) and [project-native-hero.md](references/project-native-hero.md). Choose one composition and explain which project evidence makes it fit; consider a second direction only when the brief leaves a meaningful choice.
 
 ```text
-Palette: background / foreground / primary / accent / muted
-Typography: system font stack / scale / weight contrast
-Shape: radius / stroke / grid / spacing
-Motif: one recurring project-specific visual cue
-Composition: calm / editorial / technical / playful / cinematic
+Composition / evidence-based reason:
+Palette: explicit background / foreground / primary / muted colors
+Type: available system stacks / hierarchy / minimum displayed text size
+Shape and spacing: edge treatment / stroke / spacing unit
+Motif: one cue derived from the project's material
+Proof treatment: SVG diagram / separate screenshot / composed raster
 ```
 
-Derive the motif from the project. A terminal tool may use prompts and cursor marks; an icon system may use keylines and cutouts; a research project may use coordinates and evidence labels. Never apply the same yellow-grid template to every repository.
+Existing identity wins over fashionable defaults. Neither rounded dark cards, a split hero, nor a monochrome grid is mandatory. Prototype the hero before producing a whole asset set. Test at desktop and narrow **display widths**, not only at SVG source size; simplify or move dense proof into Markdown/separate images when it fails.
 
-Before designing the hero, read [references/project-native-hero.md](references/project-native-hero.md). Build the title from project content rather than treating it as a banner placed above the proof. Choose the typography, composition, and right-side material from the repository itself.
+## 3. Build only what helps the reader
 
-### 5. Execute only the selected mode
+**README mode:** read [content-architecture.md](references/content-architecture.md). A useful default is value → proof → mechanism → first use → details. Preserve the existing sequence for a visual refresh. Keep real Markdown headings, copyable commands, searchable explanations, links, and limitations. Check existing anchors when renaming/reordering headings; an image-only heading is not a replacement.
 
-#### README mode
+**SVG-only mode:** confirm the requested asset types/count when missing, create them under `assets/readme/` or the agreed path, and keep all outputs vector. Offer raster proof separately if useful; do not silently change format or embed assets. Capture the README's starting bytes/hash and compare at handoff, including any pre-existing user edits.
 
-Decide how deeply the README needs to change:
+Before creating assets, read [github-readme-canvas.md](references/github-readme-canvas.md) and [svg-production.md](references/svg-production.md):
 
-- **Full redesign** — restructure the story and build a new visual system.
-- **Visual refresh** — preserve the information architecture while replacing weak or inconsistent presentation.
+- Use SVG for maintainable typography, geometry, and diagrams; PNG/WebP for screenshots, photos, and complex compositing in README mode.
+- Choose one strong proof composition; add section banners only when they improve scanning rather than duplicate headings.
+- Keep essential meaning available without images. Use informative alt text; genuinely decorative images may have empty alt, with that choice reviewed explicitly.
+- Reuse palette, spacing, and motif across the set, not the same layout everywhere. Let proof legibility decide whether title and proof share a board.
+- Keep assets self-contained: no scripts, event handlers, `foreignObject`, external fonts/resources, or essential animation. Do not rasterize the README itself.
 
-Use the smallest change inside README mode that can produce a meaningful improvement. Rebuild the reading order only when the selected scope requires it. A strong default is:
+## 4. Verify in two separate passes
 
-1. Hero: name + plain-language value.
-2. Proof: screenshots, outputs, or a showcase wall.
-3. What it is: one short explanation.
-4. Why it is different: mechanism, not slogans.
-5. How it works: a short process or architecture.
-6. How to use: install + first command.
-7. Limits, compatibility, license, or contribution details when relevant.
+Read [verification.md](references/verification.md) for commands, preview checks, limitations, and the missing-tool fallback.
 
-Put the example before the long explanation. Remove repeated promises and internal implementation detail that does not help adoption.
+1. **Static:** in README mode or an audit, run:
 
-#### SVG-only mode
+   ```bash
+   python3 "$SKILL_DIR/scripts/audit_readme.py" /path/to/repository/README.md
+   ```
 
-- Confirm the requested asset type and whether the user wants one asset or a coordinated set. Derive exact copy and style from the repository when they are unambiguous; ask only for missing decisions that would materially change the result.
-- Create the assets under `assets/readme/` or another user-approved path and provide rendered previews.
-- Default to pure, maintainable SVG for title systems, section headers, diagrams, badges, and deterministic decorative modules.
-- Keep one shared visual grammar across a set, but give every asset a specific communication job.
-- Do not change README text, reading order, embeds, or links. Offer an embed snippet separately when useful; only insert it after explicit approval.
+   Review every finding; exit `0` means only the supported local checks passed, `1` means findings, and `2` means input/usage failure. In SVG-only mode, audit assets through the temporary manifest procedure without editing the target README.
+2. **Rendered:** inspect each asset and the README composition at approximately 800 px and 320 px content widths, with light and dark surroundings. Check actual type size, clipping, hierarchy, contrast, proof legibility, and image-free usability. These widths are test cases, not a promise of GitHub's layout. Fix the highest-impact issue and render again.
 
-### 6. Build the visual layer
+A local renderer is not GitHub's sanitizer. Disclose any GitHub-specific behavior not checked. If rendering tools are unavailable, finish independent work and label the result **static-checked; visual verification pending**. Give precise preview steps; never substitute lint output for a visual receipt or install tooling without approval.
 
-Read [references/github-readme-canvas.md](references/github-readme-canvas.md) and [references/svg-production.md](references/svg-production.md) before creating assets.
+## 5. Hand off without publishing
 
-- Use SVG for the hero, section banners, diagrams, and deterministic design modules.
-- Use PNG/WebP for screenshots, generated art, photo material, and complex compositing.
-- Keep body copy, commands, tables, links, and details in Markdown.
-- Prefer a `1200`-wide SVG `viewBox`, `width="100%"` embeds, system fonts, semantic alt text, and rounded containers.
-- Use one reusable component grammar, but vary the art direction by repository theme.
-- When a showcase contains several artifacts, arrange them with controlled scale, overlap, rotation, and whitespace; keep reading order obvious.
-- Let the hero absorb a real project diagram, screenshot, code fragment, output, specimen, or artifact when it makes the first screen more useful. Do not separate the title and proof by habit.
-- When the user explicitly wants attribution in a repository they own, design a compact project-native `README MADE WITH` SVG instead of leaving a plain promotional sentence. Keep it near the footer and link it to this Skill. Never add this credit to a third-party repository without the maintainer's explicit request.
-- In README mode, when proof would become unreadable inside the hero, use a concise SVG title followed immediately by a larger proof board. When a few artifacts remain legible and define the product, integrate title and proof into one composed raster hero. Let proof legibility decide, not a fixed template. In SVG-only mode, keep the requested output vector and propose any raster proof as a separate, optional deliverable.
-
-Do not rasterize the whole README. Do not use scripts, `foreignObject`, remote fonts, essential animation, or CSS that GitHub strips. Avoid decorative borders and heavy shadows unless the theme genuinely calls for them.
-
-### 7. Preview and verify
-
-- Render a local GitHub-width preview or inspect the README on a local Markdown renderer.
-- Check wide and narrow layouts, image legibility, clipped SVG text, missing assets, excessive file size, and dark/light-mode contrast.
-- In README mode, run:
-
-```bash
-python3 "$SKILL_DIR/scripts/audit_readme.py" /path/to/repository/README.md
-```
-
-- Visually inspect the hero, every section transition, and the final call to action.
-- In SVG-only mode, render and inspect every requested asset at GitHub content width; verify that the README itself is unchanged.
-- Report what changed, what remains intentionally plain, and which files were deliberately left untouched.
-
-### 8. Offer optional attribution and showcase sharing after approval
-
-Only after the user explicitly approves the final README or asset set as satisfactory, make one friendly, non-promotional offer:
-
-> If you're happy with the finished README, there are two completely optional ways to wrap up: I can design a small project-native “README MADE WITH” signature that links back to this Skill, and—if this is a public repository you own or maintain—I can prepare a PR to add it to the Skill's real-world showcase. Either, both, or neither is perfectly fine.
-
-- Do not make this offer before final approval, infer satisfaction from silence or successful validation, or repeat it after the user declines.
-- Treat the signature and showcase PR as independent choices. Never require attribution in exchange for showcase consideration.
-- If the user opts into the signature, follow [references/svg-production.md](references/svg-production.md), show the rendered badge first, and modify the README only after separate approval.
-- If the user opts into the showcase, read [references/showcase-contribution.md](references/showcase-contribution.md). Verify that the repository is public and that the user owns or maintains it; draft the exact listing copy and upstream diff before requesting permission to open the PR.
-- Do not add a backlink, fork a repository, push a branch, or open a PR without explicit authorization for that specific external action.
-
-This gate controls unsolicited offers. If the user explicitly requests a signature or showcase contribution earlier, handle that request directly within its stated scope.
-
-### 9. Hand off safely
-
-Show the local preview and diff first. Only commit, push, open a PR, merge, rename a repository, or publish assets when the user explicitly asks.
+Show the diff and available previews. Do not commit, push, open a PR, merge, rename a repository, or publish assets unless explicitly requested.
 
 ## Output contract
 
-- **Audit:** prioritized clarity, hierarchy, trust, accessibility, and maintenance findings; no file edits.
-- **README mode:** project story fields, changed README/assets, local preview evidence, README diff, audit command receipt, and intentionally untouched files.
-- **SVG-only mode:** created asset paths, rendered preview evidence, optional embed snippets, and proof that the README remained unchanged unless embedding was separately approved.
-- Always disclose unsupported or unverified claims, missing render tooling, and any action still requiring owner approval.
+- **Audit:** prioritized clarity, hierarchy, trust, accessibility, and maintenance findings with evidence; no edits.
+- **README mode:** concise story/direction rationale, changed paths, README diff, static command and exit status, rendered preview evidence or pending checks, intentionally untouched files.
+- **SVG-only mode:** created asset paths, static/rendered evidence or pending checks, optional embed snippets, and before/after README comparison.
+- Distinguish **verified**, **not checked**, and **requires owner approval**. Never imply that a remote source was fetched, a preview inspected, or a claim verified when it was not.
 
-## Quality bar
+## Optional attribution and showcase
 
-- The first screen explains the project without requiring prior knowledge.
-- The design looks native to this project, not to this Skill.
-- The hero's visual material comes from the project and is not generic decoration.
-- Every visual module has a communication job.
-- Real proof appears before abstract claims.
-- The README becomes shorter or clearer, not merely more decorated.
-- The result still works when images fail: alt text, headings, commands, and links remain meaningful.
-- Removing the repository name should not make the hero reusable for an unrelated project.
-- SVG-only mode leaves the README byte-for-byte unchanged unless the user explicitly approved embedding or copy edits.
-- Optional attribution or showcase sharing appears only after explicit satisfaction and opt-in; declining it never changes the delivered result.
+Only after explicit satisfaction with the final result, offer once: an optional project-native “README MADE WITH” signature, a showcase proposal for a public repository the user owns/maintains, both, or neither. Do not infer satisfaction from silence or passing checks, repeat a declined offer, or make attribution a condition of delivery/showcase eligibility.
 
-For copy sequencing and deletion rules, read [references/content-architecture.md](references/content-architecture.md).
+- **Signature opt-in:** follow [svg-production.md](references/svg-production.md), show a rendered badge first, and get separate approval before embedding. No unsolicited backlinks in third-party repositories.
+- **Showcase opt-in:** follow [showcase-contribution.md](references/showcase-contribution.md). Verify eligibility, draft exact upstream listing/diff, then obtain authorization for each external action. Opt-in does not itself authorize a fork, push, or PR.
+
+An earlier explicit request for either option can be handled within its stated scope.
 
 ## Invocation examples
 
 ```text
-Use $beautify-github-readme to redesign this repository homepage around its developer-tool theme.
-```
-
-```text
-Use $beautify-github-readme to create one SVG hero and three section headers without modifying the README.
-```
-
-```text
-Use $beautify-github-readme to beautify this repository; if the scope is unclear, ask whether I want a whole-README redesign or SVG-only assets.
+Use beautify-github-readme to refresh this README without changing its section order.
+Use beautify-github-readme to create one SVG hero; leave the README unchanged.
+Use beautify-github-readme to audit this README without editing files.
 ```
 
 ## Shared contract

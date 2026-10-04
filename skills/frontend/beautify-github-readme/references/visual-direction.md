@@ -44,7 +44,20 @@ Freeze five decisions before producing assets:
 - **Motif** — one small recurring project-specific cue.
 - **Density** — one deliberate rhythm: sparse editorial, compact technical, or expressive gallery.
 
-The motif is the strongest anti-template device. Repeat it lightly in the hero, section transitions, and showcase, but never as wallpaper everywhere.
+The motif is the strongest anti-template device. Repeat it lightly where it helps recognition, not automatically in every section.
+
+## Turn evidence into decisions
+
+Use a short chain: **observed material → visual choice → reader benefit**. For example, a CLI with a verified three-step transformation can use three aligned input/output fragments so the mechanism is visible. A library with no interface can use one real API relationship; it does not need an invented dashboard.
+
+Before drawing, identify one visual priority and a restraint:
+
+```text
+Priority: the before/after artifact is the first thing to notice.
+Restraint: no extra metadata row or decorative section banners.
+```
+
+Keep one dominant focal point. Build hierarchy with size, spacing, and weight before adding color. Do not pick a palette, typeface, edge shape, or split composition merely because it appeared in an example. Preserve an established identity unless a rebrand was requested.
 
 ## Composition patterns
 
@@ -63,3 +76,15 @@ Prefer one strong composition over several small decorative graphics.
 - Keep decorative dots, grids, and lines subordinate to content.
 - If several modules compete for attention, remove one before reducing everything.
 - A README should feel designed at GitHub's content width, not like a full-screen website squeezed into Markdown.
+- A section title that works as plain Markdown does not automatically need an SVG banner. Spend the visual budget on proof.
+- Check one hero at wide/narrow display sizes before propagating its grammar. If the proof or promise is unreadable, reduce content rather than shrink everything.
+
+## Acceptance questions
+
+1. Can a first-time reader identify the project, value, and next action quickly?
+2. Can every visible artifact/claim be traced to project evidence?
+3. Does the composition still work at narrow width without requiring zoom?
+4. Does removing the project name still leave project-specific visual material?
+5. Is anything repeated in both a banner and a heading without adding information?
+
+A failed answer calls for a targeted simplification, not another decorative layer. Use [verification.md](verification.md) for the actual preview receipt.

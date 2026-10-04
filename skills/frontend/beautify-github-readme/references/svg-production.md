@@ -12,7 +12,7 @@ Section title:  1200 × 120–170
 Diagram:        1200 × 320–760
 ```
 
-Give every full-width SVG a `1200`-unit `viewBox`. Keep important content at least `48–64` units from the edges. A common hero split is roughly 58% title and 42% proof, but change it when the material needs more room.
+Choose the aspect ratio after deciding what the asset communicates. A `1200`-unit `viewBox` and `48–64` units of safe margin are useful starting coordinates, not a required layout. At 320 px display width, a 60-unit font in that canvas becomes 16 px. Budget for displayed readability before arranging text; do not squeeze copy to fit a predetermined split.
 
 ## Use this file skeleton
 
@@ -27,19 +27,17 @@ Give every full-width SVG a `1200`-unit `viewBox`. Keep important content at lea
     <!-- Add only patterns, gradients, or clips that the design needs. -->
   </defs>
 
-  <rect width="1200" height="320" rx="26" fill="#050607"/>
-
-  <g id="title-block" transform="translate(56 40)">
-    <!-- category, name, description, metadata -->
+  <!-- Choose background, edge treatment, and positions from the art direction. -->
+  <g id="title-block">
+    <!-- project name and one short concrete description -->
   </g>
-
-  <g id="project-proof" transform="translate(760 40)">
-    <!-- real diagram, code, specimen, or project structure -->
+  <g id="project-proof">
+    <!-- optional real diagram, output, specimen, or project structure -->
   </g>
 </svg>
 ```
 
-Name groups by role. Keep the file readable enough to edit by hand.
+This is an XML structure, not a finished hero or composition template. Add explicit foreground/background colors from the approved palette; do not rely on GitHub inheriting its theme into an embedded SVG. Name groups by role and keep the file readable enough to edit by hand.
 
 ## Build in this order
 
@@ -66,7 +64,7 @@ SVG text does not wrap automatically. Split lines explicitly:
 <text x="0" y="128">Second line</text>
 ```
 
-Render after every meaningful copy change. Chinese, English, serif, and sans-serif occupy different widths; do not trust character count alone.
+Render after every meaningful copy change. Chinese, English, serif, and sans-serif occupy different widths; do not trust character count alone. Keep essential text comfortably within its area under fallback fonts. Avoid outlined body text: it becomes harder to maintain and does not replace accessible Markdown.
 
 ## Draw project material, not tech decoration
 
@@ -110,7 +108,7 @@ If the title and screenshot belong together, compose them into one raster board.
 </p>
 ```
 
-Use a meaningful `alt`. Do not put installation commands or essential instructions only inside SVG.
+Use a meaningful `alt`. Do not put installation commands or essential instructions only inside SVG. Preserve Markdown section headings rather than replacing them with SVG text. Empty alt is appropriate only for a genuinely decorative image whose meaning is already supplied next to it; record that intentional exception when reviewing audit findings.
 
 ## Make compact attribution feel native
 
@@ -135,25 +133,4 @@ Recommended embed:
 
 ## Validate and inspect
 
-Run the bundled audit:
-
-```bash
-python3 "$SKILL_DIR/scripts/audit_readme.py" /path/to/repository/README.md
-```
-
-Then render every SVG and inspect it visually. On macOS, a quick local render is:
-
-```bash
-sips -s format png assets/readme/hero.svg --out /tmp/hero.png
-```
-
-Otherwise use a browser, `rsvg-convert`, or another SVG renderer. Check:
-
-- clipped text and paths;
-- text that becomes too small at GitHub width;
-- weak contrast in light and dark GitHub surroundings;
-- accidental decoration that competes with the project name;
-- missing `<title>`, `<desc>`, `viewBox`, or alt text;
-- visual material that could belong to any unrelated project.
-
-Make one targeted change, render again, and keep the simpler version when both communicate equally well.
+Follow [verification.md](verification.md) for the README audit, SVG-only temporary manifest, render loop, and missing-tool fallback. XML validity is not evidence of readable typography or GitHub compatibility. Fix one high-impact visual issue at a time and keep the simpler version when both communicate equally well.
