@@ -76,7 +76,7 @@ try {
     AGENT_SKILLS_PROFILE_FILE: path.join(tmp, "state", "skills-profile"),
     AGENT_SKILLS_DRY_RUN: "0", AGENT_SKILLS_BACKUP_DIR: path.join(tmp, "backups"),
   };
-  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team", "user-owned"]) {
+  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team", "hallmark", "user-owned"]) {
     fs.mkdirSync(path.join(codex, name), { recursive: true });
     fs.writeFileSync(path.join(codex, name, "SKILL.md"), `Owner-modified ${name}\n`);
   }
@@ -84,7 +84,7 @@ try {
   run("--dry-run", "--profile=default");
   assert.equal(fs.existsSync(env.AGENT_SKILLS_BACKUP_DIR), false);
   run("--profile=default");
-  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team"]) {
+  for (const name of ["ponytail", "caveman", "tdd", "autonomous-codebase-improver", "hermes-repo-team", "hallmark"]) {
     const compatibility = path.join(codex, name, "SKILL.md");
     assert.ok(fs.existsSync(compatibility), `cached command must remain readable: ${name}`);
     assert.match(fs.readFileSync(compatibility, "utf8"), /^disable-model-invocation: true$/m);
@@ -100,7 +100,7 @@ try {
   }
   const names = fs.readdirSync(codex).filter(n => fs.existsSync(path.join(codex, n, "SKILL.md")));
   const automatic = names.filter(n => !/^disable-model-invocation: true$/m.test(fs.readFileSync(path.join(codex,n,"SKILL.md"),"utf8")));
-  assert.equal(automatic.length, 24); // 23 daily + preserved owner skill; legacy commands are hidden
+  assert.equal(automatic.length, 23); // 22 daily + preserved owner skill; legacy commands are hidden
   const bridge = fs.readFileSync(path.join(codex,"autonomous-codebase-improver/SKILL.md"),"utf8");
   assert.ok(bridge.includes(path.join(env.AGENT_SKILLS_BACKUP_DIR,"Codex/autonomous-codebase-improver/SKILL.md")));
   assert.equal(fs.realpathSync(path.join(codex, "brainstorming")), path.join(upstream.SUPERPOWERS_DIR, "skills/brainstorming"));
@@ -260,7 +260,7 @@ try {
   fs.writeFileSync(path.join(home, ".claude/settings.json"), JSON.stringify({ enabledPlugins: { "superpowers@test": true } }));
   run();
   assert.equal(fs.existsSync(path.join(claude, "brainstorming")), false);
-  assert.ok(fs.existsSync(path.join(claude, "frontend-design/SKILL.md")));
+  assert.ok(fs.existsSync(path.join(claude, "impeccable/SKILL.md")));
   const invalid = spawnSync("sh", ["install-agent-skills.sh", "--profile=missing"], { cwd: root, env, encoding: "utf8" });
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /Unknown skill profile/);

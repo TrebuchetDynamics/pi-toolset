@@ -242,7 +242,8 @@ install_target() {
   # This is reversible even when --no-backup is used for ordinary replacements.
   managed_names=$(find "$src_root" -name SKILL.md -type f | while IFS= read -r file; do skill_name "$file"; done)
   # Names removed from the source tree still need reversible deactivation.
-  for name in $managed_names caveman hermes-repo-team; do
+  retired_names=$(node -e 'console.log(require(process.argv[1]).retired.join("\n"))' "$src_root/shared/profiles.json")
+  for name in $managed_names $retired_names caveman hermes-repo-team; do
     if printf '%s\n' "$selected_files" | awk -F/ -v name="$name" '$(NF-1) == name {found=1} END {exit !found}'; then
       continue
     fi

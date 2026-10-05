@@ -3,7 +3,6 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hasHardcodedHex, jsxAttributeText } from "../skills/frontend/stitch-react-components/scripts/validation-rules.js";
 
 import { superpowersFixture } from "./fixtures/superpowers.mjs";
 
@@ -90,33 +89,7 @@ function testBeautifyReadmeAudit() {
   }
 }
 
-function testUiVaultSearch() {
-  const output = runNode("skills/frontend/ui-vault/scripts/search-catalog.mjs", ["icons", "--category", "icons", "--limit", "2"]);
-  assert.match(output, /\[icons\]/);
-  assert.match(output, /Snapshot pricing\/license:/);
-  assert.equal((output.match(/^- /gm) ?? []).length, 2);
 
-  const categories = runNode("skills/frontend/ui-vault/scripts/search-catalog.mjs");
-  assert.match(categories, /^component-libraries\t12$/m);
-  assert.match(categories, /^claude-skills-design\t8$/m);
-}
-
-function testUiVaultDiagnosisContract() {
-  const skill = fs.readFileSync(path.join(root, "skills/frontend/ui-vault/SKILL.md"), "utf8");
-  const rubric = fs.readFileSync(path.join(root, "skills/frontend/ui-vault/references/diagnosis-rubric.md"), "utf8");
-
-  assert.match(skill, /references\/diagnosis-rubric\.md/);
-  assert.match(skill, /Rendered appearance.*DOM\/CSS.*local source/s);
-  assert.match(skill, /Only findings scored `0` or `1` with medium or high confidence/);
-  assert.match(skill, /## UI Vault diagnosis/);
-  assert.match(skill, /No resource needed/);
-
-  assert.match(rubric, /## Universal criteria/);
-  assert.match(rubric, /## Page-type overlays/);
-  assert.match(rubric, /`N\/A`.*not assessed/);
-  assert.match(rubric, /Never turn `N\/A` or low-confidence findings into recommendations/);
-  assert.match(rubric, /Do not calculate an overall or aggregate score/);
-}
 
 function assertInstalledSkillTree(skillsDir) {
   // Break caught: fresh all installs omit a maintained source (including one
@@ -213,106 +186,27 @@ function testClaudeSkillsInstallerCompatibilityWrapper() {
   }
 }
 
-function testStitchHexDetection() {
-  for (const color of ["#fff", "#ffff", "#ffffff", "#ffffffff"]) {
-    assert.equal(hasHardcodedHex(`bg-[${color}]`), true, `${color} must be rejected`);
-  }
-  assert.equal(hasHardcodedHex("bg-[#fffff]"), false);
-  assert.equal(jsxAttributeText({
-    type: "JSXExpressionContainer",
-    expression: { type: "StringLiteral", value: "bg-[#fff]" },
-  }), "bg-[#fff]");
-  assert.equal(jsxAttributeText({
-    type: "JSXExpressionContainer",
-    expression: {
-      type: "TemplateLiteral",
-      quasis: [{ type: "TemplateElement", cooked: "bg-[#fff]", raw: "bg-[#fff]" }],
-    },
-  }), "bg-[#fff]");
-  assert.equal(jsxAttributeText({
-    type: "JSXExpressionContainer",
-    expression: {
-      type: "CallExpression",
-      arguments: [
-        { expression: { type: "StringLiteral", value: "bg-[#fff]" } },
-        { expression: { type: "StringLiteral", value: "p-2" } },
-      ],
-    },
-  }), "bg-[#fff] p-2");
-}
 
-function testStitchFetchCreatesOutputDirectory() {
-  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "stitch-fetch-"));
-  try {
-    const source = path.join(fixture, "source.html");
-    const output = path.join(fixture, ".stitch", "designs", "page.html");
-    fs.writeFileSync(source, "stitch fixture\n");
-    execFileSync("bash", [
-      path.join(root, "skills/frontend/stitch-react-components/scripts/fetch-stitch.sh"),
-      new URL(`file://${source}`).href,
-      output,
-    ]);
-    assert.equal(fs.readFileSync(output, "utf8"), "stitch fixture\n");
-  } finally {
-    fs.rmSync(fixture, { recursive: true, force: true });
-  }
-}
 
-function testStitchFetchPreservesExistingOutput() {
-  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), "stitch-fetch-atomic-"));
-  try {
-    const binDir = path.join(fixture, "bin");
-    const output = path.join(fixture, "page.html");
-    fs.mkdirSync(binDir);
-    fs.writeFileSync(path.join(binDir, "curl"), `#!/bin/sh
-while [ "$#" -gt 0 ]; do
-  if [ "$1" = "-o" ]; then printf partial > "$2"; exit 18; fi
-  shift
-done
-exit 18
-`);
-    fs.chmodSync(path.join(binDir, "curl"), 0o755);
-    fs.writeFileSync(output, "known-good\n");
-    assert.throws(() => execFileSync("bash", [
-      path.join(root, "skills/frontend/stitch-react-components/scripts/fetch-stitch.sh"),
-      "https://example.invalid/design",
-      output,
-    ], {
-      env: { ...process.env, PATH: `${binDir}:${process.env.PATH}` },
-      stdio: ["ignore", "pipe", "pipe"],
-    }), { status: 1 });
-    assert.equal(fs.readFileSync(output, "utf8"), "known-good\n");
-  } finally {
-    fs.rmSync(fixture, { recursive: true, force: true });
-  }
-}
 
-function testStitchSkillUsesBundledResourcePrefix() {
-  const skill = fs.readFileSync(path.join(root, "skills/frontend/stitch-react-components/SKILL.md"), "utf8");
-  assert.match(skill, /Set `SKILL_DIR` to this skill directory/);
-  assert.match(skill, /bash "\$SKILL_DIR\/scripts\/fetch-stitch\.sh"/);
-  assert.match(skill, /npm --prefix "\$SKILL_DIR" run validate -- <file_path>/);
 
-  const fetchScript = path.join(root, "skills/frontend/stitch-react-components/scripts/fetch-stitch.sh");
-  assert.throws(() => execFileSync("bash", [fetchScript], { cwd: os.tmpdir(), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }), { status: 1 });
-  try {
-    execFileSync("bash", [fetchScript], { cwd: os.tmpdir(), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-  } catch (error) {
-    assert.match(error.stdout, /Usage:/);
+function testImpeccableUsesSkillRelativeLauncher() {
+  const skillDir = path.join(root, "skills/frontend/impeccable");
+  const files = fs.readdirSync(skillDir, { recursive: true }).filter((file) => file.endsWith(".md"));
+  for (const file of files) {
+    assert.doesNotMatch(fs.readFileSync(path.join(skillDir, file), "utf8"), /\.pi\/skills\/impeccable/,
+      `${file} must resolve the launcher from the installed skill directory`);
   }
+  assert.match(fs.readFileSync(path.join(skillDir, "SKILL.md"), "utf8"), /"<skill-base-dir>\/scripts\/impeccable" context/);
+  assert.ok(fs.statSync(path.join(skillDir, "scripts/impeccable")).mode & 0o111, "launcher must stay executable");
 }
 
 testPromptCacheSummary();
 testPiLogAuditRedactsFreeText();
 testBeautifyReadmeAudit();
 runNode("tests/beautify-github-readme.test.mjs");
-testUiVaultSearch();
-testUiVaultDiagnosisContract();
+testImpeccableUsesSkillRelativeLauncher();
 testAgentSkillsInstaller();
 testClaudeSkillsInstallerCompatibilityWrapper();
-testStitchHexDetection();
-testStitchSkillUsesBundledResourcePrefix();
-testStitchFetchCreatesOutputDirectory();
-testStitchFetchPreservesExistingOutput();
 
 console.log("skill-helper-scripts ok");

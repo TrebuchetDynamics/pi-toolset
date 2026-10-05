@@ -23,19 +23,7 @@
   "optional": {
     "design": [
       "diagram-design",
-      "ui-ux-pro-max",
-      "design-taste-frontend",
-      "high-end-visual-design",
-      "minimalist-ui",
-      "industrial-brutalist-ui",
-      "image-to-code",
-      "imagegen-frontend-web",
-      "imagegen-frontend-mobile",
-      "brandkit",
-      "stitch-design-taste",
-      "stitch-react-components",
-      "hallmark",
-      "ui-vault",
+      "impeccable",
       "beautify-github-readme",
       "chrome-extensions"
     ],
@@ -99,7 +87,22 @@
     "gpt-taste",
     "design-taste-frontend-v1",
     "ui-design",
-    "pi-subagents"
+    "pi-subagents",
+    "frontend-design",
+    "redesign-existing-projects",
+    "design-taste-frontend",
+    "high-end-visual-design",
+    "minimalist-ui",
+    "industrial-brutalist-ui",
+    "image-to-code",
+    "imagegen-frontend-web",
+    "imagegen-frontend-mobile",
+    "brandkit",
+    "stitch-design-taste",
+    "stitch-react-components",
+    "hallmark",
+    "ui-vault",
+    "ui-ux-pro-max"
   ],
   "manual": [
     "lgtm"

@@ -56,26 +56,8 @@ const expectedSkills = [
   "pi-extensions-helper",
   "pi-subagents",
   "research-forge",
-  "ui-ux-pro-max",
-  "ui-design",
-  "ui-vault",
-  "frontend-design",
   "beautify-github-readme",
-  "design-taste-frontend",
-  "design-taste-frontend-v1",
-  "gpt-taste",
-  "image-to-code",
-  "redesign-existing-projects",
-  "high-end-visual-design",
-  "minimalist-ui",
-  "industrial-brutalist-ui",
-  "full-output-enforcement",
-  "imagegen-frontend-web",
-  "imagegen-frontend-mobile",
-  "brandkit",
-  "stitch-design-taste",
-  "hallmark",
-  "stitch-react-components",
+  "impeccable",
 ];
 
 const skillDescriptionBudget = {
@@ -200,7 +182,7 @@ const piCorePackages = new Set([
 
 function collectNestedPackageLockNameIssues(baseDir) {
   const issues = [];
-  const packageFiles = ["skills/frontend/stitch-react-components/package.json"];
+  const packageFiles = [];
   for (const packageFile of packageFiles) {
     const packagePath = path.join(baseDir, packageFile);
     const lockPath = path.join(path.dirname(packagePath), "package-lock.json");
@@ -633,7 +615,7 @@ async function testPackageManifest() {
     "pi-posher",
     "pi-subagents",
   ]);
-  assert.deepEqual(pkg.pi.skills, ["./skills/delivery/git-commit-push", "./skills/engineering/technical-auditor", "./skills/engineering/wiki-docs", "./skills/frontend/frontend-design", "./skills/frontend/modern-web-guidance", "./skills/frontend/redesign-existing-projects", "./skills/pi/pi-extensions-helper", "./skills/planning/handoff", "./skills/planning/lgtm"]);
+  assert.deepEqual(pkg.pi.skills, ["./skills/delivery/git-commit-push", "./skills/engineering/technical-auditor", "./skills/engineering/wiki-docs", "./skills/frontend/impeccable", "./skills/frontend/modern-web-guidance", "./skills/pi/pi-extensions-helper", "./skills/planning/handoff", "./skills/planning/lgtm"]);
   assert.deepEqual(pkg.pi.themes, ["./themes"]);
   assert.ok(pkg.pi.prompts?.includes("./prompts/memory-holographic-hermes-setup.md"),
     "Pi must discover the exact Holographic setup shortcut");
@@ -700,10 +682,6 @@ async function testPackageManifest() {
   assert.match(ci, /npm pack --dry-run/);
   assert.match(ci, /\.understand-anything/);
   assert.match(ci, /codebase-map-understand\\\.md/);
-  assert.match(
-    ci,
-    /npm --prefix skills\/frontend\/stitch-react-components audit/,
-  );
   for (const file of fs
     .readdirSync(path.join(root, "tests"))
     .filter((name) => name.endsWith(".mjs"))) {
@@ -1247,20 +1225,10 @@ async function testSkills() {
     /prefer boring duplication over premature sharing/,
   );
   const frontendRoutingRoles = {
-    "skills/frontend/ui-design/SKILL.md":
-      /front door for broad or ambiguous UI\/UX work/i,
-    "skills/frontend/frontend-design/SKILL.md":
-      /working web components, pages, or product interfaces/i,
+    "skills/frontend/impeccable/SKILL.md":
+      /frontend interface.*Not for backend-only/i,
     "skills/frontend/beautify-github-readme/SKILL.md":
       /GitHub repository README.*README SVG assets.*not general website UI.*ordinary documentation maintenance/i,
-    "skills/frontend/design-taste-frontend/SKILL.md":
-      /marketing sites.*not product dashboards/i,
-    "skills/frontend/hallmark/SKILL.md":
-      /audit, redesign, or study.*explicitly invokes Hallmark/i,
-    "skills/frontend/ui-ux-pro-max/SKILL.md":
-      /design-system and accessibility guidance.*not primary implementation/i,
-    "skills/frontend/redesign-existing-projects/SKILL.md":
-      /existing website or app.*preserving functionality.*not greenfield/i,
   };
   for (const [file, role] of Object.entries(frontendRoutingRoles)) {
     assert.match(
@@ -1288,24 +1256,6 @@ async function testSkills() {
     exists("skills/frontend/beautify-github-readme/scripts/audit_readme.py"),
     "beautify README audit helper must exist",
   );
-
-  const frontendStyleRoles = {
-    "skills/frontend/minimalist-ui/SKILL.md":
-      /style overlay.*explicitly requests.*minimalist/i,
-    "skills/frontend/industrial-brutalist-ui/SKILL.md":
-      /Apply only.*brutalist/i,
-    "skills/frontend/high-end-visual-design/SKILL.md":
-      /Premium styling companion.*soft.*premium/i,
-    "skills/frontend/gpt-taste/SKILL.md":
-      /Codex\/GPT-only supporting rules.*not a general frontend router/i,
-  };
-  for (const [file, role] of Object.entries(frontendStyleRoles)) {
-    assert.match(
-      normalizeSkillDescription(parseFrontmatter(read(file)).description),
-      role,
-      `${file} must expose its supporting style role`,
-    );
-  }
 
   const engineeringRoutingRoles = {
     "skills/engineering/autonomous-codebase-improver/SKILL.md":
@@ -1786,10 +1736,6 @@ async function testDocsAndNotices() {
   assert.match(readme, /pi\.extensions/);
   assert.match(readme, /pi\.themes/);
   assert.match(readme, /npm pack --dry-run/);
-  assert.match(
-    readme,
-    /npm --prefix skills\/frontend\/stitch-react-components audit/,
-  );
 }
 
 function testSkillEntrypointBudget() {
@@ -1835,11 +1781,6 @@ function testNpmPackContents() {
 
   const packagedPaths = new Set(
     JSON.parse(result.stdout)[0].files.map((file) => file.path),
-  );
-  assert.equal(
-    packagedPaths.has("skills/frontend/stitch-react-components/.eslintcache"),
-    false,
-    "npm package must not include generated ESLint caches",
   );
   // Break caught: checkout-only command works locally but is omitted from npm.
   for (const required of [

@@ -95,68 +95,22 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
 - License: MIT
 - Full license copy: `licenses/cathrynlavery-diagram-design-LICENSE`
 
-## en970/ui-vault
 
-- Source: https://github.com/en970/ui-vault
-- Snapshot inspected: `2b199ea33df34ae6bb974796fb0af20fd7cc49e8`
+
+
+
+
+## pbakaus/impeccable
+
+- Source: https://github.com/pbakaus/impeccable
+- Snapshot inspected: `ece38d9904b8a619b3f77cab476eacad09c4fb11` (skill 4.5.0, engine 0.1.11)
 - Bundled paths:
-  - `skills/frontend/ui-vault/references/catalog.json`
-- Local changes: extracted the `DATA` resource catalog from the pinned `index.html`; added package-local search and proposal guidance.
-- Security assumptions: the catalog is inert JSON; linked resources are recommendations only and must be re-verified before adoption.
-- License: MIT
-- Full license copy: `licenses/en970-ui-vault-LICENSE`
-
-## nextlevelbuilder/ui-ux-pro-max-skill
-
-- Source: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
-- Snapshot inspected: `b7e3af8`
-- Bundled paths:
-  - `skills/frontend/ui-ux-pro-max/`
-- Local changes: a package-local routing description and shared-contract reference were added.
-- License: MIT
-- Full license copy: `licenses/nextlevelbuilder-ui-ux-pro-max-skill-LICENSE`
-
-## anthropics/claude-code frontend-design
-
-- Source: https://github.com/anthropics/claude-code
-- Snapshot inspected: `7228175`
-- Bundled paths:
-  - `skills/frontend/frontend-design/`
-- Local changes: a package-local routing description, codebase-map guidance, and shared-contract reference were added.
-- License: Anthropic commercial terms
-- Full license copy: `licenses/anthropics-claude-code-LICENSE.md`
-
-## Leonxlnx/taste-skill
-
-- Source: https://github.com/Leonxlnx/taste-skill
-- Snapshot inspected: `06d6028`
-- Bundled paths:
-  - `skills/frontend/brandkit/`
-  - `skills/frontend/design-taste-frontend/`
-  - `skills/frontend/design-taste-frontend-v1/`
-  - `skills/frontend/full-output-enforcement/`
-  - `skills/frontend/gpt-taste/`
-  - `skills/frontend/high-end-visual-design/`
-  - `skills/frontend/image-to-code/`
-  - `skills/frontend/imagegen-frontend-mobile/`
-  - `skills/frontend/imagegen-frontend-web/`
-  - `skills/frontend/industrial-brutalist-ui/`
-  - `skills/frontend/minimalist-ui/`
-  - `skills/frontend/redesign-existing-projects/`
-  - `skills/frontend/stitch-design-taste/`
-- Local changes: package-local trigger descriptions and shared-contract references were added to fit this package's skill quality gates.
-- License: MIT
-- Full license copy: `licenses/Leonxlnx-taste-skill-LICENSE`
-
-## Nutlope/hallmark
-
-- Source: https://github.com/Nutlope/hallmark
-- Snapshot inspected: `aeb42fb`
-- Bundled paths:
-  - `skills/frontend/hallmark/`
-- Local changes: a narrower package-local routing description and shared-contract reference were added.
-- License: MIT
-- Full license copy: `licenses/Nutlope-hallmark-LICENSE`
+  - `skills/frontend/impeccable/` (upstream generated Pi build, `.pi/skills/impeccable/`)
+- Replaces the previously bundled frontend design skills (Anthropic frontend-design, taste-skill, Hallmark, UI/UX Pro Max, UI Vault, and Stitch skills), which are retired.
+- Local changes: launcher commands resolve from the installed skill directory (`<skill-base-dir>/scripts/impeccable`) instead of the project-local `.pi/skills/impeccable/scripts` path, so global Pi, Codex, and Claude installs work; the trigger description was shortened to fit the package description budget; the project-local `allowed-tools` entry was dropped; provenance frontmatter and the shared-contract reference were added. Upstream `NOTICE.md` (including the ehmo/platform-design-skills MIT attribution) and `LICENSE` are kept in the skill folder.
+- Security assumptions: the `scripts/impeccable` launcher runs a prebuilt engine binary. When none is cached or set through `IMPECCABLE_BIN`, it downloads one from the upstream GitHub releases into `~/.impeccable/bin/<version>/` and refuses to run it unless its `.sha256` sidecar verifies. The browser-side `live` scripts inject into a local dev page only when the user invokes live mode.
+- License: Apache-2.0
+- Full license copy: `licenses/pbakaus-impeccable-LICENSE`
 
 ## oil-oil/beautify-github-readme
 
@@ -169,14 +123,6 @@ Local skill maintenance adds scope-aware shared guidance, persistent session aut
 - License: MIT
 - Full license copy: `licenses/oil-oil-beautify-github-readme-LICENSE`
 
-## google-labs-code/stitch-skills
-
-- Source: https://github.com/google-labs-code/stitch-skills
-- Snapshot inspected: `1544aa4`
-- Bundled paths:
-  - `skills/frontend/stitch-react-components/`
-- License: Apache-2.0
-- Full license copy: `licenses/google-labs-code-stitch-skills-LICENSE`
 
 ## greptileai/skills
 

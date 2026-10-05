@@ -1,6 +1,6 @@
 # pi-toolset Context
 
-Superpowers is the primary workflow; the package defaults to eight local specialists, Search Hub, and subagents. Other stored resources are opt-in. The upstream bootstrap comes from the pinned, unmodified Superpowers checkout.
+Superpowers is the primary workflow; the package defaults to seven local specialists, Search Hub, and subagents. Other stored resources are opt-in. The upstream bootstrap comes from the pinned, unmodified Superpowers checkout.
 
 The optional catalog includes `/understand`, folder-refactor, RTK bridge, Onklaud advisory, and the bug-harvest, isolated-verifier, search-hub, typesafe, s3upload, poshify, and pi-subagents extensions.
 
@@ -31,7 +31,7 @@ A deterministic file-generation workflow that reads the current repo's existing 
 _Avoid_: hidden model calls, treating graph heuristics as final architectural judgment, editing production code during plan generation, requiring refactor to run `/understand` itself, recommending graph-only hotspots without live-code confidence labels, ending with only a file path and no decision prompt, losing prior refactor decisions when regenerating the same output file, asking the user to manually compose the next skill prompt, silently running follow-up reasoning without an explicit candidate choice
 
 **Skill Bundle**:
-The source catalog lives under `skills/`; `package.json` explicitly selects eight default local skills. `skills/shared/profiles.json` names optional profiles and the pinned upstream source. Global migration archives inactive known copies outside discovery roots, leaves manual-only compatibility files for already-installed commands, and links the 15 canonical Superpowers skills. The explicit `lgtm` command remains available without automatic invocation.
+The source catalog lives under `skills/`; `package.json` explicitly selects seven default local skills. `skills/shared/profiles.json` names optional profiles and the pinned upstream source. Global migration archives inactive known copies outside discovery roots, leaves manual-only compatibility files for already-installed commands, and links the 15 canonical Superpowers skills. The explicit `lgtm` command remains available without automatic invocation.
 _Avoid_: hidden behavior not represented in docs or manifests, unlisted resource paths
 
 **Diagram Design Skill**:
